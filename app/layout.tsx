@@ -1,8 +1,6 @@
-// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-// IMPORT IMPORTANT: El proveïdor d'idioma
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 const geistSans = Geist({
@@ -16,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Assistent de Decisions",
-  description: "Delega les teves decisions quotidianes.",
+  title: "Decision Assistant 🎮",
+  description: "Delega les teves decisions de forma divertida.",
 };
 
 export default function RootLayout({
@@ -27,10 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ca">
+      {/* AFEGIM: bg-gamified-pattern per donar textura a tota l'app */}
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gamified-pattern min-h-screen`}
       >
-        {/* Envoltem tota l'aplicació amb el LanguageProvider */}
         <LanguageProvider>
           {children}
         </LanguageProvider>

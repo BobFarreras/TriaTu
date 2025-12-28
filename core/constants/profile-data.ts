@@ -11,7 +11,7 @@ export type OptionCategory = {
   items: OptionItem[];
 };
 
-// --- DATA: AL·LÈRGIES I EXCLUSIONS (Mantinc la que teníem, que estava molt bé) ---
+// --- DATA: AL·LÈRGIES I EXCLUSIONS ---
 export const EXCLUSION_DATA: OptionCategory[] = [
   {
     title: "⚠️ Les 14 Al·lèrgens Principals (UE)",
@@ -66,36 +66,36 @@ export const EXCLUSION_DATA: OptionCategory[] = [
   }
 ];
 
-// --- DATA: PREFERÈNCIES DE MENJAR (AMPLIADA I CATEGORITZADA) ---
+// --- DATA: PREFERÈNCIES DE MENJAR (PAÍS + EMOJI CULTURAL) ---
 export const FOOD_DATA: OptionCategory[] = [
   {
     title: "🌍 Cuines del Món (Europa & Amèrica)",
     items: [
-      { id: 'italian', label: 'Italiana', emoji: '🇮🇹' },
+      { id: 'italian', label: 'Italiana', emoji: '🍕' },
       { id: 'mediterranean', label: 'Mediterrània', emoji: '🫒' },
-      { id: 'spanish', label: 'Espanyola/Tapes', emoji: '🇪🇸' },
-      { id: 'french', label: 'Francesa', emoji: '🇫🇷' },
-      { id: 'greek', label: 'Grega', emoji: '🇬🇷' },
-      { id: 'mexican', label: 'Mexicana', emoji: '🇲🇽' },
-      { id: 'american', label: 'Americana (USA)', emoji: '🇺🇸' },
-      { id: 'brazilian', label: 'Brasilera', emoji: '🇧🇷' },
-      { id: 'peruvian', label: 'Peruana', emoji: '🇵🇪' },
-      { id: 'argentinian', label: 'Argentina', emoji: '🇦🇷' },
-      { id: 'german', label: 'Alemanya', emoji: '🇩🇪' },
+      { id: 'spanish', label: 'Espanyola', emoji: '🥘' },
+      { id: 'french', label: 'Francesa', emoji: '🥐' },
+      { id: 'greek', label: 'Grega', emoji: '🧀' },
+      { id: 'mexican', label: 'Mexicana', emoji: '🌮' },
+      { id: 'american', label: 'Americana', emoji: '🍔' },
+      { id: 'brazilian', label: 'Brasilera', emoji: '🥩' },
+      { id: 'peruvian', label: 'Peruana', emoji: '🐟' },
+      { id: 'argentinian', label: 'Argentina', emoji: '🥩🔥' },
+      { id: 'german', label: 'Alemanya', emoji: '🌭' },
     ]
   },
   {
     title: "🥢 Cuines del Món (Àsia & Orient)",
     items: [
-      { id: 'japanese', label: 'Japonesa', emoji: '🇯🇵' },
-      { id: 'chinese', label: 'Xinesa', emoji: '🇨🇳' },
-      { id: 'indian', label: 'Índia', emoji: '🇮🇳' },
-      { id: 'thai', label: 'Tailandesa', emoji: '🇹🇭' },
-      { id: 'korean', label: 'Coreana', emoji: '🇰🇷' },
-      { id: 'vietnamese', label: 'Vietnamita', emoji: '🇻🇳' },
-      { id: 'turkish', label: 'Turca', emoji: '🇹🇷' },
-      { id: 'lebanese', label: 'Libanesa/Àrab', emoji: '🇱🇧' },
-      { id: 'poke', label: 'Hawaiana (Poke)', emoji: '🌺' },
+      { id: 'japanese', label: 'Japonesa', emoji: '🍣' },
+      { id: 'chinese', label: 'Xinesa', emoji: '🥡' },
+      { id: 'indian', label: 'Índia', emoji: '🍛' },
+      { id: 'thai', label: 'Tailandesa', emoji: '🍜' },
+      { id: 'korean', label: 'Coreana', emoji: '🥘🔥' },
+      { id: 'vietnamese', label: 'Vietnamita', emoji: '🍲' },
+      { id: 'turkish', label: 'Turca', emoji: '🥙' },
+      { id: 'lebanese', label: 'Libanesa', emoji: '🧆' },
+      { id: 'poke', label: 'Hawaiana (Poke)', emoji: '🐟🥗' },
     ]
   },
   {

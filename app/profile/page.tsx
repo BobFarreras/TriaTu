@@ -1,8 +1,9 @@
-import Link from 'next/link'; // <--- IMPORT CRÍTIC
+// =================== FILE: app/profile/page.tsx ===================
+
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
 import { SupabasePreferenceRepository } from '@/adapters/supabase/SupabasePreferenceRepository';
-// CORRECCIÓ: 'ProfileForm' en lloc de 'ProfileFrom'
 import { ProfileForm } from '@/features/profile/ui/ProfileFrom';
 
 export default async function ProfilePage() {
@@ -14,7 +15,6 @@ export default async function ProfilePage() {
   const repo = new SupabasePreferenceRepository();
   const profile = await repo.findByUserId(user.id);
 
-  // Casting segur per llegir dades privades al DTO inicial
   const exclusions = profile 
     ? (profile as unknown as { exclusions: string[] }).exclusions 
     : [];
@@ -26,17 +26,38 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50 dark:bg-black">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold">Configuració</h1>
-        
-        {/* CORRECCIÓ: Usem Link en lloc de <a> */}
-        <Link href="/" className="text-sm text-blue-500 hover:underline transition-colors">
-          ← Tornar a l'inici
-        </Link>
+    // CANVI CLAU: Eliminem 'bg-gray-50' perquè es vegi el fons global
+    <div className="min-h-screen p-4 md:p-8 pb-32">
+      
+      {/* HEADER AMB ANIMACIÓ D'ENTRADA */}
+      <div className="max-w-4xl mx-auto mb-8 flex flex-col md:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-700">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/" 
+            className="btn-3d bg-white dark:bg-zinc-800 p-3 rounded-2xl border-2 border-b-4 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 transition-all"
+          >
+            🔙
+          </Link>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tight">
+              El teu Personatge
+            </h1>
+            <p className="text-gray-500 font-bold text-sm uppercase tracking-wider">
+              Configuració del perfil
+            </p>
+          </div>
+        </div>
+
+        {/* Decoració flotant (opcional) */}
+        <div className="hidden md:block text-5xl animate-[float_4s_ease-in-out_infinite]">
+          ⚙️
+        </div>
       </div>
       
-      <ProfileForm initialData={initialData} />
+      {/* EL FORMULARI */}
+      <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+        <ProfileForm initialData={initialData} />
+      </div>
     </div>
   );
 }

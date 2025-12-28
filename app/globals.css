@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Paleta "Gamified" vibrant */
+  --brand-green: #58cc02;
+  --brand-green-dark: #46a302;
+  --brand-blue: #1cb0f6;
+  --brand-blue-dark: #1480b3;
+  --brand-orange: #ff9600;
+  --brand-orange-dark: #cc7800;
+  
+  /* Fons animat */
+  --background: #f0fdf4; /* Verd molt suau */
+  --foreground: #3c3c3c;
 }
 
 @theme inline {
@@ -10,17 +19,52 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Animacions personalitzades */
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-bounce-click: bounce-click 0.2s ease-in-out;
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
 }
 
+/* Forcem el mode fosc a ser "Midnight Purple" en lloc de negre pur */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #131f24; /* Blau nit profund, no negre */
+    --foreground: #ffffff;
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* PATRÓ DE PUNTS ESTIL JOC */
+.bg-gamified-pattern {
+  background-color: var(--background);
+  background-image: radial-gradient(#86efac 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bg-gamified-pattern {
+    background-image: radial-gradient(#1e3a8a 1px, transparent 1px);
+  }
+}
+
+/* UTILITATS 3D (Botons estil Candy Crush) */
+.btn-3d {
+  transition: all 0.1s;
+  transform: translateY(0);
+}
+.btn-3d:active {
+  transform: translateY(4px);
+  border-bottom-width: 0px !important;
+  margin-top: 4px;
 }
