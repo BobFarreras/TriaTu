@@ -14,7 +14,6 @@ export class DecisionRoom {
   public readonly id: string;
   public readonly hostUserId: string;
   public readonly name: string;
-  // ✅ FIX 1: Afegim la propietat pública perquè sigui accessible
   public readonly votingMode: 'BLIND' | 'PUBLIC'; 
   
   private _participants: RoomParticipant[];
@@ -24,7 +23,6 @@ export class DecisionRoom {
     this.id = props.id;
     this.hostUserId = props.hostUserId;
     this.name = props.name;
-    // ✅ FIX 2: L'assignem al constructor
     this.votingMode = props.votingMode; 
     
     // Si participants ve buit o undefined, assegurem array
@@ -41,6 +39,7 @@ export class DecisionRoom {
   }
   
   get history(): DecisionOutcome[] {
+    // Retornem ordenat per data (més recent primer)
     return [...this._history].sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime());
   }
 
@@ -49,6 +48,13 @@ export class DecisionRoom {
     this._participants.push(new RoomParticipant(userId));
   }
 
+  // ✅ AQUEST ÉS EL MÈTODE QUE FALTAVA I DONAVA ERROR
+  public resolve(outcome: DecisionOutcome): void {
+    // Afegim el resultat a l'historial intern de la sala
+    this._history.push(outcome);
+  }
+
+  // Mètode auxiliar per si vols afegir manualment (pot ser redundant amb resolve, però el mantenim si l'uses)
   public addDecision(outcome: DecisionOutcome): void {
     this._history.push(outcome);
   }

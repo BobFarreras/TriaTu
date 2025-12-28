@@ -1,4 +1,3 @@
-// core/usecases/rooms/JoinDecisionRoom.ts
 import { DecisionRoomRepository } from '@/core/ports/DecisionRoomRepository';
 
 type Input = {
@@ -16,10 +15,12 @@ export class JoinDecisionRoom {
       throw new Error(`Room not found: ${input.roomId}`);
     }
 
-    // 2. Aplicar lògica de negoci (l'entitat valida si està OPEN o si duplicat)
+    // 2. Aplicar lògica de negoci en memòria
+    // (Això valida regles de negoci com: la sala està plena? està tancada?)
     room.addParticipant(input.userId);
 
-    // 3. Persistir només el nou participant (més eficient que guardar tota la sala)
+    // 3. Persistència eficient
+    // Com que ja hem validat al pas 2, ara guardem directament el link a la DB
     await this.roomRepo.addParticipant(room.id, input.userId);
   }
 }
