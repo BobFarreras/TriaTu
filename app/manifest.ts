@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     icons: [
       {
-        src: '/web-app-manifest-192x192.png', // Assegura't que la ruta és correcta a public/
+        src: '/web-app-manifest-192x192.png', // Revisa que aquestes imatges existeixin a /public
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable'

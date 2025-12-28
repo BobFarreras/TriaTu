@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* COLORS DE MARCA */
+  /* --- COLORS CORPORATIUS --- */
   --brand-green: #58cc02;
   --brand-green-dark: #46a302;
   --brand-blue: #1cb0f6;
@@ -9,9 +9,9 @@
   --brand-orange: #ff9600;
   --brand-orange-dark: #cc7800;
   
-  /* FONS I TEXT (FORÇAT A FOSC PER SEMPRE) */
-  --background: #131f24; /* Blau nit profund */
-  --foreground: #ffffff; /* Text blanc */
+  /* --- FONS I TEXT (FORÇAT A FOSC 'MIDNIGHT PURPLE') --- */
+  --background: #131f24; 
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -20,7 +20,6 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   
-  /* Animacions */
   --animate-float: float 3s ease-in-out infinite;
   --animate-bounce-click: bounce-click 0.2s ease-in-out;
   
@@ -35,13 +34,14 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
-  overscroll-behavior-y: none; /* Evita rebot blanc a iOS */
+  /* VITAL PER MÒBIL: Evita que al fer scroll amunt es vegi blanc */
+  overscroll-behavior-y: none; 
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* PATRÓ DE PUNTS (Sempre versió fosca) */
+/* NOM CORRECTE: bg-gamified-pattern (Coincidirà amb el layout) */
 .bg-gamified-pattern {
   background-color: var(--background);
-  /* Punts blancs/blavosos subtils */
   background-image: radial-gradient(#1e3a8a 1px, transparent 1px);
   background-size: 20px 20px;
   color: var(--foreground);
@@ -56,25 +56,4 @@ body {
   transform: translateY(4px);
   border-bottom-width: 0px !important;
   margin-top: 4px;
-}
-
-/* ANIMACIONS */
-@keyframes wave {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-20deg); }
-  75% { transform: rotate(20deg); }
-}
-
-.animate-wave {
-  animation: wave 2s infinite ease-in-out;
-  transform-origin: 70% 70%;
-}
-
-@keyframes float-fast {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
-}
-
-.animate-float-fast {
-  animation: float-fast 3s ease-in-out infinite;
 }

@@ -5,14 +5,14 @@ import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "DecideAI",
+export const metadacideAIta: Metadata = {
+  title: "TriaTu",
   description: "Decisions en grup fàcils i ràpides",
-  // NO posis manifest aquí, Next.js ho fa automàticament amb manifest.ts
+  // Next.js injectarà automàticament el link al manifest generat
 };
 
-// FORCEM UN ÚNIC COLOR DE TEMA (BLAU NIT)
 export const viewport: Viewport = {
+  // Fixem el color exacte del fons (#131f24)
   themeColor: "#131f24",
   width: "device-width",
   initialScale: 1,
@@ -26,16 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // Forcem la classe 'dark' per si tens components que usen 'dark:'
-    <html lang="ca" className="dark" suppressHydrationWarning>
+    <html lang="ca">
       <head>
-        {/* Estil inline per evitar el flash blanc inicial */}
         <style>{`
-          html, body { background-color: #131f24; } 
+          html, body { background-color: #131f24 !important; }
         `}</style>
       </head>
       
-      <body className={`${inter.className} min-h-dvh bg-gamified-pattern overflow-x-hidden selection:bg-brand-green selection:text-white`}>
+      {/* CORRECCIÓ AQUÍ: Canvia 'bg-dot-pattern' per 'bg-gamified-pattern' */}
+      <body className={`${inter.className} min-h-dvh bg-[#131f24] text-white bg-gamified-pattern overflow-x-hidden`}>
         <LanguageProvider>
            {children}
         </LanguageProvider>
