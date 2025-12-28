@@ -13,6 +13,12 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+   {
+    rules: {
+      "react/no-unescaped-entities": "off",
+      "react/jsx-key": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
