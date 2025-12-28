@@ -1,4 +1,3 @@
-// =================== FILE: features/profile/ui/ProfileContent.tsx ===================
 'use client'
 
 import Link from 'next/link';
@@ -21,33 +20,36 @@ export function ProfileContent({ initialData, username }: Props) {
   const { t } = useLanguage();
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col bg-dot-pattern selection:bg-purple-200 overflow-hidden relative">
+    // FONS: Sempre fosc i amb el patró gamified
+    <div className="h-dvh w-full flex flex-col bg-[#131f24] bg-gamified-pattern selection:bg-purple-500 selection:text-white overflow-hidden relative">
       
       {/* DECORACIÓ DE FONS */}
-      <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-purple-200/20 dark:bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute top-[-20%] right-[-10%] w-125 h-125 bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* HEADER COMPACTE */}
       <header className="w-full max-w-5xl mx-auto p-4 md:p-6 flex items-center justify-between z-20 shrink-0">
          <div className="flex items-center gap-4">
             <Link 
                 href="/" 
-                className="group flex items-center justify-center w-12 h-12 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-2xl border-2 border-gray-200 dark:border-zinc-700 hover:border-black dark:hover:border-white transition-all shadow-sm"
+                // BOTÓ ENRERE: Fosc (bg-zinc-900/80)
+                className="group flex items-center justify-center w-12 h-12 bg-zinc-900/80 backdrop-blur-md rounded-2xl border-2 border-zinc-700 hover:border-white transition-all shadow-sm"
             >
-                <ArrowLeft size={20} className="text-gray-500 group-hover:text-black dark:group-hover:text-white transition-colors group-hover:-translate-x-0.5" />
+                <ArrowLeft size={20} className="text-gray-400 group-hover:text-white transition-colors group-hover:-translate-x-0.5" />
             </Link>
             
             <div>
-                <h1 className="text-xl font-black text-gray-900 dark:text-white leading-none">
+                {/* TEXT: Sempre Blanc */}
+                <h1 className="text-xl font-black text-white leading-none">
                     {username}
                 </h1>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">
                     {t.profile?.title || 'CONFIGURACIÓ'}
                 </p>
             </div>
          </div>
 
          {/* Icona decorativa animada */}
-         <div className="hidden md:flex w-10 h-10 bg-gradient-to-tr from-purple-400 to-pink-500 rounded-xl items-center justify-center text-xl shadow-lg animate-[float_4s_ease-in-out_infinite]">
+         <div className="hidden md:flex w-10 h-10 bg-linear-to-tr from-purple-400 to-pink-500 rounded-xl items-center justify-center text-xl shadow-lg animate-[float_4s_ease-in-out_infinite]">
             ⚙️
          </div>
       </header>

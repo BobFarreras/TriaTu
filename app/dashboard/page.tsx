@@ -1,4 +1,4 @@
-import Link from 'next/link';
+
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
 import { DashboardContent } from '@/features/dashboard/ui/DashboardContent';

@@ -5,19 +5,18 @@ import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadacideAIta: Metadata = {
+export const metadata: Metadata = {
   title: "TriaTu",
   description: "Decisions en grup fàcils i ràpides",
-  // Next.js injectarà automàticament el link al manifest generat
 };
 
 export const viewport: Viewport = {
-  // Fixem el color exacte del fons (#131f24)
   themeColor: "#131f24",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover', // Omple tota la pantalla (notch inclòs)
 };
 
 export default function RootLayout({
@@ -28,13 +27,11 @@ export default function RootLayout({
   return (
     <html lang="ca">
       <head>
-        <style>{`
-          html, body { background-color: #131f24 !important; }
-        `}</style>
+        {/* Estil inline per evitar flaixos blancs abans que carregui el CSS */}
+        <style>{`html, body { background-color: #131f24 !important; }`}</style>
       </head>
       
-      {/* CORRECCIÓ AQUÍ: Canvia 'bg-dot-pattern' per 'bg-gamified-pattern' */}
-      <body className={`${inter.className} min-h-dvh bg-[#131f24] text-white bg-gamified-pattern overflow-x-hidden`}>
+      <body className={`${inter.className} min-h-dvh bg-[#131f24] text-white bg-gamified-pattern overflow-x-hidden antialiased`}>
         <LanguageProvider>
            {children}
         </LanguageProvider>
