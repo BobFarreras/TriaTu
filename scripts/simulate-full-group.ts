@@ -1,4 +1,3 @@
-// scripts/simulate-full-group.ts
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
@@ -11,16 +10,22 @@ async function main() {
   const { CreateDecisionRoom } = await import('../core/usecases/rooms/CreateDecisionRoom');
   const { JoinDecisionRoom } = await import('../core/usecases/rooms/JoinDecisionRoom');
   const { PreferenceProfile } = await import('../core/domain/entities/PreferenceProfile');
+  
+  // ✅ 1. IMPORTAR EL SERVEI NOU
+  const { FoodKnowledgeService } = await import('../core/domain/services/FoodKnowledgeService');
 
   const profileRepo = new SupabasePreferenceRepository();
   const roomRepo = new SupabaseDecisionRoomRepository();
-  const groupResolver = new BasicGroupResolver();
+  
+  // ✅ 2. INSTANCIAR EL SERVEI I INJECTAR-LO
+  const foodService = new FoodKnowledgeService();
+  const groupResolver = new BasicGroupResolver(foodService); // <--- Ara sí!
 
   const createRoom = new CreateDecisionRoom(roomRepo);
   const joinRoom = new JoinDecisionRoom(roomRepo);
   const resolveRoom = new ResolveGroupDecision(roomRepo, profileRepo, groupResolver);
 
-  // 1. Crear Usuaris Ficticis (Actors)
+  // --- DADES DE PROVA ---
   const users = [
     { id: crypto.randomUUID(), name: 'Alice (Vegan)', prefs: ['Salad', 'Tofu', 'Fruit'], excl: ['Meat'] },
     { id: crypto.randomUUID(), name: 'Bob (Meat Lover)', prefs: ['Burger', 'Steak', 'Pizza'], excl: ['Tofu'] },
@@ -35,7 +40,13 @@ async function main() {
       socialTolerance: 5,
       exclusions: u.excl
     });
-    await profileRepo.save(profile); // Assegura't que tens aquest mètode al repo
+    // Nota: Assegura't que SupabasePreferenceRepository té el mètode 'save'.
+    // Si no el té, hauràs de crear-lo o fer servir una inserció directa per al test.
+    try {
+        await profileRepo.save(profile);
+    } catch (e) {
+        console.warn(`⚠️ Could not save profile for ${u.name}. Check Repo implementation. Error:`, e);
+    }
   }
 
   // 2. Crear Sala
@@ -58,18 +69,6 @@ async function main() {
     console.log('🎉 FINAL VERDICT:', outcome.choice);
     console.log('📝 REASON:', outcome.reason);
     console.log('=============================\n');
-
-    /* Analisi esperat:
-       Alice vol: Salad, Tofu, Fruit. Exclou: Meat
-       Bob vol: Burger, Steak, Pizza. Exclou: Tofu
-       Charlie vol: Pizza, Salad, Sushi.
-       
-       Intersecció:
-       - Pizza: Bob (Si), Charlie (Si), Alice (No, però no Exclou explícitament 'Pizza' tret que porti Meat)
-       - Salad: Alice (Si), Charlie (Si), Bob (No, no exclou)
-       
-       Depenent de l'ordre o l'algoritme, hauria de sortir Salad o Pizza.
-    */
 
   } catch (e) {
     console.error('❌ Failed:', e);

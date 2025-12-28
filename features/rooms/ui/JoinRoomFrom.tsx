@@ -8,7 +8,6 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
-// NOU: Acceptem userId com a prop
 export function JoinRoomForm({ userId }: { userId: string }) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -20,25 +19,27 @@ export function JoinRoomForm({ userId }: { userId: string }) {
     if (!roomId.trim()) return;
 
     startTransition(async () => {
-      // Usem l'ID real passat per prop
       const res = await joinRoomAction(roomId, userId);
       
       if (res.success) {
-        // Redirigim SENSE paràmetres d'usuari a la URL
         router.push(`/rooms/${roomId}`);
       } else {
+        // Mostrem l'error del servidor o un de genèric
         setError(res.error || t.common.error);
       }
     });
   };
 
   return (
-    <Card className="max-w-md mx-auto space-y-6">
-      <h2 className="text-xl font-bold">{t.room.join_title}</h2>
+    <Card className="max-w-md mx-auto space-y-6 p-6"> {/* Padding afegit per consistència */}
+      
+      {/* ✅ CORREGIT: Usem 'hero_title' de la secció 'join_room' */}
+      <h2 className="text-xl font-bold">{t.join_room.hero_title}</h2>
       
       <Input 
-        label="ID de la Sala (UUID)"
-        placeholder="ex: 550e8400..."
+        // ✅ CORREGIT: Claus correctes del diccionari
+        label={t.join_room.label_code}
+        placeholder={t.join_room.placeholder_code}
         value={roomId}
         onChange={(e) => setRoomId(e.target.value)}
       />
@@ -51,7 +52,8 @@ export function JoinRoomForm({ userId }: { userId: string }) {
         isLoading={isPending}
         disabled={!roomId.trim()}
       >
-        {t.room.join_title}
+        {/* ✅ CORREGIT: Text del botó */}
+        {t.join_room.btn_join}
       </Button>
     </Card>
   );

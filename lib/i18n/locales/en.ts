@@ -6,80 +6,77 @@ export const en = {
     switch_lang: 'Switch language'
   },
   dashboard: {
-    level: 'Level 1: Easy life',
+    level: 'Level 1: Easy Life',
     config: 'Settings',
     quick_decision: 'Quick Decision',
     create_room: 'Create Room',
-    create_desc: 'Invite friends and decide together',
-    join_room: 'Join',
-    join_desc: 'Do you have an invite code?'
+    create_desc: 'Invite friends & decide together',
+    join_room: 'Join Room',
+    join_desc: 'Got an invite code?',
+    active_rooms_title: 'Your Rooms',
+    active_rooms_empty: 'No active rooms found.',
+    continue_btn: 'Continue',
+    menu: {
+      role_player: 'Player',
+      my_profile: 'My Profile',
+      logout: 'LOG OUT'
+    }
   },
   decision: {
     title_food: 'What are we eating today? 🍽️',
     energy_label: 'Energy Level',
-    time_label: 'Available time',
+    time_label: 'Time Available',
     button_decide: '🎲 Decide for me!',
     disclaimer: '*No refunds, fate is final.',
-
     fate_spoken: 'Fate has spoken',
     why: 'Why?',
     roll_again: '🔄 Roll again',
-
     energy_levels: {
       low: 'Lazy mode',
-      mid: 'Meh mode',
-      high: 'Ready to conquer the world!'
+      mid: 'Meh',
+      high: 'Let\'s go!'
     },
     reasons: {
-      high_energy: "You have great energy! I randomly picked something from your favorites.",
-      low_energy: "Low energy detected. I chose an easy and comforting option.",
+      high_energy: "Good energy! Picked something from your favorites randomly.",
+      low_energy: "Low energy detected. Picked an easy and comforting option.",
       balanced: "A balanced option for the time you have.",
-      random: "Fate decided completely at random.",
-      default: "It seems like a good option for now."
+      random: "Fate has decided completely at random.",
+      default: "Seems like a good option for now."
     }
-
   },
   room: {
-    back_home: '← Back to home',
+    back_home: '← Back home',
     new_room_title: 'New Room',
     id_label: 'ID',
-
     copy_code: 'Copy Code',
     code_copied: 'Code copied to clipboard! 📋',
     kick_confirm: 'Do you want to kick this player?',
     host_badge: '👑 Host',
     you_badge: 'You',
     user_prefix: 'User',
-
     mode_auto: '✨ AUTO',
     mode_manual: '📝 MANUAL',
-
     voting_blind: 'Blind Voting',
     voting_public: 'Public Voting',
-    blind_desc: 'No one sees others’ options.',
-    public_desc: 'Everyone sees what is written.',
+    blind_desc: 'Nobody sees other options.',
+    public_desc: 'Everyone sees what is typed.',
     btn_change: 'Change',
-
     empty_options: 'No options yet',
     input_placeholder: 'Type an option...',
     add_btn: 'Add',
     hidden_candidate: '??????',
-
-    magic_title: 'Fate Decides',
-    magic_desc: 'The algorithm will analyze the food profiles of all participants to find the perfect mathematical match.',
-
-    decide_magic: '✨ Make Magic & Decide',
+    magic_title: 'Fate Rules',
+    magic_desc: 'The algorithm will analyze food profiles from all participants to find the perfect mathematical match.',
+    decide_magic: '✨ Do Magic & Decide',
     decide_roll: '🎲 Roll the Dice!',
     waiting_host: 'Waiting for Host...',
-
     history_title: 'History',
     trophy_empty_title: 'Empty Trophy Room',
-    trophy_empty_desc: 'No decisions have been made yet.',
+    trophy_empty_desc: 'No decisions made yet.',
     wall_fame: 'Wall of Fame',
-    view_more: '✨ View {count} more wins...',
-    clean_room: '💣 Clear room',
-    clean_confirm: 'Are you sure you want to delete the history?',
-
+    view_more: '✨ See {count} more wins...',
+    clean_room: '💣 Clean room',
+    clean_confirm: 'Are you sure you want to clear history?',
     err_kick: 'Error kicking user',
     err_clean: 'Error clearing history',
     err_add: 'Error adding option',
@@ -87,43 +84,36 @@ export const en = {
   },
   landing: {
     phrases: [
-      { text: "I don’t know, you decide...", emoji: "🙄" },
-      { text: "I don’t mind, really...", emoji: "🥱" },
+      { text: "I don't know, you decide...", emoji: "🙄" },
+      { text: "I really don't care...", emoji: "🥱" },
       { text: "Where are we having dinner?", emoji: "😫" },
       { text: "Pizza again?", emoji: "🍕" },
-      { text: "You choose, I don’t want to think", emoji: "🤯" }
+      { text: "You choose, I can't think", emoji: "🤯" }
     ],
-    hero_title: 'Goodbye to wasting time deciding.',
-    hero_subtitle: 'Hello to meeting more and thinking less.',
-
-    btn_login: 'I already have an account',
-    btn_start: '🚀 GET STARTED'
+    hero_title: 'Stop wasting time deciding.',
+    hero_subtitle: 'Start hanging out more and thinking less.',
+    btn_login: 'I have an account',
+    btn_start: '🚀 START'
   },
   auth: {
-    // Shared
     email_label: 'Email',
     email_placeholder: 'name@example.com',
     password_label: 'Password',
     password_placeholder: '••••••••',
-    password_min: 'Minimum 6 characters',
+    password_min: 'Min 6 chars',
     back: 'BACK',
-
-    // Login
     login_title: 'Welcome back!',
-    login_subtitle: 'Your room is waiting.',
-    forgot_password: 'Forgot your password?',
-    login_btn: 'LOG IN',
-    no_account: "Don't have an account?",
-    register_link: 'Sign up here',
-
-    // Register
+    login_subtitle: 'Your room awaits.',
+    forgot_password: 'Forgot password?',
+    login_btn: 'LOGIN',
+    no_account: 'No account?',
+    register_link: "Sign up here",
     register_title: 'Join the club',
-    register_subtitle: 'Start the adventure today.',
+    register_subtitle: 'Start your adventure today.',
     register_btn: 'CREATE ACCOUNT',
     has_account: 'Already have an account?',
-    login_link: 'Log in here'
+    login_link: 'Login here'
   },
-  // ✅ NEW KEYS FOR CREATE/JOIN
   create_room: {
     back_cancel: '← CANCEL',
     hero_title: 'New Adventure',
@@ -131,64 +121,51 @@ export const en = {
     label_name: 'Room Name',
     placeholder_name: 'ex: Friday Dinner 🍕',
     btn_create: '🪄 CREATE ROOM',
-    host_info: 'You will be the host 👑',
+    host_info: 'You will be the Host 👑',
     err_name_required: 'Room name is required.',
-    err_unknown: 'Unknown error creating the room.'
+    err_unknown: 'Unknown error creating room.'
   },
-
   join_room: {
     back: '← BACK',
-    hero_title: 'Got an invitation?',
-    hero_subtitle: 'Enter the code to join the party.',
+    hero_title: 'Got an invite?',
+    hero_subtitle: 'Enter code to join the party.',
     label_code: 'ROOM CODE (UUID)',
-    placeholder_code: 'paste-it-here...',
-    btn_join: 'JOIN NOW 🍿',
+    placeholder_code: 'paste-here...',
+    btn_join: 'ENTER NOW 🍿',
     err_code_required: 'Code is required.'
-
   },
   profile: {
     back: '🔙',
     title: 'Your Character',
-    subtitle: 'Profile Settings',
+    subtitle: 'Profile settings',
     saved: '✅ Saved!',
     save_btn: '💾 Save Changes',
-
-    // Section 1: Food
     menu_title: 'Your Menu',
     menu_desc: 'What do you usually like to eat?',
     search_food: '🍕 Search food (ex: Sushi...)',
-
-    // Section 2: Exclusions
-    blacklist_title: 'Blacklist',
-    blacklist_desc: 'Allergies and things you can’t tolerate.',
+    blacklist_title: 'The Blacklist',
+    blacklist_desc: 'Allergies and things you hate.',
     search_allergy: '🥜 Search allergy (ex: Gluten...)',
     warning_title: '⚠️ Other Restrictions',
-    warning_text: 'Did you forget something important?',
-    warning_example: 'Ex: Coriander, Peach, Food Coloring E-120...',
+    warning_text: 'Did you miss anything important?',
+    warning_example: 'Ex: Cilantro, Peach, Dye E-120...',
     warning_placeholder: 'Type here and press Enter...',
-
-    // Section 3: Tolerance
     flexibility_title: 'Flexibility',
     flexibility_desc: 'How easy are you to convince?',
     rigid: 'Rigid',
     flexible: 'Flexible',
     levels: {
       low: 'NON-NEGOTIABLE',
-      mid: 'NEUTRAL',
-      high: 'I ADAPT TO EVERYTHING'
+      mid: 'WHATEVER',
+      high: 'UP FOR ANYTHING'
     },
-
-
     food: {
-      // Categories
-      cat_world_west: "🌍 World Cuisines (Europe & America)",
-      cat_world_east: "🥢 World Cuisines (Asia & Orient)",
+      cat_world_west: "🌍 World Cuisines (West)",
+      cat_world_east: "🥢 World Cuisines (East)",
       cat_fast: "🍔 Fast Food & Casual",
-      cat_specific: "🍣 Specific Dishes & Delicacies",
+      cat_specific: "🍣 Specific Dishes & Delicatessen",
       cat_healthy: "🥗 Healthy & Light",
       cat_sweet: "🧁 Breakfast & Sweets",
-
-      // Items (World West)
       italian: 'Italian',
       mediterranean: 'Mediterranean',
       spanish: 'Spanish',
@@ -200,8 +177,6 @@ export const en = {
       peruvian: 'Peruvian',
       argentinian: 'Argentinian',
       german: 'German',
-
-      // Items (World East)
       japanese: 'Japanese',
       chinese: 'Chinese',
       indian: 'Indian',
@@ -211,83 +186,67 @@ export const en = {
       turkish: 'Turkish',
       lebanese: 'Lebanese',
       poke: 'Hawaiian (Poke)',
-
-      // Items (Fast Food)
       pizza: 'Pizza',
       burger: 'Burger',
       fried_chicken: 'Fried Chicken',
       kebab: 'Kebab/Dürüm',
       hotdog: 'Hot Dog',
       tacos: 'Tacos/Burritos',
-      sandwich: 'Sandwiches/Wraps',
+      sandwich: 'Sandwich/Wraps',
       crepes: 'Crepes',
       empanadas: 'Empanadas',
-
-      // Items (Specific)
       sushi: 'Sushi',
       ramen: 'Ramen',
-      steak: 'Grilled Meat',
-      seafood_dish: 'Seafood Platter',
+      steak: 'Steakhouse',
+      seafood_dish: 'Seafood',
       paella: 'Paella/Rice',
       pasta: 'Pasta',
       bbq: 'BBQ/Ribs',
       dimsum: 'Dim Sum/Gyozas',
       fondue: 'Fondue/Raclette',
-
-      // Items (Healthy)
       salad: 'Salads',
       poke_bowl: 'Poke Bowl',
-      soup: 'Soups/Crems',
+      soup: 'Soup/Cream',
       vegan_dish: 'Vegan Dishes',
       smoothies: 'Smoothies/Fruit',
       grilled_fish: 'Grilled Fish',
-
-      // Items (Sweet)
       breakfast: 'Brunch',
       croissant: 'Pastry',
       ice_cream: 'Ice Cream',
-      coffee: 'Coffee',
+      coffee: 'Coffee Shop',
       bubble_tea: 'Bubble Tea',
-      donuts: 'Donuts/Berliners'
+      donuts: 'Donuts'
     },
-
     exclusions: {
-      // Categories
-      cat_allergens: "⚠️ The 14 Main Allergens (EU)",
-      cat_diets: "🚫 Diets & Lifestyles",
+      cat_allergens: "⚠️ Top 14 Allergens (EU)",
+      cat_diets: "🚫 Diets & Lifestyle",
       cat_dislikes: "❌ Common Intolerances & Dislikes",
-
-      // Allergens
       gluten: 'Gluten',
       crustaceans: 'Crustaceans',
       eggs: 'Eggs',
       fish: 'Fish',
       peanuts: 'Peanuts',
-      soybeans: 'Soy',
-      dairy: 'Milk/Lactose',
-      nuts: 'Nuts',
+      soybeans: 'Soybeans',
+      dairy: 'Dairy/Lactose',
+      nuts: 'Tree Nuts',
       celery: 'Celery',
       mustard: 'Mustard',
       sesame: 'Sesame',
       sulphites: 'Sulphites',
       lupin: 'Lupin',
       molluscs: 'Molluscs',
-
-      // Diets
       vegan: 'Vegan (No animals)',
       vegetarian: 'Vegetarian',
       pescatarian: 'Pescatarian',
       halal: 'Halal',
       kosher: 'Kosher',
-      keto: 'Keto (Low carbs)',
+      keto: 'Keto (Low carb)',
       paleo: 'Paleo',
       low_fodmap: 'Low FODMAP',
-
-      // Intolerances / Dislikes
       onion: 'Onion',
       garlic: 'Garlic',
       spicy: 'Spicy',
-      cilantro: 'Coriander',
+      cilantro: 'Cilantro',
       mushrooms: 'Mushrooms',
       pork: 'Pork',
       beef: 'Beef',
@@ -299,7 +258,5 @@ export const en = {
       coconut: 'Coconut',
       cucumber: 'Cucumber'
     }
-
   }
-
 };
