@@ -42,3 +42,13 @@ export async function signup(formData: FormData) {
   revalidatePath('/', 'layout');
   redirect('/');
 }
+
+export async function signOutAction() {
+  const supabase = await createClient();
+  
+  // 1. Tancar sessió a Supabase (esborra cookies)
+  await supabase.auth.signOut();
+
+  // 2. Redirigir a la landing page (que ara ja et deixarà entrar perquè no hi ha usuari)
+  redirect('/');
+}

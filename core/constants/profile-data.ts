@@ -1,151 +1,150 @@
-// core/constants/profile-data.ts
-
-export type OptionItem = {
+// ✅ 1. Definició correcta dels tipus (exportats)
+export type OptionItemDef = {
   id: string;
-  label: string;
   emoji: string;
+  // Nota: 'label' ja no és aquí, perquè ve de la traducció
 };
 
-export type OptionCategory = {
-  title: string;
-  items: OptionItem[];
+export type OptionCategoryDef = {
+  id: string; // ID per buscar el títol al diccionari
+  items: OptionItemDef[];
 };
 
-// --- DATA: AL·LÈRGIES I EXCLUSIONS ---
-export const EXCLUSION_DATA: OptionCategory[] = [
+// --- AL·LÈRGIES I EXCLUSIONS ---
+export const EXCLUSION_DATA: OptionCategoryDef[] = [
   {
-    title: "⚠️ Les 14 Al·lèrgens Principals (UE)",
+    id: "cat_allergens",
     items: [
-      { id: 'gluten', label: 'Gluten', emoji: '🍞' },
-      { id: 'crustaceans', label: 'Crustacis', emoji: '🦐' },
-      { id: 'eggs', label: 'Ous', emoji: '🥚' },
-      { id: 'fish', label: 'Peix', emoji: '🐟' },
-      { id: 'peanuts', label: 'Cacauets', emoji: '🥜' },
-      { id: 'soybeans', label: 'Soja', emoji: '🫘' },
-      { id: 'dairy', label: 'Llet/Lactosa', emoji: '🥛' },
-      { id: 'nuts', label: 'Fruits de closca', emoji: '🌰' },
-      { id: 'celery', label: 'Api', emoji: '🥬' },
-      { id: 'mustard', label: 'Mostassa', emoji: '🌭' },
-      { id: 'sesame', label: 'Sèsam', emoji: '🥯' },
-      { id: 'sulphites', label: 'Sulfits', emoji: '🍷' },
-      { id: 'lupin', label: 'Tramussos', emoji: '🌼' },
-      { id: 'molluscs', label: 'Mol·luscs', emoji: '🐙' },
+      { id: 'gluten', emoji: '🍞' },
+      { id: 'crustaceans', emoji: '🦐' },
+      { id: 'eggs', emoji: '🥚' },
+      { id: 'fish', emoji: '🐟' },
+      { id: 'peanuts', emoji: '🥜' },
+      { id: 'soybeans', emoji: '🫘' },
+      { id: 'dairy', emoji: '🥛' },
+      { id: 'nuts', emoji: '🌰' },
+      { id: 'celery', emoji: '🥬' },
+      { id: 'mustard', emoji: '🌭' },
+      { id: 'sesame', emoji: '🥯' },
+      { id: 'sulphites', emoji: '🍷' },
+      { id: 'lupin', emoji: '🌼' },
+      { id: 'molluscs', emoji: '🐙' },
     ]
   },
   {
-    title: "🚫 Dietes i Estils de Vida",
+    id: "cat_diets",
     items: [
-      { id: 'vegan', label: 'Vegà (Sense animals)', emoji: '🌱' },
-      { id: 'vegetarian', label: 'Vegetarià', emoji: '🥗' },
-      { id: 'pescatarian', label: 'Pescatarià', emoji: '🎣' },
-      { id: 'halal', label: 'Halal', emoji: '☪️' },
-      { id: 'kosher', label: 'Kosher', emoji: '✡️' },
-      { id: 'keto', label: 'Keto (Baix carbs)', emoji: '🥑' },
-      { id: 'paleo', label: 'Paleo', emoji: '🍖' },
-      { id: 'low_fodmap', label: 'Low FODMAP', emoji: '📉' },
+      { id: 'vegan', emoji: '🌱' },
+      { id: 'vegetarian', emoji: '🥗' },
+      { id: 'pescatarian', emoji: '🎣' },
+      { id: 'halal', emoji: '☪️' },
+      { id: 'kosher', emoji: '✡️' },
+      { id: 'keto', emoji: '🥑' },
+      { id: 'paleo', emoji: '🍖' },
+      { id: 'low_fodmap', emoji: '📉' },
     ]
   },
   {
-    title: "❌ Intoleràncies i Aversions Comuns",
+    id: "cat_dislikes",
     items: [
-      { id: 'onion', label: 'Ceba', emoji: '🧅' },
-      { id: 'garlic', label: 'All', emoji: '🧄' },
-      { id: 'spicy', label: 'Picant', emoji: '🌶️' },
-      { id: 'cilantro', label: 'Cilandre', emoji: '🌿' },
-      { id: 'mushrooms', label: 'Bolets', emoji: '🍄' },
-      { id: 'pork', label: 'Porc', emoji: '🐖' },
-      { id: 'beef', label: 'Vedella', emoji: '🐄' },
-      { id: 'alcohol', label: 'Alcohol', emoji: '🍺' },
-      { id: 'caffeine', label: 'Cafeïna', emoji: '☕' },
-      { id: 'sugar', label: 'Sucre afegit', emoji: '🍬' },
-      { id: 'fructose', label: 'Fructosa', emoji: '🍎' },
-      { id: 'bell_pepper', label: 'Pebrot', emoji: '🫑' },
-      { id: 'coconut', label: 'Coco', emoji: '🥥' },
-      { id: 'cucumber', label: 'Cogombre', emoji: '🥒' },
+      { id: 'onion', emoji: '🧅' },
+      { id: 'garlic', emoji: '🧄' },
+      { id: 'spicy', emoji: '🌶️' },
+      { id: 'cilantro', emoji: '🌿' },
+      { id: 'mushrooms', emoji: '🍄' },
+      { id: 'pork', emoji: '🐖' },
+      { id: 'beef', emoji: '🐄' },
+      { id: 'alcohol', emoji: '🍺' },
+      { id: 'caffeine', emoji: '☕' },
+      { id: 'sugar', emoji: '🍬' },
+      { id: 'fructose', emoji: '🍎' },
+      { id: 'bell_pepper', emoji: '🫑' },
+      { id: 'coconut', emoji: '🥥' },
+      { id: 'cucumber', emoji: '🥒' },
     ]
   }
 ];
 
-// --- DATA: PREFERÈNCIES DE MENJAR (PAÍS + EMOJI CULTURAL) ---
-export const FOOD_DATA: OptionCategory[] = [
+// --- PREFERÈNCIES DE MENJAR ---
+export const FOOD_DATA: OptionCategoryDef[] = [
   {
-    title: "🌍 Cuines del Món (Europa & Amèrica)",
+    id: "cat_world_west",
     items: [
-      { id: 'italian', label: 'Italiana', emoji: '🍕' },
-      { id: 'mediterranean', label: 'Mediterrània', emoji: '🫒' },
-      { id: 'spanish', label: 'Espanyola', emoji: '🥘' },
-      { id: 'french', label: 'Francesa', emoji: '🥐' },
-      { id: 'greek', label: 'Grega', emoji: '🧀' },
-      { id: 'mexican', label: 'Mexicana', emoji: '🌮' },
-      { id: 'american', label: 'Americana', emoji: '🍔' },
-      { id: 'brazilian', label: 'Brasilera', emoji: '🥩' },
-      { id: 'peruvian', label: 'Peruana', emoji: '🐟' },
-      { id: 'argentinian', label: 'Argentina', emoji: '🥩🔥' },
-      { id: 'german', label: 'Alemanya', emoji: '🌭' },
+      { id: 'italian', emoji: '🍕' },
+      { id: 'mediterranean', emoji: '🫒' },
+      { id: 'spanish', emoji: '🥘' },
+      { id: 'french', emoji: '🥐' },
+      { id: 'greek', emoji: '🧀' },
+      { id: 'mexican', emoji: '🌮' },
+      { id: 'american', emoji: '🍔' },
+      { id: 'brazilian', emoji: '🥩' },
+      { id: 'peruvian', emoji: '🐟' },
+      { id: 'argentinian', emoji: '🥩🔥' },
+      { id: 'german', emoji: '🌭' },
     ]
   },
   {
-    title: "🥢 Cuines del Món (Àsia & Orient)",
+    id: "cat_world_east",
     items: [
-      { id: 'japanese', label: 'Japonesa', emoji: '🍣' },
-      { id: 'chinese', label: 'Xinesa', emoji: '🥡' },
-      { id: 'indian', label: 'Índia', emoji: '🍛' },
-      { id: 'thai', label: 'Tailandesa', emoji: '🍜' },
-      { id: 'korean', label: 'Coreana', emoji: '🥘🔥' },
-      { id: 'vietnamese', label: 'Vietnamita', emoji: '🍲' },
-      { id: 'turkish', label: 'Turca', emoji: '🥙' },
-      { id: 'lebanese', label: 'Libanesa', emoji: '🧆' },
-      { id: 'poke', label: 'Hawaiana (Poke)', emoji: '🐟🥗' },
+      { id: 'japanese', emoji: '🍣' },
+      { id: 'chinese', emoji: '🥡' },
+      { id: 'indian', emoji: '🍛' },
+      { id: 'thai', emoji: '🍜' },
+      { id: 'korean', emoji: '🥘🔥' },
+      { id: 'vietnamese', emoji: '🍲' },
+      { id: 'turkish', emoji: '🥙' },
+      { id: 'lebanese', emoji: '🧆' },
+      { id: 'poke', emoji: '🐟🥗' },
     ]
   },
   {
-    title: "🍔 Fast Food & Casual",
+    id: "cat_fast",
     items: [
-      { id: 'pizza', label: 'Pizza', emoji: '🍕' },
-      { id: 'burger', label: 'Hamburguesa', emoji: '🍔' },
-      { id: 'fried_chicken', label: 'Pollastre Fregit', emoji: '🍗' },
-      { id: 'kebab', label: 'Kebab/Dürüm', emoji: '🌯' },
-      { id: 'hotdog', label: 'Frankfurt/Hot Dog', emoji: '🌭' },
-      { id: 'tacos', label: 'Tacos/Burritos', emoji: '🌮' },
-      { id: 'sandwich', label: 'Entrepans/Wraps', emoji: '🥪' },
-      { id: 'crepes', label: 'Creps', emoji: '🥞' },
-      { id: 'empanadas', label: 'Empanades', emoji: '🥟' },
+      { id: 'pizza', emoji: '🍕' },
+      { id: 'burger', emoji: '🍔' },
+      { id: 'fried_chicken', emoji: '🍗' },
+      { id: 'kebab', emoji: '🌯' },
+      { id: 'hotdog', emoji: '🌭' },
+      { id: 'tacos', emoji: '🌮' },
+      { id: 'sandwich', emoji: '🥪' },
+      { id: 'crepes', emoji: '🥞' },
+      { id: 'empanadas', emoji: '🥟' },
     ]
   },
   {
-    title: "🍣 Plats Específics i Delicatessen",
+    id: "cat_specific",
     items: [
-      { id: 'sushi', label: 'Sushi', emoji: '🍣' },
-      { id: 'ramen', label: 'Ramen', emoji: '🍜' },
-      { id: 'steak', label: 'Carn a la brasa', emoji: '🥩' },
-      { id: 'seafood_dish', label: 'Mariscada', emoji: '🦞' },
-      { id: 'paella', label: 'Paella/Arròs', emoji: '🥘' },
-      { id: 'pasta', label: 'Pasta', emoji: '🍝' },
-      { id: 'bbq', label: 'Barbacoa/Costelles', emoji: '🍖' },
-      { id: 'dimsum', label: 'Dim Sum/Gyozas', emoji: '🥟' },
-      { id: 'fondue', label: 'Fondue/Raclette', emoji: '🧀' },
+      { id: 'sushi', emoji: '🍣' },
+      { id: 'ramen', emoji: '🍜' },
+      { id: 'steak', emoji: '🥩' },
+      { id: 'seafood_dish', emoji: '🦞' },
+      { id: 'paella', emoji: '🥘' },
+      { id: 'pasta', emoji: '🍝' },
+      { id: 'bbq', emoji: '🍖' },
+      { id: 'dimsum', emoji: '🥟' },
+      { id: 'fondue', emoji: '🧀' },
     ]
   },
   {
-    title: "🥗 Saludable i Lleuger",
+    id: "cat_healthy",
     items: [
-      { id: 'salad', label: 'Amanides', emoji: '🥗' },
-      { id: 'poke_bowl', label: 'Poke Bowl', emoji: '🥣' },
-      { id: 'soup', label: 'Sopes/Cremes', emoji: '🍲' },
-      { id: 'vegan_dish', label: 'Plats Vegans', emoji: '🥦' },
-      { id: 'smoothies', label: 'Smoothies/Fruita', emoji: '🫐' },
-      { id: 'grilled_fish', label: 'Peix a la planxa', emoji: '🐟' },
+      { id: 'salad', emoji: '🥗' },
+      { id: 'poke_bowl', emoji: '🥣' },
+      { id: 'soup', emoji: '🍲' },
+      { id: 'vegan_dish', emoji: '🥦' },
+      { id: 'smoothies', emoji: '🫐' },
+      { id: 'grilled_fish', emoji: '🐟' },
     ]
   },
   {
-    title: "🧁 Esmorzars i Dolços",
+    id: "cat_sweet",
     items: [
-      { id: 'breakfast', label: 'Brunch', emoji: '🥑' },
-      { id: 'croissant', label: 'Pastisseria', emoji: '🥐' },
-      { id: 'ice_cream', label: 'Gelat', emoji: '🍦' },
-      { id: 'coffee', label: 'Cafeteria', emoji: '☕' },
-      { id: 'bubble_tea', label: 'Bubble Tea', emoji: '🧋' },
-      { id: 'donuts', label: 'Donuts/Berlines', emoji: '🍩' },
+      { id: 'breakfast', emoji: '🥑' },
+      { id: 'croissant', emoji: '🥐' },
+      { id: 'ice_cream', emoji: '🍦' },
+      { id: 'coffee', emoji: '☕' },
+      { id: 'bubble_tea', emoji: '🧋' },
+      { id: 'donuts', emoji: '🍩' },
     ]
   }
 ];

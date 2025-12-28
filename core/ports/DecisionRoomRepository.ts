@@ -1,11 +1,14 @@
-import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
-import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
+import { DecisionRoom } from "../domain/entities/DecisionRoom";
+import { DecisionOutcome } from "../domain/value-objects/DecisionOutcome";
 
 export interface DecisionRoomRepository {
-  save(room: DecisionRoom): Promise<void>; // Guarda només info bàsica (nom)
-  findById(id: string): Promise<DecisionRoom | null>; // Carrega info + historial
-  addParticipant(roomId: string, userId: string): Promise<void>;
-  
-  // NOU: Guardar una decisió específica
+  findById(id: string): Promise<DecisionRoom | null>;
+  save(room: DecisionRoom): Promise<void>;
   saveDecision(roomId: string, outcome: DecisionOutcome): Promise<void>;
+  
+  // AFEGIR AQUESTS DOS MÈTODES NOUS:
+  removeParticipant(roomId: string, userId: string): Promise<void>;
+  clearHistory(roomId: string): Promise<void>;
+  setVotingMode(roomId: string, mode: 'BLIND' | 'PUBLIC'): Promise<void>;
+  findByParticipantId(userId: string): Promise<DecisionRoom[]>;
 }

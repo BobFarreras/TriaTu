@@ -1,95 +1,110 @@
-// services/decision/BasicGroupResolver.ts
 import { GroupDecisionResolver } from '@/core/ports/GroupDecisionResolver';
 import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
 import { PreferenceProfile } from '@/core/domain/entities/PreferenceProfile';
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
+import { FoodKnowledgeService } from '@/core/domain/services/FoodKnowledgeService';
 
-// Interface auxiliar per accedir a propietats privades de forma segura
 interface ProfileWithExclusions {
   exclusions: string[];
 }
 
 export class BasicGroupResolver implements GroupDecisionResolver {
   
+  constructor(private readonly knowledgeService: FoodKnowledgeService) {}
+
   async resolve(
     room: DecisionRoom, 
     profiles: PreferenceProfile[],
-    candidates?: string[] // <-- NOU PARÀMETRE OPCIONAL
+    candidates?: string[]
   ): Promise<DecisionOutcome> {
     
-    // Validació inicial
-    if (profiles.length === 0) {
-      return new DecisionOutcome({ choice: 'Random', reason: 'No profiles available' });
+    // 1. Preparar candidats
+    const potentialOptions = candidates && candidates.length > 0 
+        ? candidates 
+        : this.gatherUserFavorites(profiles);
+
+    if (potentialOptions.length === 0) {
+       return new DecisionOutcome({ choice: 'Random', reason: 'No options to decide from.' });
     }
 
-    // 1. Recollir totes les Exclusions globals (Hard Limits)
-    const globalExclusions = new Set<string>();
-    
-    profiles.forEach(p => {
-        const profileAccess = p as unknown as ProfileWithExclusions;
-        profileAccess.exclusions.forEach((ex: string) => globalExclusions.add(ex.toLowerCase()));
-    });
+    // 2. Sistema de Puntuació
+    const scores = new Map<string, number>();
+    const rejectionReasons = new Map<string, string>(); 
 
-    // CAS A: HI HA CANDIDATS (Llista Tancada - Ex: "Japonès o Italià?")
-    if (candidates && candidates.length > 0) {
-      return this.resolveFromCandidates(candidates, globalExclusions);
-    }
+    for (const option of potentialOptions) {
+        let score = 0;
+        let isRejected = false;
 
-    // CAS B: NO HI HA CANDIDATS (Llista Oberta - Ex: "Què mengem avui?")
-    return this.resolveOpenEnded(profiles, globalExclusions);
-  }
+        for (const profile of profiles) {
+            const exclusions = (profile as unknown as ProfileWithExclusions).exclusions || [];
+            
+            // A. Comprovar Exclusions
+            for (const exclusion of exclusions) {
+                if (this.knowledgeService.hasConflict(option, exclusion)) {
+                    isRejected = true;
+                    // Guardem per què s'ha rebutjat
+                    rejectionReasons.set(option, `Conflict with ${exclusion}`);
+                    break; 
+                }
+            }
+            if (isRejected) break;
 
-  // --- Lògica A: Filtrar i triar d'una llista ---
-  private resolveFromCandidates(candidates: string[], exclusions: Set<string>): DecisionOutcome {
-    // 1. Filtrar opcions prohibides
-    const validCandidates = candidates.filter(c => !exclusions.has(c.toLowerCase()));
-
-    if (validCandidates.length === 0) {
-      return new DecisionOutcome({ 
-        choice: 'None', 
-        reason: 'Conflict! All proposed options interact with someone\'s exclusions.' 
-      });
-    }
-
-    // 2. Triar un guanyador (MVP: Aleatori entre els vàlids)
-    // En el futur aquí podríem mirar quin candidat coincideix més amb les preferències positives.
-    const winner = validCandidates[Math.floor(Math.random() * validCandidates.length)];
-    
-    return new DecisionOutcome({
-      choice: winner,
-      reason: `Chosen from your list (${validCandidates.length} valid options). Safe for everyone.`
-    });
-  }
-
-  // --- Lògica B: Algoritme de Vots (El que ja tenies) ---
-  private resolveOpenEnded(profiles: PreferenceProfile[], exclusions: Set<string>): DecisionOutcome {
-    const voteCount: Record<string, number> = {};
-    
-    profiles.forEach(p => {
-      p.foodPreferences.forEach(food => {
-        const normalizedFood = food.toLowerCase();
-        if (!exclusions.has(normalizedFood)) {
-          voteCount[normalizedFood] = (voteCount[normalizedFood] || 0) + 1;
+            // B. Comprovar Preferències
+            for (const pref of profile.foodPreferences) {
+                if (this.knowledgeService.matchesPreference(option, pref)) {
+                    score += 1; 
+                }
+            }
         }
-      });
-    });
 
-    let bestOption = 'Random Place';
-    let maxVotes = 0;
-    const entries = Object.entries(voteCount);
-
-    if (entries.length > 0) {
-      entries.sort((a, b) => b[1] - a[1]);
-      bestOption = entries[0][0]; 
-      maxVotes = entries[0][1];
-      // Capitalitzem
-      bestOption = bestOption.charAt(0).toUpperCase() + bestOption.slice(1);
+        if (!isRejected) {
+            scores.set(option, score);
+        }
     }
 
-    const reason = maxVotes === profiles.length 
-      ? `Perfect match! Everyone likes ${bestOption}.`
-      : `Best compromise. ${bestOption} satisfies ${maxVotes} out of ${profiles.length} people.`;
+    // 3. Triar Guanyador
+    const validOptions = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]);
 
-    return new DecisionOutcome({ choice: bestOption, reason });
+    // Cas: Tot rebutjat
+    if (validOptions.length === 0) {
+        // Aquí també podríem llistar les raons
+        const reasonsList = Array.from(rejectionReasons.entries())
+            .map(([opt, reason]) => `${opt}: ${reason}`)
+            .join('. ');
+            
+        return new DecisionOutcome({ 
+            choice: 'Water', 
+            reason: `Impossible conflict! ${reasonsList}`
+        });
+    }
+
+    const [, winnerScore] = validOptions[0];
+
+    // Empats
+    const topScorers = validOptions.filter(([, s]) => s === winnerScore);
+    const finalChoice = topScorers[Math.floor(Math.random() * topScorers.length)][0];
+
+    // --- CORRECCIÓ FINAL ---
+    // Generem un resum de les opcions descartades per seguretat
+    let reasonText = `Safe choice. Fits preferences (Score: ${winnerScore}).`;
+    
+    if (rejectionReasons.size > 0) {
+        const rejectedLog = Array.from(rejectionReasons.entries())
+            .map(([opt, reason]) => `${opt} (${reason})`)
+            .join(', ');
+        // Afegim la "xafarderia" al final
+        reasonText += ` [Excluded: ${rejectedLog}]`;
+    }
+
+    return new DecisionOutcome({
+        choice: finalChoice.charAt(0).toUpperCase() + finalChoice.slice(1),
+        reason: reasonText
+    });
+  }
+
+  private gatherUserFavorites(profiles: PreferenceProfile[]): string[] {
+      const allPrefs = new Set<string>();
+      profiles.forEach(p => p.foodPreferences.forEach(f => allPrefs.add(f)));
+      return Array.from(allPrefs);
   }
 }

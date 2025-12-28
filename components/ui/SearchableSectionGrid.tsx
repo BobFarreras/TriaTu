@@ -1,19 +1,28 @@
-// =================== FILE: components/ui/SearchableSectionGrid.tsx ===================
-
 'use client'
 
 import { useState, useMemo } from 'react';
-import { OptionCategory } from '@/core/constants/profile-data';
 import { Search, ChevronDown } from 'lucide-react';
 
+// ✅ DEFINIM EL TIPUS QUE EL COMPONENT ESPERA REBRE (JA TRADUÏT)
+// No importem de profile-data perquè la UI necessita 'title' i 'label', que no estan allà.
+export type UISectionItem = {
+  id: string;
+  label: string;
+  emoji: string;
+};
+
+export type UISectionCategory = {
+  title: string;
+  items: UISectionItem[];
+};
+
 interface Props {
-  data: OptionCategory[];
+  data: UISectionCategory[]; // <--- Usem el nostre tipus UI
   selectedValues: string[];
   onChange: (newValues: string[]) => void;
   placeholder?: string;
   accentColor?: 'green' | 'red' | 'blue';
 }
-
 export function SearchableSectionGrid({ data, selectedValues, onChange, placeholder, accentColor = 'green' }: Props) {
   const [query, setQuery] = useState('');
   

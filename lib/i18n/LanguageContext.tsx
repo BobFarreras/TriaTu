@@ -1,28 +1,44 @@
 'use client'
 
-import React, { createContext, useContext, useState } from 'react';
-import { dictionaries, Locale } from './dictionaries';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { dictionaries, Locale, Dictionary } from './dictionaries';
 
-type LanguageContextType = {
+interface LanguageContextType {
   locale: Locale;
-  t: typeof dictionaries['en']; // Usem l'anglès com a tipus base
-  setLocale: (locale: Locale) => void;
-};
+  t: Dictionary;
+  changeLanguage: (lang: Locale) => void;
+}
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocale] = useState<Locale>('ca'); // Català per defecte
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  // Per defecte català, però aquí podries llegir localStorage o cookies
+  const [locale, setLocale] = useState<Locale>('ca');
+
+  const changeLanguage = (lang: Locale) => {
+    setLocale(lang);
+    // Opcional: Guardar a localStorage aquí
+    // localStorage.setItem('lang', lang); 
+  };
+
+  const value = {
+    locale,
+    t: dictionaries[locale], // Aquí passa la màgia: 't' sempre té l'idioma correcte
+    changeLanguage
+  };
 
   return (
-    <LanguageContext.Provider value={{ locale, t: dictionaries[locale], setLocale }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );
 }
 
+// Custom Hook per fer servir el context fàcilment
 export function useLanguage() {
   const context = useContext(LanguageContext);
-  if (!context) throw new Error('useLanguage must be used within a LanguageProvider');
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
   return context;
 }

@@ -18,11 +18,12 @@ export function CreateRoomForm({ userId }: { userId: string }) {
 
   const handleCreate = () => {
     if (!roomName.trim()) return;
-    
+
     startTransition(async () => {
+      // Ara aquesta crida coincideix perfectament amb la signatura de l'acció
       const res = await createRoomAction(userId, roomName);
+
       if (res.success && res.roomId) {
-        // Naveguem a la nova sala
         router.push(`/rooms/${res.roomId}`);
       } else {
         setError(res.error || t.common.error);
@@ -33,8 +34,8 @@ export function CreateRoomForm({ userId }: { userId: string }) {
   return (
     <Card className="max-w-md mx-auto space-y-6">
       <h2 className="text-xl font-bold">{t.room.create_title}</h2>
-      
-      <Input 
+
+      <Input
         label={t.room.room_name}
         placeholder="ex: Dinar Equip"
         value={roomName}
@@ -43,9 +44,9 @@ export function CreateRoomForm({ userId }: { userId: string }) {
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <Button 
-        className="w-full" 
-        onClick={handleCreate} 
+      <Button
+        className="w-full"
+        onClick={handleCreate}
         isLoading={isPending}
         disabled={!roomName.trim()}
       >

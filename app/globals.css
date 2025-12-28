@@ -68,3 +68,23 @@ body {
   border-bottom-width: 0px !important;
   margin-top: 4px;
 }
+
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-20deg); }
+  75% { transform: rotate(20deg); }
+}
+
+.animate-wave {
+  animation: wave 2s infinite ease-in-out;
+  transform-origin: 70% 70%; /* L'eix de rotació a la base de la mà */
+}
+
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-float-fast {
+  animation: float-fast 3s ease-in-out infinite;
+}
