@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Paleta "Gamified" vibrant */
+  /* COLORS DE MARCA */
   --brand-green: #58cc02;
   --brand-green-dark: #46a302;
   --brand-blue: #1cb0f6;
@@ -9,9 +9,9 @@
   --brand-orange: #ff9600;
   --brand-orange-dark: #cc7800;
   
-  /* Fons animat */
-  --background: #f0fdf4; /* Verd molt suau */
-  --foreground: #3c3c3c;
+  /* FONS I TEXT (FORÇAT A FOSC PER SEMPRE) */
+  --background: #131f24; /* Blau nit profund */
+  --foreground: #ffffff; /* Text blanc */
 }
 
 @theme inline {
@@ -20,7 +20,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   
-  /* Animacions personalitzades */
+  /* Animacions */
   --animate-float: float 3s ease-in-out infinite;
   --animate-bounce-click: bounce-click 0.2s ease-in-out;
   
@@ -30,39 +30,24 @@
   }
 }
 
-/* Forcem el mode fosc a ser "Midnight Purple" en lloc de negre pur */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #131f24; /* Blau nit profund, no negre */
-    --foreground: #ffffff;
-  }
-}
-
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
+  overscroll-behavior-y: none; /* Evita rebot blanc a iOS */
 }
 
-/* PATRÓ DE PUNTS ESTIL JOC */
+/* PATRÓ DE PUNTS (Sempre versió fosca) */
 .bg-gamified-pattern {
   background-color: var(--background);
-  background-image: radial-gradient(#86efac 1px, transparent 1px);
+  /* Punts blancs/blavosos subtils */
+  background-image: radial-gradient(#1e3a8a 1px, transparent 1px);
   background-size: 20px 20px;
   color: var(--foreground);
-  /* Això evita el "rebote" blanc a iOS quan fas scroll cap amunt */
-  overscroll-behavior-y: none;
 }
 
-
-@media (prefers-color-scheme: dark) {
-  .bg-gamified-pattern {
-    background-image: radial-gradient(#1e3a8a 1px, transparent 1px);
-  }
-}
-
-/* UTILITATS 3D (Botons estil Candy Crush) */
+/* UTILITATS 3D */
 .btn-3d {
   transition: all 0.1s;
   transform: translateY(0);
@@ -73,6 +58,7 @@ body {
   margin-top: 4px;
 }
 
+/* ANIMACIONS */
 @keyframes wave {
   0%, 100% { transform: rotate(0deg); }
   25% { transform: rotate(-20deg); }
@@ -81,7 +67,7 @@ body {
 
 .animate-wave {
   animation: wave 2s infinite ease-in-out;
-  transform-origin: 70% 70%; /* L'eix de rotació a la base de la mà */
+  transform-origin: 70% 70%;
 }
 
 @keyframes float-fast {

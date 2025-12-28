@@ -1,4 +1,3 @@
-// =================== FILE: app/layout.tsx ===================
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -9,16 +8,12 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "DecideAI",
   description: "Decisions en grup fàcils i ràpides",
-  // ❌ ESBORRA AQUESTA LÍNIA: manifest: "/manifest.json", 
-  // Next.js ja carregarà automàticament el fitxer app/manifest.ts
+  // NO posis manifest aquí, Next.js ho fa automàticament amb manifest.ts
 };
 
-// Mantén el viewport igual, està perfecte per evitar el blanc
+// FORCEM UN ÚNIC COLOR DE TEMA (BLAU NIT)
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f0fdf4" },
-    { media: "(prefers-color-scheme: dark)", color: "#131f24" },
-  ],
+  themeColor: "#131f24",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -31,16 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ca" suppressHydrationWarning>
+    // Forcem la classe 'dark' per si tens components que usen 'dark:'
+    <html lang="ca" className="dark" suppressHydrationWarning>
       <head>
-        {/* Això ho mantenim per seguretat visual extra */}
+        {/* Estil inline per evitar el flash blanc inicial */}
         <style>{`
           html, body { background-color: #131f24; } 
-          @media (prefers-color-scheme: light) { html, body { background-color: #f0fdf4; } }
         `}</style>
       </head>
       
-      <body className={`${inter.className} min-h-dvh bg-gray-50 dark:bg-black bg-dot-pattern overflow-x-hidden selection:bg-purple-200`}>
+      <body className={`${inter.className} min-h-dvh bg-gamified-pattern overflow-x-hidden selection:bg-brand-green selection:text-white`}>
         <LanguageProvider>
            {children}
         </LanguageProvider>
