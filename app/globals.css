@@ -50,7 +50,11 @@ body {
   background-color: var(--background);
   background-image: radial-gradient(#86efac 1px, transparent 1px);
   background-size: 20px 20px;
+  color: var(--foreground);
+  /* Això evita el "rebote" blanc a iOS quan fas scroll cap amunt */
+  overscroll-behavior-y: none;
 }
+
 
 @media (prefers-color-scheme: dark) {
   .bg-gamified-pattern {
