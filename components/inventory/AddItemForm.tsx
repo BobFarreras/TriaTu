@@ -198,7 +198,7 @@ export function AddItemForm() {
         <button 
           type="submit" 
           disabled={isSubmitting}
-          className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-black text-lg py-6 rounded-2xl shadow-xl shadow-purple-900/30 transform transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 tracking-widest uppercase border-t border-white/20"
+          className="w-full bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-black text-lg py-6 rounded-2xl shadow-xl shadow-purple-900/30 transform transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 tracking-widest uppercase border-t border-white/20"
         >
           {isSubmitting ? 'Guardant...' : '📥 Guardar al Rebost'}
         </button>

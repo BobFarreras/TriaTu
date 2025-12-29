@@ -1,6 +1,4 @@
-// src/components/scanner/ScannedItemCard.tsx
 import { ScannedItem } from "@/core/domain/types/ScannedItem";
-import { StorageLocation } from "@/core/domain/entities/StorageLocation";
 import { getEmojiForName } from "@/lib/presetMatcher";
 
 interface ScannedItemCardProps {
@@ -11,86 +9,85 @@ interface ScannedItemCardProps {
 
 export function ScannedItemCard({ item, onUpdate, onRemove }: ScannedItemCardProps) {
   
-  // Emoji automàtic pel nom (Ex: "Poma" -> 🍎)
   const productEmoji = getEmojiForName(item.name);
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-sm rounded-2xl p-4 border border-slate-800 shadow-lg relative animate-in slide-in-from-right-4 duration-300">
+    <div className="bg-slate-900/90 backdrop-blur-sm rounded-xl p-3 border border-slate-800 shadow-md relative animate-in slide-in-from-right-4 duration-300 w-full group hover:border-slate-700 transition-colors">
         
-        {/* 1. CAPÇALERA: EMOJI + NOM + ELIMINAR */}
-        <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-2xl shadow-inner shrink-0 border border-slate-700">
+        {/* 1. FILA SUPERIOR: EMOJI + NOM + ELIMINAR */}
+        <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-lg shadow-inner shrink-0 border border-slate-800">
                 {productEmoji}
             </div>
+            
             <input 
                 value={item.name}
                 onChange={(e) => onUpdate('name', e.target.value)}
-                className="flex-1 bg-transparent text-white font-bold text-lg border-none p-0 focus:ring-0 placeholder-slate-600 min-w-0"
-                placeholder="Nom del producte..."
+                className="flex-1 bg-transparent text-slate-200 font-bold text-sm border-none p-0 focus:ring-0 placeholder-slate-600 min-w-0"
+                placeholder="Nom..."
             />
+            
             <button 
                 onClick={onRemove} 
-                className="w-8 h-8 flex items-center justify-center bg-slate-800 hover:bg-red-900/30 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
+                className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-900/20 rounded transition-all shrink-0"
             >
                 ✕
             </button>
         </div>
 
-        {/* 2. GRID DE PROPIETATS */}
-        <div className="grid grid-cols-7 gap-2 mb-3">
+        {/* 2. FILA INFERIOR: TOTS ELS CONTROLS ALINEATS */}
+        <div className="flex items-center gap-2 w-full">
             
-            {/* Quantitat (Col 2/7) */}
-            <div className="col-span-2 bg-slate-950 rounded-lg p-1 border border-slate-800 flex items-center">
+            {/* A. CÀPSULA QUANTITAT + UNITAT (Ara amb icones) */}
+            <div className="flex items-center bg-slate-950 rounded-lg border border-slate-800 h-9 shrink-0 overflow-hidden">
                 <input 
                     type="number" 
                     value={item.quantity}
                     onChange={(e) => onUpdate('quantity', e.target.value)}
-                    className="w-full bg-transparent text-center text-white font-mono text-lg border-none focus:ring-0 p-0"
+                    className="w-10 bg-transparent text-center text-white font-mono text-sm border-none focus:ring-0 p-0 h-full"
                 />
-            </div>
-
-            {/* Unitats (Col 2/7) - AMB EMOJIS */}
-            <div className="col-span-2">
+                
+                {/* Separador vertical */}
+                <div className="w-px h-1/2 bg-slate-800"></div>
+                
+                {/* SELECTOR D'UNITATS AMB EMOJIS */}
                 <select 
                     value={item.unit}
                     onChange={(e) => onUpdate('unit', e.target.value)}
-                    className="w-full h-full bg-slate-950 text-white text-sm rounded-lg border-slate-800 focus:ring-0 text-center appearance-none"
+                    className="bg-transparent text-slate-300 text-xs font-bold h-full border-none focus:ring-0 text-center pl-1 pr-1 cursor-pointer hover:text-white appearance-none min-w-14"
                 >
                     <option value="ut">📦 ut</option>
                     <option value="kg">⚖️ kg</option>
-                    <option value="l">💧 l</option>
+                    <option value="l">💧 L</option>
                     <option value="g">🤏 g</option>
                 </select>
             </div>
 
-            {/* Ubicació (Col 3/7) */}
-            <div className="col-span-3">
+            {/* B. UBICACIÓ (Ocupa l'espai central) */}
+            <div className="h-9 grow min-w-20">
                 <select 
                     value={item.location}
                     onChange={(e) => onUpdate('location', e.target.value)}
-                    className="w-full h-full bg-slate-950 text-white text-xs font-bold uppercase rounded-lg border-slate-800 focus:ring-0"
+                    className="w-full h-full bg-slate-950 text-slate-300 text-[10px] sm:text-xs font-bold uppercase rounded-lg border border-slate-800 focus:ring-0 cursor-pointer pl-2 pr-1 appearance-none hover:border-slate-600 transition-colors"
                 >
                     <option value="FRIDGE">❄️ Nevera</option>
                     <option value="PANTRY">🥫 Rebost</option>
                     <option value="FREEZER">🧊 Congelador</option>
                 </select>
             </div>
-        </div>
 
-        {/* 3. CADUCITAT */}
-        <div className="flex items-center gap-3 bg-slate-950/50 p-2 rounded-xl border border-slate-800/50">
-            <span className="text-lg grayscale opacity-70">📅</span>
-            <input 
-                type="date"
-                value={item.expiryDate || ''}
-                onChange={(e) => onUpdate('expiryDate', e.target.value)}
-                className="bg-transparent text-slate-300 text-sm font-mono border-none focus:ring-0 w-full p-0"
-            />
-            {!item.expiryDate && (
-                <span className="text-[10px] text-orange-400 italic whitespace-nowrap px-2">
-                    Sense data
-                </span>
-            )}
+            {/* C. DATA */}
+            <div className="h-9 shrink-0 w-24 sm:w-auto">
+                <div className="w-full h-full flex items-center bg-slate-950/50 rounded-lg border border-slate-800/50 px-2">
+                    <input 
+                        type="date"
+                        value={item.expiryDate || ''}
+                        onChange={(e) => onUpdate('expiryDate', e.target.value)}
+                        className="bg-transparent text-slate-400 text-[10px] font-mono border-none focus:ring-0 p-0 w-full text-right sm:text-center"
+                    />
+                </div>
+            </div>
+
         </div>
     </div>
   );

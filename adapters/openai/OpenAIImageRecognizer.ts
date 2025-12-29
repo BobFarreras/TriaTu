@@ -14,66 +14,69 @@ export class OpenAIImageRecognizer implements ImageRecognitionService {
 
   async analyze(imageBase64: string): Promise<ScannedItem[]> {
     try {
-      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      // DEBUG: Comprovem si arriba la imatge i quina mida té
+      console.log(`📡 OpenAI: Rebent imatge de ${(imageBase64.length / 1024).toFixed(2)} KB`);
+
+      // 1. Neteja robusta del Base64
+      // De vegades arriba amb 'data:image/jpeg;base64,' i de vegades sense.
+      const base64Data = imageBase64.includes('base64,') 
+        ? imageBase64.split('base64,')[1] 
+        : imageBase64;
 
       const response = await this.client.chat.completions.create({
         model: "gpt-4o",
+        // FORCEM EL MODE JSON (Molt important per evitar errors de parseig)
+        response_format: { type: "json_object" }, 
         messages: [
           {
             role: "system",
             content: `
-        Ets un assistent expert en inventari domèstic i seguretat alimentària.
-        Analitza la imatge, detecta cada aliment individualment i extreu les seves dades.
-
-        TASQUES:
-        1. Identifica l'aliment (Nom en Català).
-        2. Estima la quantitat.
-        3. Detecta la ubicació ideal (Nevera, Revost, Congelador).
-        4. CADUCITAT INTEL·LIGENT:
-           - Si veus una data impresa, usa-la (format YYYY-MM-DD).
-           - SI NO VEUS DATA, ESTIMA-LA basant-te en el tipus d'aliment fresc.
-             Exemple: Enciam ~5 dies des d'avui. Carn fresca ~3 dies. Arròs ~365 dies.
-             Calcula la data aproximada sumant dies a la data d'avui: ${new Date().toISOString().split('T')[0]}.
-        5. DETECCIÓ VISUAL (Bounding Box):
-           - Retorna les coordenades de la caixa que envolta l'objecte.
-           - Format: [ymin, xmin, ymax, xmax] (escala 0-1000).
-
-        RETORNA NOMÉS UN ARRAY JSON:
-        [{ 
-          "name": "Poma Fuji", 
-          "quantity": 3, 
-          "unit": "ut", 
-          "location": "FRIDGE", 
-          "expiryDate": "2024-10-25", 
-          "confidence": 0.95,
-          "box2d": [150, 300, 450, 600] 
-        }]
-      `
+              Ets un assistent expert en inventari.
+              Analitza la imatge i retorna un JSON amb la clau "items".
+              
+              Si no trobes cap aliment, retorna: { "items": [] }
+              
+              TASQUES:
+              1. Identifica l'aliment (name).
+              2. Quantitat (quantity).
+              3. Ubicació (location: FRIDGE, PANTRY, FREEZER).
+              4. Caducitat (expiryDate YYYY-MM-DD). Si no la veus, estima-la.
+              5. Bounding Box (box2d: [ymin, xmin, ymax, xmax]).
+            `
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Llista els aliments:" },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } },
+              { type: "text", text: "Retorna el JSON dels aliments detectats:" },
+              { 
+                type: "image_url", 
+                image_url: { 
+                  // Assegura't que el tipus MIME és correcte. JPEG sol ser el més segur.
+                  url: `data:image/jpeg;base64,${base64Data}`,
+                  detail: "high" // Força alta resolució
+                } 
+              },
             ],
           },
         ],
       });
 
       const content = response.choices[0]?.message?.content;
+      console.log("🤖 OpenAI Raw Response:", content?.substring(0, 100) + "..."); // Loguegem l'inici per veure què diu
+
       if (!content) return [];
 
-      // ✅ FIX: Netegem els blocs de codi Markdown abans de parsejar
-      const cleanJson = content.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(content);
+      // Gràcies al response_format, ara busquem la clau "items"
+      const rawItems = parsed.items || [];
 
-      const parsed = JSON.parse(cleanJson);
-      const rawItems = Array.isArray(parsed) ? parsed : (parsed.items || []);
+      console.log(`✅ OpenAI ha trobat ${rawItems.length} elements.`);
 
       return rawItems.map((item: unknown) => ScanSanitizer.sanitize(item as ScannedItem));
 
     } catch (error) {
-      console.error("❌ OpenAI també ha fallat:", error);
-      throw error; // Llancem l'error perquè el test ho detecti
+      console.error("❌ OpenAI Error:", error);
+      throw error;
     }
   }
 }
