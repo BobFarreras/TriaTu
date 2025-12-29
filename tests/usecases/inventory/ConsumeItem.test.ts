@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'; // <--- Importem 'Mock'
 import { ConsumeItem } from '@/core/usecases/inventory/ConsumeItem';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
-import { StorageLocation } from '@/core/domain/inventory/StorageLocation';
+import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { InventoryRepository } from '@/core/ports/InventoryRepository';
 
 const createMockItem = (qty: number) => InventoryItem.create({

@@ -24,6 +24,7 @@ import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInvento
 import { AddItem } from '@/core/usecases/inventory/AddItem';
 import { ConsumeItem } from '@/core/usecases/inventory/ConsumeItem';
 import { GetExpiringItems } from '@/core/usecases/inventory/GetExpiringItems';
+import { GetUserInventory } from '@/core/usecases/inventory/GetUserInventory';
 // Singleton
 const decisionRepo = new SupabaseDecisionRepository();
 const roomRepo = new SupabaseDecisionRoomRepository();
@@ -62,4 +63,5 @@ export const container = {
   getAddItem: () => new AddItem(inventoryRepo),
   getConsumeItem: () => new ConsumeItem(inventoryRepo),
   getGetExpiringItems: () => new GetExpiringItems(inventoryRepo),
+  getGetUserInventory: () => new GetUserInventory(inventoryRepo),
 };

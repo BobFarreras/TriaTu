@@ -1,6 +1,6 @@
 import { InventoryRepository } from '@/core/ports/InventoryRepository';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
-import { StorageLocation } from '@/core/domain/inventory/StorageLocation'; // Assegura't de la ruta correcta
+import { StorageLocation } from '@/core/domain/entities/StorageLocation'; // Assegura't de la ruta correcta
 import { createClient } from '@/adapters/supabase/server';
 
 // ✅ DEFINIM EL DTO (Data Transfer Object)

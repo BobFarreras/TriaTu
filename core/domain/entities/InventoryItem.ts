@@ -1,6 +1,6 @@
 // src/domain/inventory/InventoryItem.ts
 
-import { StorageLocation } from '../inventory/StorageLocation';
+import { StorageLocation } from './StorageLocation';
 
 export interface InventoryItemProps {
   id: string;

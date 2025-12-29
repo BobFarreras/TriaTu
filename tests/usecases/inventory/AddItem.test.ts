@@ -2,7 +2,7 @@ import { describe, it, expect, vi, type Mock } from 'vitest'; // <--- Importem '
 import { AddItem, AddItemInput } from '@/core/usecases/inventory/AddItem';
 import { InventoryRepository } from '@/core/ports/InventoryRepository';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
-import { StorageLocation } from '@/core/domain/inventory/StorageLocation';
+import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 
 
 // Definim el mock typed manualment per evitar 'any' en la inicialització

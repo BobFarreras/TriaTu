@@ -1,7 +1,7 @@
 // src/domain/inventory/InventoryItem.test.ts
 import { describe, it, expect } from 'vitest'
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
-import { StorageLocation } from '@/core/domain/inventory/StorageLocation';
+import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 
 describe('InventoryItem Entity', () => {
   const validProps = {

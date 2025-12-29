@@ -1,7 +1,7 @@
 // src/core/usecases/inventory/AddItem.ts
 import { InventoryRepository } from '@/core/ports/InventoryRepository';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
-import { StorageLocation } from '@/core/domain/inventory/StorageLocation'; // O on tinguis l'enum
+import { StorageLocation } from '@/core/domain/entities/StorageLocation'; // O on tinguis l'enum
 
 export interface AddItemInput {
   userId: string;
