@@ -33,7 +33,7 @@ export function RoomHeader({ roomName, roomId, hostUserId, participants, current
         {/* INFO SALA */}
         {/* AFEGIT: max-w-full i overflow-hidden per evitar desbordaments en mòbils petits */}
         <div className="flex items-center gap-4 bg-black/20 p-2 pr-6 rounded-3xl border border-zinc-800/50 flex-1 md:flex-none max-w-full min-w-0">
-            <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-purple-900/20 transform -rotate-3 group-hover:rotate-0 transition-transform shrink-0">
+            <div className="bg-linear-to-br from-purple-500 to-pink-500 w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-purple-900/20 transform -rotate-3 group-hover:rotate-0 transition-transform shrink-0">
                🎪
             </div>
             
@@ -48,7 +48,7 @@ export function RoomHeader({ roomName, roomId, hostUserId, participants, current
                     className="text-[10px] font-mono font-bold text-gray-500 hover:text-purple-400 flex items-center gap-1 mt-0.5 group/code transition-colors text-left max-w-full"
                 >
                     {/* CORRECCIÓ: Afegim un max-w i block perquè el truncate funcioni */}
-                    <span className="truncate max-w-[100px] md:max-w-[200px] block">
+                    <span className="truncate max-w-25 md:max-w-50 block">
                         ID: {roomId}
                     </span> 
                     <Share2 size={10} className="group-hover/code:scale-110 shrink-0"/>

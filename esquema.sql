@@ -1,5 +1,5 @@
 
-\restrict 9v9UgUPujCdJleCnIMwV2QNaGpSdmkaq7G5ubYqTKgLRfJAZ2Ml12YkR6rey0zp
+\restrict IJqpT0thh058fjDtFAyuSbVOXQlLv7zgBDGXEoh2DGjLTI34LZ2ZnwEutW6aSxh
 
 
 SET statement_timeout = 0;
@@ -58,7 +58,9 @@ CREATE TABLE IF NOT EXISTS "public"."decision_rooms" (
     "host_user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "status" "text" DEFAULT 'OPEN'::"text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "voting_mode" "text" DEFAULT 'BLIND'::"text",
+    CONSTRAINT "decision_rooms_voting_mode_check" CHECK (("voting_mode" = ANY (ARRAY['BLIND'::"text", 'PUBLIC'::"text"])))
 );
 
 
@@ -104,6 +106,18 @@ CREATE TABLE IF NOT EXISTS "public"."preference_profiles" (
 ALTER TABLE "public"."preference_profiles" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."room_candidates" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "room_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "content" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."room_candidates" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."room_participants" (
     "room_id" "uuid" NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -139,6 +153,11 @@ ALTER TABLE ONLY "public"."preference_profiles"
 
 
 
+ALTER TABLE ONLY "public"."room_candidates"
+    ADD CONSTRAINT "room_candidates_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."room_participants"
     ADD CONSTRAINT "room_participants_pkey" PRIMARY KEY ("room_id", "user_id");
 
@@ -151,6 +170,16 @@ ALTER TABLE ONLY "public"."decision_outcomes"
 
 ALTER TABLE ONLY "public"."group_decisions"
     ADD CONSTRAINT "group_decisions_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."room_candidates"
+    ADD CONSTRAINT "room_candidates_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."room_candidates"
+    ADD CONSTRAINT "room_candidates_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
 
 
 
@@ -172,6 +201,14 @@ CREATE POLICY "Dev policy participants" ON "public"."room_participants" USING (t
 
 
 CREATE POLICY "Dev policy profiles" ON "public"."preference_profiles" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable read access for all authenticated users" ON "public"."decision_rooms" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable read access for participants" ON "public"."room_participants" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -202,7 +239,26 @@ ALTER TABLE "public"."group_decisions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."preference_profiles" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."room_candidates" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."room_participants" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "smart_delete_candidates" ON "public"."room_candidates" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "smart_insert_candidates" ON "public"."room_candidates" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "smart_select_candidates" ON "public"."room_candidates" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+   FROM "public"."decision_rooms"
+  WHERE (("decision_rooms"."id" = "room_candidates"."room_id") AND ("decision_rooms"."host_user_id" = "auth"."uid"())))) OR (EXISTS ( SELECT 1
+   FROM "public"."decision_rooms"
+  WHERE (("decision_rooms"."id" = "room_candidates"."room_id") AND ("decision_rooms"."voting_mode" = 'PUBLIC'::"text"))))));
+
 
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";
@@ -248,6 +304,12 @@ GRANT ALL ON TABLE "public"."preference_profiles" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."room_candidates" TO "anon";
+GRANT ALL ON TABLE "public"."room_candidates" TO "authenticated";
+GRANT ALL ON TABLE "public"."room_candidates" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."room_participants" TO "anon";
 GRANT ALL ON TABLE "public"."room_participants" TO "authenticated";
 GRANT ALL ON TABLE "public"."room_participants" TO "service_role";
@@ -284,6 +346,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict 9v9UgUPujCdJleCnIMwV2QNaGpSdmkaq7G5ubYqTKgLRfJAZ2Ml12YkR6rey0zp
+\unrestrict IJqpT0thh058fjDtFAyuSbVOXQlLv7zgBDGXEoh2DGjLTI34LZ2ZnwEutW6aSxh
 
 RESET ALL;
