@@ -4,7 +4,7 @@ import { OpenAIImageRecognizer } from '@/adapters/openai/OpenAIImageRecognizer';
 // 1. Definim el mock function fora
 const mockCreate = vi.fn();
 
-// 2. Mockegem el mòdul retornant una CLASSE real
+// 2. Mockegem el mòdul
 vi.mock('openai', () => {
   return {
     default: class {
@@ -13,7 +13,6 @@ vi.mock('openai', () => {
           create: mockCreate
         }
       };
-      // El constructor és necessari perquè funcioni 'new OpenAI()'
       constructor(options: unknown) {}
     }
   };
@@ -28,22 +27,27 @@ describe('OpenAIImageRecognizer Adapter', () => {
   });
 
   it('hauria de transformar la resposta JSON d\'OpenAI en ScannedItems', async () => {
-    const fakeJsonResponse = JSON.stringify([
-      {
-        name: 'Plàtan',
-        quantity: 5,
-        unit: 'ut',
-        location: 'PANTRY',
-        confidence: 0.95
-      }
-    ]);
+    // CANVI 1: L'estructura ara ha de tenir la clau "items"
+    const fakeJsonResponse = JSON.stringify({
+      items: [
+        {
+          name: 'Plàtan',
+          quantity: 5,
+          unit: 'ut',
+          location: 'PANTRY',
+          confidence: 0.95,
+          box2d: [0, 0, 100, 100] // Afegim coordenades dummy per complir el tipus
+        }
+      ]
+    });
 
-    // Simulem que OpenAI retorna Markdown (que ara el codi ja sap netejar)
+    // CANVI 2: Simulem resposta JSON neta (sense Markdown ```json)
+    // OpenAI amb mode json_object NO torna markdown.
     mockCreate.mockResolvedValue({
       choices: [
         {
           message: {
-            content: `\`\`\`json\n${fakeJsonResponse}\n\`\`\``
+            content: fakeJsonResponse // Passem el JSON net directament
           }
         }
       ]
@@ -53,12 +57,12 @@ describe('OpenAIImageRecognizer Adapter', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe('Plàtan');
+    expect(result[0].quantity).toBe(5);
   });
 
   it('hauria de retornar array buit (o llençar error) si falla', async () => {
     mockCreate.mockRejectedValue(new Error('API Error'));
 
-    // Com que al codi hem posat 'throw error', aquí esperem que peti
     await expect(adapter.analyze('base64-fake')).rejects.toThrow('API Error');
   });
 });

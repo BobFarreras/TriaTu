@@ -24,7 +24,7 @@ export class OpenAIImageRecognizer implements ImageRecognitionService {
         : imageBase64;
 
       const response = await this.client.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         // FORCEM EL MODE JSON (Molt important per evitar errors de parseig)
         response_format: { type: "json_object" }, 
         messages: [

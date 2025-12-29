@@ -18,7 +18,7 @@ interface InventoryItemRow {
 }
 
 export class SupabaseInventoryRepository implements InventoryRepository {
-  
+
   // --- MAPPER (Privat) ---
   // Converteix de Base de Dades -> Domini
   private toDomain(row: InventoryItemRow): InventoryItem {
@@ -38,7 +38,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
 
   async save(item: InventoryItem): Promise<void> {
     const supabase = await createClient();
-    
+
     // Mapeig Domini -> Base de Dades
     const row = {
       id: item.props.id,
@@ -63,7 +63,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
 
   async findById(id: string): Promise<InventoryItem | null> {
     const supabase = await createClient();
-    
+
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
@@ -103,7 +103,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
 
   async findExpiringSoon(userId: string, daysThreshold: number): Promise<InventoryItem[]> {
     const supabase = await createClient();
-    
+
     // Calculem la data límit
     const now = new Date();
     const thresholdDate = new Date();
@@ -120,5 +120,30 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     if (error) throw new Error(error.message);
 
     return (data as InventoryItemRow[]).map(row => this.toDomain(row));
+  }
+  async batchUpdate(updates: { id: string; quantity: number }[]): Promise<void> {
+    // ✅ FIX: Afegim 'await'
+    const supabase = await createClient();
+
+    const promises = updates.map(update =>
+      supabase
+        .from('inventory_items')
+        .update({ quantity: update.quantity })
+        .eq('id', update.id)
+    );
+
+    await Promise.all(promises);
+  }
+
+  async batchDelete(ids: string[]): Promise<void> {
+    // ✅ FIX: Afegim 'await'
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('inventory_items')
+      .delete()
+      .in('id', ids);
+
+    if (error) throw new Error(error.message);
   }
 }
