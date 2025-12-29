@@ -31,14 +31,14 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (!imageSrc) return;
 
-    // 2. Feedback visual immediat (Flash + Congelar imatge)
+    // 2. Feedback visual immediat
     setFlash(true);
-    setTimeout(() => setFlash(false), 150); // Flash dura 150ms
-    setCapturedImage(imageSrc); // Substituïm webcam per la foto fixa
-    setIsProcessing(true); // Activem l'estat de càrrega
+    setTimeout(() => setFlash(false), 150);
+    setCapturedImage(imageSrc);
+    setIsProcessing(true);
 
     try {
-      // 3. Convertir a File per enviar al servidor
+      // 3. Convertir a File
       const res = await fetch(imageSrc);
       const blob = await res.blob();
       const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
@@ -46,20 +46,28 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
       const formData = new FormData();
       formData.append('image', file);
 
-      // 4. Cridar a la IA (Server Action)
+      // 4. Cridar a la IA
       const result = await scanImageAction(formData);
 
       if (result.success) {
         onItemsFound(result.items, imageSrc);
       } else {
-        alert('Error: ' + result.error);
-        // Si falla, tornem a la càmera en viu
-        setCapturedImage(null);
+        // Llancem un error manual per caure al catch
+        throw new Error(result.error || 'Error desconegut al processar');
       }
-    } catch (err: any) { // Afegim tipat any per accedir al missatge
-      console.error(err);
-      // ✅ CANVI: Mostrem l'error real per saber si és Timeout, 413 Payload Too Large, etc.
-      alert(`Error: ${err.message || 'Error desconegut'}`);
+    } catch (error: unknown) { // ✅ CORRECCIÓ: Usem 'unknown' en lloc de 'any'
+      console.error(error);
+
+      // ✅ TYPE GUARD: Extreiem el missatge de forma segura
+      let errorMessage = 'Error de connexió o processament';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
+      alert(`Error: ${errorMessage}`);
       setCapturedImage(null);
     } finally {
       setIsProcessing(false);

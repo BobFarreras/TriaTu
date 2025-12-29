@@ -61,6 +61,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
               <div className="overflow-y-auto pr-1">
                  <ScannedListEditor 
                     initialItems={scannedItems} 
+                    
                     onCancel={() => {
                         setScannedItems(null);
                         setCapturedImage(null);
