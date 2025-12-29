@@ -13,7 +13,7 @@ interface CameraScannerProps {
 
 export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
   const webcamRef = useRef<Webcam>(null);
-  
+
   // Estats per controlar el flux visual
   const [isProcessing, setIsProcessing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null); // Guardem la foto aquí
@@ -56,9 +56,10 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
         // Si falla, tornem a la càmera en viu
         setCapturedImage(null);
       }
-    } catch (err) {
+    } catch (err: any) { // Afegim tipat any per accedir al missatge
       console.error(err);
-      alert('Error de connexió');
+      // ✅ CANVI: Mostrem l'error real per saber si és Timeout, 413 Payload Too Large, etc.
+      alert(`Error: ${err.message || 'Error desconegut'}`);
       setCapturedImage(null);
     } finally {
       setIsProcessing(false);
@@ -71,75 +72,75 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      
+
       {/* --- HEADER --- */}
       <div className="absolute top-0 w-full p-4 flex justify-between items-center z-20">
         <button onClick={onCancel} disabled={isProcessing} className="text-white bg-black/40 px-4 py-2 rounded-full backdrop-blur-md font-bold text-sm border border-white/10">
-           ✕ Tancar
+          ✕ Tancar
         </button>
         {!capturedImage && (
           <button onClick={toggleCamera} className="text-white bg-black/40 p-2 rounded-full backdrop-blur-md border border-white/10">
-             🔄 Girar
+            🔄 Girar
           </button>
         )}
       </div>
 
       {/* --- AREA PRINCIPAL (VISOR) --- */}
       <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
-         
-         {/* 1. VISOR DE CÀMERA (Només si no tenim foto capturada) */}
-         {!capturedImage && (
-           <Webcam
-             audio={false}
-             ref={webcamRef}
-             screenshotFormat="image/jpeg"
-             screenshotQuality={1}
-             forceScreenshotSourceSize={true}
-             videoConstraints={videoConstraints}
-             className="absolute inset-0 w-full h-full object-cover"
-           />
-         )}
 
-         {/* 2. FOTO CONGELADA (Es mostra quan hem disparat) */}
-         {capturedImage && (
-           <img 
-             src={capturedImage} 
-             alt="Captured" 
-             className="absolute inset-0 w-full h-full object-contain bg-black" 
-           />
-         )}
-         
-         {/* 3. GUIES D'ENQUADRAMENT (Només en mode càmera) */}
-         {!isProcessing && !capturedImage && (
-            <div className="absolute inset-0 pointer-events-none opacity-30 flex items-center justify-center">
-                <div className="w-64 h-64 border-2 border-white/50 rounded-3xl border-dashed"></div>
+        {/* 1. VISOR DE CÀMERA (Només si no tenim foto capturada) */}
+        {!capturedImage && (
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            screenshotQuality={0.8} // ✅ CANVI: De 1 a 0.8 (molt més lleuger, mateixa precisió IA)
+            forceScreenshotSourceSize={true}
+            videoConstraints={videoConstraints}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+
+        {/* 2. FOTO CONGELADA (Es mostra quan hem disparat) */}
+        {capturedImage && (
+          <img
+            src={capturedImage}
+            alt="Captured"
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+          />
+        )}
+
+        {/* 3. GUIES D'ENQUADRAMENT (Només en mode càmera) */}
+        {!isProcessing && !capturedImage && (
+          <div className="absolute inset-0 pointer-events-none opacity-30 flex items-center justify-center">
+            <div className="w-64 h-64 border-2 border-white/50 rounded-3xl border-dashed"></div>
+          </div>
+        )}
+
+        {/* 4. ANIMACIÓ D'ESCANEIG (LÀSER) - Es mostra durant el processament */}
+        {isProcessing && (
+          <div className="absolute inset-0 z-10 pointer-events-none">
+            {/* Fons lleugerament enfosquit per resaltar el làser */}
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>
+
+            {/* Línia làser que es mou (animació Tailwind personalitzada o CSS estàndard) */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
+
+            {/* Text informatiu centrat */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="bg-black/60 px-6 py-3 rounded-2xl backdrop-blur-md border border-white/10 flex flex-col items-center">
+                <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                <p className="text-cyan-300 font-bold text-lg tracking-wide">ANALITZANT...</p>
+                <p className="text-white/70 text-xs">Identificant productes i caducitats</p>
+              </div>
             </div>
-         )}
+          </div>
+        )}
 
-         {/* 4. ANIMACIÓ D'ESCANEIG (LÀSER) - Es mostra durant el processament */}
-         {isProcessing && (
-           <div className="absolute inset-0 z-10 pointer-events-none">
-             {/* Fons lleugerament enfosquit per resaltar el làser */}
-             <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>
-             
-             {/* Línia làser que es mou (animació Tailwind personalitzada o CSS estàndard) */}
-             <div className="absolute top-0 left-0 w-full h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
-             
-             {/* Text informatiu centrat */}
-             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="bg-black/60 px-6 py-3 rounded-2xl backdrop-blur-md border border-white/10 flex flex-col items-center">
-                  <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                  <p className="text-cyan-300 font-bold text-lg tracking-wide">ANALITZANT...</p>
-                  <p className="text-white/70 text-xs">Identificant productes i caducitats</p>
-                </div>
-             </div>
-           </div>
-         )}
-
-         {/* 5. EFECTE FLASH (Pantalla blanca ràpida) */}
-         {flash && (
-           <div className="absolute inset-0 bg-white z-50 animate-out fade-out duration-150"></div>
-         )}
+        {/* 5. EFECTE FLASH (Pantalla blanca ràpida) */}
+        {flash && (
+          <div className="absolute inset-0 bg-white z-50 animate-out fade-out duration-150"></div>
+        )}
       </div>
 
       {/* --- FOOTER (BOTÓ DE DISPARAR) --- */}
@@ -150,7 +151,7 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
             onClick={capture}
             className="w-20 h-20 rounded-full border-4 border-white bg-white/20 flex items-center justify-center active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:bg-white/30"
           >
-             <div className="w-16 h-16 bg-white rounded-full shadow-inner"></div>
+            <div className="w-16 h-16 bg-white rounded-full shadow-inner"></div>
           </button>
         </div>
       )}
