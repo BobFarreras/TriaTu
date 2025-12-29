@@ -46,7 +46,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-100px)]">
               
               {/* ESQUERRA: REALITAT AUGMENTADA (Visible en Mobile també) */}
-              <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-2xl min-h-[300px] lg:min-h-0">
+              <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-2xl min-h-75 lg:min-h-0">
                  <AROverlay 
                     imageSrc={capturedImage} 
                     items={scannedItems} 
@@ -126,7 +126,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
                  flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-lg
                  ${showAddForm 
                     ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700' 
-                    : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:scale-105'
+                    : 'bg-linear-to-r from-purple-600 to-indigo-600 text-white hover:scale-105'
                  }
                `}
             >
@@ -135,7 +135,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
          </div>
       </div>
 
-      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showAddForm ? 'max-h-[1500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showAddForm ? 'max-h-375 opacity-100' : 'max-h-0 opacity-0'}`}>
          <div className="pt-2 pb-6">
             <AddItemForm />
          </div>

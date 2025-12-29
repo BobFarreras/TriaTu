@@ -7,47 +7,53 @@ export class GeminiImageRecognizer implements ImageRecognitionService {
   private client: GoogleGenAI;
 
   constructor() {
+    // Assegura't de tenir GEMINI_API_KEY al .env.local
     this.client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
 
   async analyze(imageBase64: string): Promise<ScannedItem[]> {
     try {
+      // 1. Netejar base64
       const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
+      // Calculer la data d'avui per al prompt
+      const today = new Date().toISOString().split('T')[0];
 
+      // 2. EL SUPER-PROMPT MILLORAT
       const prompt = `
-        Ets un sistema de visió artificial avançat per a inventari de cuina.
+        Ets un sistema de visió artificial expert en inventari domèstic.
+
+        OBJECTIU CRÍTIC:
+        Detecta i localitza TOTS els aliments, begudes o envasos individuals a la imatge.
+
+        REGLAS PER A CADA OBJECTE:
+        1. **box2d (COORDENADES):** ÉS OBLIGATORI. Retorna la caixa delimitadora [ymin, xmin, ymax, xmax] en una escala de 0 a 1000.
+        2. **expiryDate (CADUCITAT):**
+           - Si hi ha una data impresa visible, USA-LA (format YYYY-MM-DD).
+           - SI NO HI HA DATA, ESTIMA-LA basant-te en avui (${today}):
+             * 🥫 Productes de rebost (Aigua, Conserves, Arròs, Pasta): Afegeix +2 ANYS.
+             * 🥬 Frescos (Fruita, Verdura, Carn): Afegeix +1 SETMANA.
+             * 🥛 Làctics/Oberts: Afegeix +3 DIES.
         
-        OBJECTIU PRINCIPAL:
-        Detecta TOTS els aliments, begudes o envasos individuals a la imatge.
-        PER A CADA OBJECTE DETECTAT ÉS **OBLIGATORI** RETORNAR LES SEVES COORDENADES "box2d".
-
-        REGLAS DE CADUCITAT (expiryDate):
-        - Si veus una data impresa clara (ex: "EXP 12/25"), USA-LA (format YYYY-MM-DD).
-        - SI NO VEUS DATA, ESTIMA-LA basant-te en el tipus de producte i la data d'avui (${new Date().toISOString().split('T')[0]}):
-          * 💧 Aigua, Conserves, Pasta seca, Arròs: LLARGA DURADA (+1 o +2 anys). NO POSIS DATA D'AVUI.
-          * 🥬 Verdura fresca, Fruita, Carn crua: CURTA DURADA (+3 a +7 dies).
-          * 🥛 Làctics oberts, Plats preparats: MOLT CURTA (+2 a +4 dies).
-
         FORMAT DE RESPOSTA (ARRAY JSON PUR):
         [
           {
-            "name": "Nom curt en Català (ex: Ampolla Aigua 1.5L)",
-            "quantity": número (mínim 1),
-            "unit": "ut" | "kg" | "l",
-            "location": "FRIDGE" | "PANTRY" | "FREEZER",
-            "expiryDate": "YYYY-MM-DD" (o null si és impossible estimar, PERÒ MAI LA DATA D'AVUI per productes de llarga durada),
-            "confidence": 0.5 a 1.0,
-            "box2d": [ymin, xmin, ymax, xmax]  <-- COORDENADES OBLIGATÒRIES (escala 0-1000)
+            "name": "Nom curt en Català (ex: Ampolla d'Aigua)",
+            "quantity": 1,
+            "unit": "ut",
+            "location": "PANTRY",
+            "expiryDate": "2026-05-20", 
+            "confidence": 0.9,
+            "box2d": [100, 200, 500, 400] 
           }
         ]
         
-        Si no detectes cap aliment, retorna un array buit [].
+        Retorna NOMÉS el JSON. Si no trobes res, retorna [].
       `;
 
-
+      // 3. Cridar a l'API (Usem el model Pro per millor visió si pots, sino el flash)
       const response = await this.client.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-2.5-flash', // El model Pro és millor per a coordenades
         contents: [
           {
             role: 'user',
@@ -64,12 +70,11 @@ export class GeminiImageRecognizer implements ImageRecognitionService {
         ],
         config: {
           responseMimeType: 'application/json',
+          temperature: 0.1, // Baixa temperatura per ser més precís
         }
       });
 
-      // --- CORRECCIÓN AQUÍ ---
-      // 1. Accedemos a la propiedad .text (sin paréntesis)
-      // 2. Usamos '?' para evitar el error de "posiblemente undefined"
+      // 4. Parseig segur
       const text = response?.text;
 
       if (!text) {
@@ -83,13 +88,21 @@ export class GeminiImageRecognizer implements ImageRecognitionService {
         if (!Array.isArray(rawItems)) rawItems = [];
       } catch (e) {
         console.error("Gemini JSON Parse Error:", e);
-        throw new Error('Invalid JSON from Gemini');
+        // Si falla el JSON mode, intentem netejar markdown per si de cas
+        try {
+          const cleanText = text.replace(/```json|```/g, '').trim();
+          rawItems = JSON.parse(cleanText);
+        } catch (e2) {
+          console.log(e2)
+          throw new Error('Invalid JSON from Gemini');
+        }
       }
 
+      // 5. Sanitize via Domini
       return rawItems.map(item => ScanSanitizer.sanitize(item as ScannedItem));
 
     } catch (error) {
-      console.warn("⚠️ Gemini ha fallado:", error);
+      console.warn("⚠️ Gemini ha fallat:", error);
       throw error;
     }
   }
