@@ -19,6 +19,11 @@ import { AddCandidate } from '@/core/usecases/candidates/AddCandidate';
 import { SetRoomVotingMode } from '@/core/usecases/rooms/SetRoomVotingMode';
 import { RemoveCandidate } from '@/core/usecases/candidates/RemoveCandidate';
 import { GetUserRooms } from "@/core/usecases/rooms/GetUserRooms";
+
+import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository';
+import { AddItem } from '@/core/usecases/inventory/AddItem';
+import { ConsumeItem } from '@/core/usecases/inventory/ConsumeItem';
+import { GetExpiringItems } from '@/core/usecases/inventory/GetExpiringItems';
 // Singleton
 const decisionRepo = new SupabaseDecisionRepository();
 const roomRepo = new SupabaseDecisionRoomRepository();
@@ -29,7 +34,7 @@ const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
 // Instàncies
 const candidateRepo = new SupabaseCandidateRepository();
-
+const inventoryRepo = new SupabaseInventoryRepository(); // <--- INSTÀNCIA SINGLETON
 // Instància del servei (Singleton)
 export const container = {
   getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, profileRepo, individualEngine),
@@ -51,5 +56,10 @@ export const container = {
   getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
   // ✅ CORRECCIÓ AQUÍ:
   // En lloc de 'this.getDecisionRoomRepository()', fem servir la variable 'roomRepo' directament.
-  getUserRooms: () => new GetUserRooms(roomRepo)
+  getUserRooms: () => new GetUserRooms(roomRepo),
+
+  // === NOUS MÈTODES PER AL REVOST ===
+  getAddItem: () => new AddItem(inventoryRepo),
+  getConsumeItem: () => new ConsumeItem(inventoryRepo),
+  getGetExpiringItems: () => new GetExpiringItems(inventoryRepo),
 };
