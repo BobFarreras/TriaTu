@@ -25,6 +25,9 @@ import { AddItem } from '@/core/usecases/inventory/AddItem';
 import { ConsumeItem } from '@/core/usecases/inventory/ConsumeItem';
 import { GetExpiringItems } from '@/core/usecases/inventory/GetExpiringItems';
 import { GetUserInventory } from '@/core/usecases/inventory/GetUserInventory';
+import { OpenAIImageRecognizer } from '@/adapters/openai/OpenAIImageRecognizer';
+import { GeminiImageRecognizer } from '@/adapters/gemini/GeminiImageRecognizer';
+import { FallbackImageRecognizer } from '@/adapters/strategies/FallbackImageRecognizer';
 // Singleton
 const decisionRepo = new SupabaseDecisionRepository();
 const roomRepo = new SupabaseDecisionRoomRepository();
@@ -36,6 +39,13 @@ const groupResolver = new BasicGroupResolver(foodKnowledgeService);
 // Instàncies
 const candidateRepo = new SupabaseCandidateRepository();
 const inventoryRepo = new SupabaseInventoryRepository(); // <--- INSTÀNCIA SINGLETON
+
+// 1. Instàncies Individuals
+// (Poden ser Singletons o crear-se al moment, aquí ho fem Singleton per eficiència)
+const geminiAdapter = new GeminiImageRecognizer();
+const openAIAdapter = new OpenAIImageRecognizer();
+
+const robustRecognizer = new FallbackImageRecognizer(geminiAdapter, openAIAdapter);
 // Instància del servei (Singleton)
 export const container = {
   getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, profileRepo, individualEngine),
@@ -64,4 +74,5 @@ export const container = {
   getConsumeItem: () => new ConsumeItem(inventoryRepo),
   getGetExpiringItems: () => new GetExpiringItems(inventoryRepo),
   getGetUserInventory: () => new GetUserInventory(inventoryRepo),
+  getImageRecognizer: () => robustRecognizer,
 };

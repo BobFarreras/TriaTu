@@ -1,5 +1,6 @@
 import { StorageLocation } from "@/core/domain/entities/StorageLocation";
 
+// ✅ Els teus tipus personalitzats amb emojis
 export type FoodCategory =
   | '🥩 Proteïna'
   | '🥦 Verdura'
@@ -7,7 +8,8 @@ export type FoodCategory =
   | '🥛 Lactic'
   | '🥖 Cereals'
   | '🥤 Beguda'
-  | '🍪 Snack';
+  | '🍪 Snack'
+  | '🧂 Condiments';
 
 export type FoodPreset = {
   id: string;
@@ -16,8 +18,9 @@ export type FoodPreset = {
   category: FoodCategory;
   defaultUnit: 'ut' | 'kg' | 'l' | 'g';
   defaultLoc: StorageLocation;
-  step: number;
+  step: number; // Increment per als botons +/-
 };
+
 
 export const FOOD_PRESETS: FoodPreset[] = [
 
