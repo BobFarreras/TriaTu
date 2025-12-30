@@ -6,6 +6,7 @@ import { StorageLocation } from '@/core/domain/entities/StorageLocation'; // O o
 export interface AddItemInput {
   userId: string;
   name: string;
+  emoji: string;
   quantity: number;
   unit: string;
   location: StorageLocation;

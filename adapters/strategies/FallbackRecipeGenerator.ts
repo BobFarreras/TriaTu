@@ -10,22 +10,30 @@ export class FallbackRecipeGenerator implements RecipeGenerator {
     private readonly secondary: RecipeGenerator
   ) {}
 
-  async generate(inventory: InventoryItemProps[], restrictions: DietaryRestriction[]): Promise<Recipe[]> {
+  async generate(
+    inventory: InventoryItemProps[], 
+    restrictions: DietaryRestriction[],
+    focusDish?: string,
+    excludeNames?: string[]
+  ): Promise<Recipe[]> {
+    console.log("🔄 [FALLBACK] Iniciant estratègia de generació...");
+    
     try {
-      // 1. Intentem Gemini
-      // console.log("🍳 Provant Gemini per cuinar...");
-      return await this.primary.generate(inventory, restrictions);
+      console.log("🔹 Provant PRIMARI (Gemini)...");
+      const result = await this.primary.generate(inventory, restrictions, focusDish, excludeNames);
+      console.log("✅ Primari OK.");
+      return result;
 
     } catch (error) {
-      console.error("❌ Gemini ha fallat generant receptes:", error);
+      console.error("🔸 Primari ha fallat. Motiu:", error);
       
-      // 2. Intentem OpenAI
-      console.warn("⚠️ Activant OpenAI (Fallback) per receptes...");
+      console.log("🔹 Provant SECUNDARI (OpenAI)...");
       try {
-        return await this.secondary.generate(inventory, restrictions);
+        const result = await this.secondary.generate(inventory, restrictions, focusDish, excludeNames);
+        console.log("✅ Secundari OK.");
+        return result;
       } catch (secondaryError) {
-        // 3. Tot ha fallat
-        console.error("💀 Error Crític: Cap xef (IA) disponible.", secondaryError);
+        console.error("💀 TOT HA FALLAT:", secondaryError);
         return [];
       }
     }

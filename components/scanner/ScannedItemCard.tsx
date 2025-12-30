@@ -1,5 +1,6 @@
 import { ScannedItem } from "@/core/domain/types/ScannedItem";
-import { getEmojiForName } from "@/lib/presetMatcher";
+// ❌ Esborra aquest import, ja no el necessitem aquí
+// import { getEmojiForName } from "@/lib/presetMatcher"; 
 
 interface ScannedItemCardProps {
   item: ScannedItem;
@@ -9,7 +10,9 @@ interface ScannedItemCardProps {
 
 export function ScannedItemCard({ item, onUpdate, onRemove }: ScannedItemCardProps) {
   
-  const productEmoji = getEmojiForName(item.name);
+  // ✅ CORRECCIÓ: Usem l'emoji que ve de l'objecte (IA o Preset)
+  // Si per algun motiu fos undefined, posem la caixa.
+  const productEmoji = item.emoji || "📦";
 
   return (
     <div className="bg-slate-900/90 backdrop-blur-sm rounded-xl p-3 border border-slate-800 shadow-md relative animate-in slide-in-from-right-4 duration-300 w-full group hover:border-slate-700 transition-colors">
@@ -17,6 +20,7 @@ export function ScannedItemCard({ item, onUpdate, onRemove }: ScannedItemCardPro
         {/* 1. FILA SUPERIOR: EMOJI + NOM + ELIMINAR */}
         <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-lg shadow-inner shrink-0 border border-slate-800">
+                {/* Aquí es renderitza l'emoji bo */}
                 {productEmoji}
             </div>
             
@@ -38,7 +42,7 @@ export function ScannedItemCard({ item, onUpdate, onRemove }: ScannedItemCardPro
         {/* 2. FILA INFERIOR: TOTS ELS CONTROLS ALINEATS */}
         <div className="flex items-center gap-2 w-full">
             
-            {/* A. CÀPSULA QUANTITAT + UNITAT (Ara amb icones) */}
+            {/* A. CÀPSULA QUANTITAT + UNITAT */}
             <div className="flex items-center bg-slate-950 rounded-lg border border-slate-800 h-9 shrink-0 overflow-hidden">
                 <input 
                     type="number" 
@@ -47,10 +51,8 @@ export function ScannedItemCard({ item, onUpdate, onRemove }: ScannedItemCardPro
                     className="w-10 bg-transparent text-center text-white font-mono text-sm border-none focus:ring-0 p-0 h-full"
                 />
                 
-                {/* Separador vertical */}
                 <div className="w-px h-1/2 bg-slate-800"></div>
                 
-                {/* SELECTOR D'UNITATS AMB EMOJIS */}
                 <select 
                     value={item.unit}
                     onChange={(e) => onUpdate('unit', e.target.value)}
@@ -63,7 +65,7 @@ export function ScannedItemCard({ item, onUpdate, onRemove }: ScannedItemCardPro
                 </select>
             </div>
 
-            {/* B. UBICACIÓ (Ocupa l'espai central) */}
+            {/* B. UBICACIÓ */}
             <div className="h-9 grow min-w-20">
                 <select 
                     value={item.location}

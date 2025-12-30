@@ -19,7 +19,7 @@ export function AddItemForm() {
 
   // ESTATS
   const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState('📦'); 
+  const [emoji, setEmoji] = useState('📦');
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState<UnitType>('ut');
   const [location, setLocation] = useState('FRIDGE');
@@ -27,7 +27,7 @@ export function AddItemForm() {
   const [activeCategory, setActiveCategory] = useState<FoodCategory | null>(null);
 
   const selectPreset = (preset: FoodPreset) => {
-    setName(preset.name); 
+    setName(preset.name);
     setEmoji(preset.emoji);
     setUnit(preset.defaultUnit);
     setLocation(preset.defaultLoc);
@@ -42,21 +42,30 @@ export function AddItemForm() {
       return Math.max(step, parseFloat(newVal.toFixed(2)));
     });
   };
-
   async function clientAction(formData: FormData) {
     setIsSubmitting(true);
-    let finalName = name.trim();
-    if (!finalName.includes(emoji)) {
-        finalName = `${emoji} ${finalName}`;
-    }
-    formData.set('name', finalName);
-    
+
+    // ❌ ELIMINAR LÒGICA ANTIGA:
+    // let finalName = name.trim();
+    // if (!finalName.includes(emoji)) { ... }
+
+    // ✅ CORRECCIÓ: Enviem dades netes
+    // Sobreescrivim el 'name' per assegurar que no porta espais extra, però sense emoji
+    formData.set('name', name.trim());
+
+    // IMPORTANT: Com que l'emoji no és un input HTML, l'hem d'afegir manualment al FormData
+    // des de l'estat de React
+    formData.set('emoji', emoji || '📦');
+
+    // Assegura't que la resta de camps s'envien bé (els inputs hidden ja ho fan)
+
     const result = await addItemAction(formData);
     setIsSubmitting(false);
-    
+
     if (!result.success) {
       alert(`⚠️ Error: ${result.error}`);
     } else {
+      // Reset del formulari
       setName('');
       setEmoji('📦');
       setQuantity(1);
@@ -68,7 +77,7 @@ export function AddItemForm() {
   return (
     // CANVI CLAU: w-full i max-w-5xl per fer-ho ample
     <div className="w-full max-w-5xl mx-auto bg-slate-900 border border-slate-700 p-6 md:p-8 rounded-3xl shadow-2xl">
-      
+
       {/* 1. CATEGORIES (Scroll Horitzontal net) */}
       <div className="mb-8">
         <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
@@ -79,8 +88,8 @@ export function AddItemForm() {
               onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
               className={`
                 snap-start whitespace-nowrap px-5 py-3 rounded-full border text-sm font-bold transition-all
-                ${activeCategory === cat 
-                  ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/50 scale-105' 
+                ${activeCategory === cat
+                  ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/50 scale-105'
                   : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700'
                 }
               `}
@@ -110,82 +119,82 @@ export function AddItemForm() {
       </div>
 
       <form ref={formRef} action={clientAction} className="space-y-8">
-        
+
         {/* 2. INPUT NOM (HERO) */}
         <div className="bg-slate-950 border border-slate-800 rounded-2xl p-2 flex items-center shadow-inner focus-within:ring-2 focus-within:ring-purple-500/50 transition-all">
-            <div className="w-16 h-16 flex items-center justify-center text-4xl bg-slate-900 rounded-xl border border-slate-800 shadow-sm shrink-0">
-              {emoji}
-            </div>
-            <input 
-              name="name" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Què afegim al revost?"
-              className="w-full bg-transparent border-none px-6 text-2xl md:text-3xl font-bold text-white placeholder-slate-700 outline-none h-16"
-              autoComplete="off"
-            />
+          <div className="w-16 h-16 flex items-center justify-center text-4xl bg-slate-900 rounded-xl border border-slate-800 shadow-sm shrink-0">
+            {emoji}
+          </div>
+          <input
+            name="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Què afegim al revost?"
+            className="w-full bg-transparent border-none px-6 text-2xl md:text-3xl font-bold text-white placeholder-slate-700 outline-none h-16"
+            autoComplete="off"
+          />
         </div>
 
         {/* 3. GRAELLA DE CONTROLS (GRID LAYOUT AMPLE) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            
-            {/* COLUMNA ESQUERRA: Quantitat */}
-            <div className="bg-slate-950/30 p-6 rounded-3xl border border-slate-800 flex flex-col justify-between h-full">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Quantitat</label>
-                
-                <div className="flex items-center gap-4 mb-6">
-                    <button type="button" onClick={() => handleQuantityChange(-1)} className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg">−</button>
-                    <div className="flex-1 text-center bg-slate-900/50 rounded-2xl py-2 border border-slate-800/50">
-                        <span className="text-5xl font-black text-white tracking-tighter">{quantity}</span>
-                    </div>
-                    <button type="button" onClick={() => handleQuantityChange(1)} className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg">+</button>
-                </div>
 
-                <div className="grid grid-cols-4 gap-2">
-                    {units.map((u) => (
-                    <button
-                        key={u.val}
-                        type="button"
-                        onClick={() => setUnit(u.val)}
-                        className={`py-3 rounded-xl text-xl transition-all border ${unit === u.val ? 'bg-slate-700 text-white border-slate-500 shadow-inner' : 'bg-slate-900 text-slate-600 border-slate-800 hover:bg-slate-800'}`}
-                    >
-                        {u.icon}
-                    </button>
-                    ))}
-                </div>
+          {/* COLUMNA ESQUERRA: Quantitat */}
+          <div className="bg-slate-950/30 p-6 rounded-3xl border border-slate-800 flex flex-col justify-between h-full">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Quantitat</label>
+
+            <div className="flex items-center gap-4 mb-6">
+              <button type="button" onClick={() => handleQuantityChange(-1)} className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg">−</button>
+              <div className="flex-1 text-center bg-slate-900/50 rounded-2xl py-2 border border-slate-800/50">
+                <span className="text-5xl font-black text-white tracking-tighter">{quantity}</span>
+              </div>
+              <button type="button" onClick={() => handleQuantityChange(1)} className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg">+</button>
             </div>
 
-            {/* COLUMNA DRETA: Ubicació + Data */}
-            <div className="flex flex-col gap-6">
-                
-                {/* LOCATION */}
-                <div className="bg-slate-950/30 p-1 rounded-2xl border border-slate-800 grid grid-cols-3 gap-1">
-                    {[
-                    { val: 'FRIDGE', icon: '❄️', label: 'Nevera' },
-                    { val: 'PANTRY', icon: '🚪', label: 'Revost' },
-                    { val: 'FREEZER', icon: '🧊', label: 'Congelador' }
-                    ].map((opt) => (
-                    <button 
-                        key={opt.val}
-                        type="button"
-                        onClick={() => setLocation(opt.val)}
-                        className={`
+            <div className="grid grid-cols-4 gap-2">
+              {units.map((u) => (
+                <button
+                  key={u.val}
+                  type="button"
+                  onClick={() => setUnit(u.val)}
+                  className={`py-3 rounded-xl text-xl transition-all border ${unit === u.val ? 'bg-slate-700 text-white border-slate-500 shadow-inner' : 'bg-slate-900 text-slate-600 border-slate-800 hover:bg-slate-800'}`}
+                >
+                  {u.icon}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* COLUMNA DRETA: Ubicació + Data */}
+          <div className="flex flex-col gap-6">
+
+            {/* LOCATION */}
+            <div className="bg-slate-950/30 p-1 rounded-2xl border border-slate-800 grid grid-cols-3 gap-1">
+              {[
+                { val: 'FRIDGE', icon: '❄️', label: 'Nevera' },
+                { val: 'PANTRY', icon: '🚪', label: 'Revost' },
+                { val: 'FREEZER', icon: '🧊', label: 'Congelador' }
+              ].map((opt) => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setLocation(opt.val)}
+                  className={`
                             py-4 rounded-xl flex flex-col items-center gap-2 transition-all
-                            ${location === opt.val 
-                            ? 'bg-slate-800 text-white shadow-lg ring-1 ring-white/10' 
-                            : 'text-slate-500 hover:bg-slate-900 hover:text-slate-300'
-                            }
+                            ${location === opt.val
+                      ? 'bg-slate-800 text-white shadow-lg ring-1 ring-white/10'
+                      : 'text-slate-500 hover:bg-slate-900 hover:text-slate-300'
+                    }
                         `}
-                    >
-                        <span className="text-2xl">{opt.icon}</span>
-                        <span className="text-[10px] uppercase font-bold tracking-widest">{opt.label}</span>
-                    </button>
-                    ))}
-                </div>
-
-                {/* DATE PICKER (Dins la columna) */}
-                <SmartDatePicker selectedDate={expiryDate} onDateSelect={setExpiryDate} />
+                >
+                  <span className="text-2xl">{opt.icon}</span>
+                  <span className="text-[10px] uppercase font-bold tracking-widest">{opt.label}</span>
+                </button>
+              ))}
             </div>
+
+            {/* DATE PICKER (Dins la columna) */}
+            <SmartDatePicker selectedDate={expiryDate} onDateSelect={setExpiryDate} />
+          </div>
         </div>
 
         {/* INPUTS OCULTS */}
@@ -195,8 +204,8 @@ export function AddItemForm() {
         <input type="hidden" name="expiryDate" value={expiryDate} />
 
         {/* SUBMIT BUTTON GEGANT */}
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isSubmitting}
           className="w-full bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-black text-lg py-6 rounded-2xl shadow-xl shadow-purple-900/30 transform transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 tracking-widest uppercase border-t border-white/20"
         >

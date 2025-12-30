@@ -1,56 +1,47 @@
 import { DietaryRestriction, RESTRICTION_KEYWORDS } from '../value-objects/DietaryRestriction';
 
-export interface RecipeIngredient {
-  name: string;
-  quantity: number;
-  unit: string;
-}
-
 export interface RecipeProps {
-  id: string;
-  name: string;
-  ingredients: RecipeIngredient[];
-  steps: string[];
-  tags: string[];
-  prepTimeMinutes?: number;
+    id: string;
+    name: string;
+    ingredients: { name: string; quantity: number; unit: string }[];
+    steps: string[];
+    tags: string[];
+    prepTimeMinutes?: number;
 }
 
 export class Recipe {
-  constructor(public props: RecipeProps) {
-    this.validate();
-  }
+    constructor(public readonly props: RecipeProps) {}
 
-  private validate() {
-    if (!this.props.name) throw new Error("La recepta necessita un nom");
-    if (!this.props.ingredients || this.props.ingredients.length === 0) {
-      throw new Error("La recepta necessita ingredients");
+    // Getters per facilitar l'accés (sucre sintàctic)
+    get name() { return this.props.name; }
+    get ingredients() { return this.props.ingredients; }
+    get tags() { return this.props.tags; }
+    get prepTimeMinutes() { return this.props.prepTimeMinutes; }
+
+    // LÒGICA DE DOMINI: Seguretat Alimentària
+    public isSafeFor(restrictions: DietaryRestriction[]): boolean {
+        // Si no hi ha restriccions, és segur per defecte
+        if (restrictions.length === 0) return true;
+
+        const ingredientNames = this.props.ingredients.map(i => i.name.toLowerCase());
+        const recipeTags = this.props.tags.map(t => t.toLowerCase());
+
+        return restrictions.every(restriction => {
+            // 1. Check de Tags positius (ex: si és VEGAN, ha de tenir tag 'vegan')
+            // (Això depèn de com vinguin els teus tags, de moment ho deixem permissiu o ho implementes estricte)
+            // if (restriction === DietaryRestriction.VEGAN && !recipeTags.includes('vegan')) return false;
+
+            // 2. Check de Paraules Prohibides (Keywords)
+            const forbiddenWords = RESTRICTION_KEYWORDS[restriction];
+            
+            if (!forbiddenWords) return true; // Si no tenim paraules definides, assumim segur
+
+            // Mirem si algun ingredient conté alguna paraula prohibida
+            const hasForbiddenIngredient = ingredientNames.some(ingName => 
+                forbiddenWords.some(keyword => ingName.includes(keyword.toLowerCase()))
+            );
+
+            return !hasForbiddenIngredient;
+        });
     }
-  }
-
-  // --- LÒGICA DE SEGURETAT CRÍTICA ---
-  // Retorna FALSE si troba algun ingredient prohibit
-  isSafeFor(restrictions: DietaryRestriction[]): boolean {
-    if (!restrictions || restrictions.length === 0) return true;
-
-    for (const restriction of restrictions) {
-      const forbiddenWords = RESTRICTION_KEYWORDS[restriction];
-      
-      // 1. Revisar cada ingredient
-      const hasBadIngredient = this.props.ingredients.some(ing => {
-        const ingName = ing.name.toLowerCase();
-        return forbiddenWords.some(word => ingName.includes(word));
-      });
-
-      if (hasBadIngredient) return false;
-
-      // 2. Revisar el títol (per seguretat extra)
-      const titleCheck = forbiddenWords.some(word => 
-        this.props.name.toLowerCase().includes(word)
-      );
-      
-      if (titleCheck) return false;
-    }
-
-    return true;
-  }
 }

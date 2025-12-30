@@ -6,6 +6,7 @@ export interface RecipeGenerator {
   generate(
     inventory: InventoryItemProps[], 
     restrictions: DietaryRestriction[],
-    focusDish?: string // <--- NOU PARÀMETRE OPCIONAL
+    focusDish?: string,
+    excludeNames?: string[] // <--- NOU: Llista negra de noms
   ): Promise<Recipe[]>;
 }

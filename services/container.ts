@@ -1,6 +1,5 @@
 // services/container.ts
 
-
 import { SupabaseDecisionRepository } from '@/adapters/supabase/SupabaseDecisionRepository';
 import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
 import { SupabasePreferenceRepository } from '@/adapters/supabase/SupabasePreferenceRepository';
@@ -24,20 +23,29 @@ import { AddItem } from '@/core/usecases/inventory/AddItem';
 import { ConsumeItem } from '@/core/usecases/inventory/ConsumeItem';
 import { GetExpiringItems } from '@/core/usecases/inventory/GetExpiringItems';
 import { GetUserInventory } from '@/core/usecases/inventory/GetUserInventory';
-import { OpenAIImageRecognizer } from '@/adapters/openai/OpenAIImageRecognizer'; // ⚠️ REVISA LA RUTA
-import { GeminiImageRecognizer } from '@/adapters/gemini/GeminiImageRecognizer'; // ⚠️ REVISA LA RUTA
+import { OpenAIImageRecognizer } from '@/adapters/openai/OpenAIImageRecognizer';
+import { GeminiImageRecognizer } from '@/adapters/gemini/GeminiImageRecognizer';
 import { FallbackImageRecognizer } from '@/adapters/strategies/FallbackImageRecognizer';
 
-// ✅ NOUS IMPORTS NECESSARIS PER AL GENERADOR DE RECEPTES
+// RECEPTES
 import { GeminiRecipeGenerator } from '@/adapters/gemini/GeminiRecipeGenerator';
 import { OpenAIRecipeGenerator } from '@/adapters/openai/OpenAIRecipeGenerator';
 import { FallbackRecipeGenerator } from '@/adapters/strategies/FallbackRecipeGenerator';
-import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
-// ✅ 1. IMPORTAR EL CAS D'ÚS I EL SERVEI DE DOMINI
+import { RecipeGenerator } from '@/core/ports/RecipeGenerator'; // ✅ Importem la interfície
 import { CookRecipe } from '@/core/usecases/inventory/CookRecipe';
 import { RecipeMatcher } from '@/core/domain/services/RecipeMatcher';
+import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
+// USUARIS
+import { SupabaseUserRepository } from '@/adapters/supabase/SupabaseUserRepository';
+import { UserRepository } from '@/core/ports/UserRepository'; // ✅ Importem la interfície
 
-// Singleton
+import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
+import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe';
+import { SuggestRecipes } from '@/core/usecases/inventory/SuggestRecipes';
+import { UpdateItem } from '@/core/usecases/inventory/UpdateItem';
+import { DeleteItem } from '@/core/usecases/inventory/DeleteItem';
+
+// --- INSTÀNCIES STATELESS (Singletons Implícits) ---
 const decisionRepo = new SupabaseDecisionRepository();
 const roomRepo = new SupabaseDecisionRoomRepository();
 const profileRepo = new SupabasePreferenceRepository();
@@ -46,18 +54,19 @@ const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
 const candidateRepo = new SupabaseCandidateRepository();
 const inventoryRepo = new SupabaseInventoryRepository();
-
-// Instàncies Scanner
+const recipeRepo = new SupabaseRecipeRepository(); // <--- NOU
+// --- SCANNER ---
 const geminiAdapter = new GeminiImageRecognizer();
 const openAIAdapter = new OpenAIImageRecognizer();
 const robustRecognizer = new FallbackImageRecognizer(geminiAdapter, openAIAdapter);
 
-// ✅ VARIABLE SINGLETON PER AL GENERADOR DE RECEPTES
-let recipeGeneratorInstance: RecipeGenerator | null = null;
-
-
-// ✅ 2. INSTANCIAR EL MATCHER (Singleton)
+// --- SERVICES ---
 const recipeMatcher = new RecipeMatcher();
+
+// --- LAZY SINGLETONS (Variables de mòdul) ---
+// Així evitem 'any' i mantenim l'estat global del mòdul
+let recipeGeneratorInstance: RecipeGenerator | null = null;
+let userRepositoryInstance: UserRepository | null = null;
 
 
 export const container = {
@@ -78,23 +87,57 @@ export const container = {
   getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
   getUserRooms: () => new GetUserRooms(roomRepo),
 
-  // === MÈTODES DEL REVOST ===
+  // === INVENTORY ===
   getAddItem: () => new AddItem(inventoryRepo),
   getConsumeItem: () => new ConsumeItem(inventoryRepo),
   getGetExpiringItems: () => new GetExpiringItems(inventoryRepo),
   getGetUserInventory: () => new GetUserInventory(inventoryRepo),
+  // ✅ AFEGITS ARA:
+  getUpdateItem: () => new UpdateItem(inventoryRepo),
+  getDeleteItem: () => new DeleteItem(inventoryRepo),
   getImageRecognizer: () => robustRecognizer,
 
-  // ✅ GETTER DEL GENERADOR DE RECEPTES
-  getRecipeGenerator: () => {
+  // === RECIPES ===
+  // Lazy initialization amb tipatge correcte
+  getRecipeGenerator: (): RecipeGenerator => {
     if (!recipeGeneratorInstance) {
-        // Creem les instàncies només quan es necessiten (Lazy Loading)
-        const gemini = new GeminiRecipeGenerator();
-        const openai = new OpenAIRecipeGenerator();
-        // Creem l'estratègia Fallback
-        recipeGeneratorInstance = new FallbackRecipeGenerator(gemini, openai);
+      const gemini = new GeminiRecipeGenerator();
+      const openai = new OpenAIRecipeGenerator();
+
+      // 🔄 CANVI D'ORDRE: OpenAI Primer, Gemini Segon
+      // Abans: new FallbackRecipeGenerator(gemini, openai);
+      // Ara:
+      recipeGeneratorInstance = new FallbackRecipeGenerator(gemini, openai);
     }
     return recipeGeneratorInstance;
   },
+
   getCookRecipe: () => new CookRecipe(inventoryRepo, recipeMatcher),
+
+  // === USER ===
+  getUserRepository: (): UserRepository => {
+    if (!userRepositoryInstance) {
+      userRepositoryInstance = new SupabaseUserRepository();
+    }
+    return userRepositoryInstance;
+  },
+  // === RECIPES (Persistència) ===
+  getSaveGeneratedRecipe: () => new SaveGeneratedRecipe(recipeRepo),
+
+  // Helper per llegir receptes (per a la pàgina /recipes/[id])
+  getRecipeById: () => ({
+    execute: (id: string) => recipeRepo.findById(id)
+  }),
+  // ✅ NOU: El Cas d'Ús Híbrid (Fase 4)
+  getSuggestRecipes: () => {
+    const generator = container.getRecipeGenerator(); // Reutilitzem el getter lazy
+    return new SuggestRecipes(
+      inventoryRepo,
+      recipeRepo,
+      generator,
+      recipeMatcher
+    );
+  },
+  getGetRecipe: () => new GetRecipe(recipeRepo),
+
 };

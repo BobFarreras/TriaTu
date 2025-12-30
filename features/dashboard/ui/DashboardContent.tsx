@@ -19,7 +19,7 @@ export function DashboardContent({ userName, userId, userRooms }: Props) {
     // Estat local per controlar el desplegable. 
     // UX: Per defecte tancat per veure tot el dashboard net, o obert si volem acció directa?
     // Decisió: Tancat per prioritzar la "vista de comandament" completa.
-    const [isQuickModeOpen, setQuickModeOpen] = useState(false);
+    const [isQuickModeOpen, setQuickModeOpen] = useState(true);
 
     return (
         <main className="min-h-dvh w-full p-4 md:p-6 flex flex-col relative bg-[#131f24] bg-gamified-pattern selection:bg-purple-500 selection:text-white overflow-y-auto md:overflow-hidden">

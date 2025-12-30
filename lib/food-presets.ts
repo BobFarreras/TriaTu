@@ -253,6 +253,10 @@ export const FOOD_PRESETS: FoodPreset[] = [
   { id: 'b14', emoji: '🍺', name: 'Cervesa', category: '🥤 Beguda', defaultUnit: 'ut', defaultLoc: StorageLocation.FRIDGE, step: 1 },
   { id: 'b15', emoji: '🍷', name: 'Vi', category: '🥤 Beguda', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 0.75 },
 
+  { id: 'b16', emoji: '🥂', name: 'Vi blanc', category: '🥤 Beguda', defaultUnit: 'l', defaultLoc: StorageLocation.FRIDGE, step: 0.75 },
+  { id: 'b17', emoji: '🍾', name: 'Cava', category: '🥤 Beguda', defaultUnit: 'l', defaultLoc: StorageLocation.FRIDGE, step: 0.75 },
+  { id: 'b18', emoji: '🥃', name: 'Vermut', category: '🥤 Beguda', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'b19', emoji: '🥤', name: 'Tònica', category: '🥤 Beguda', defaultUnit: 'ut', defaultLoc: StorageLocation.FRIDGE, step: 1 },
 
   // 🍪 SNACK
   { id: 's1', emoji: '🍪', name: 'Galetes', category: '🍪 Snack', defaultUnit: 'g', defaultLoc: StorageLocation.PANTRY, step: 100 },
@@ -287,6 +291,35 @@ export const FOOD_PRESETS: FoodPreset[] = [
   { id: 's22', emoji: '🍫', name: 'Barretes de cereals', category: '🍪 Snack', defaultUnit: 'ut', defaultLoc: StorageLocation.PANTRY, step: 1 },
   { id: 's23', emoji: '🍯', name: 'Mel', category: '🍪 Snack', defaultUnit: 'g', defaultLoc: StorageLocation.PANTRY, step: 250 },
 
+  // 🧂 CONDIMENTS I OLIS (NOVA CATEGORIA EXPANDIDA)
+  { id: 'co1', emoji: '🫒', name: 'Oli d\'oliva verge', category: '🧂 Condiments', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'co2', emoji: '🌻', name: 'Oli de gira-sol', category: '🧂 Condiments', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'co3', emoji: '🧂', name: 'Sal', category: '🧂 Condiments', defaultUnit: 'g', defaultLoc: StorageLocation.PANTRY, step: 500 },
+  { id: 'co4', emoji: '🧂', name: 'Pebre negre', category: '🧂 Condiments', defaultUnit: 'g', defaultLoc: StorageLocation.PANTRY, step: 50 },
+  { id: 'co5', emoji: '🍯', name: 'Vinagre de vi', category: '🧂 Condiments', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 0.5 },
+  { id: 'co6', emoji: '🍯', name: 'Vinagre de mòdena', category: '🧂 Condiments', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 0.25 },
+  { id: 'co7', emoji: '🧈', name: 'Mantega', category: '🥛 Lactic', defaultUnit: 'g', defaultLoc: StorageLocation.FRIDGE, step: 250 },
+  { id: 'co8', emoji: '🧈', name: 'Margarina', category: '🥛 Lactic', defaultUnit: 'g', defaultLoc: StorageLocation.FRIDGE, step: 250 },
+  { id: 'co9', emoji: '🍅', name: 'Quètxup', category: '🧂 Condiments', defaultUnit: 'ut', defaultLoc: StorageLocation.FRIDGE, step: 1 },
+  { id: 'co10', emoji: '🥚', name: 'Maionesa', category: '🧂 Condiments', defaultUnit: 'ut', defaultLoc: StorageLocation.FRIDGE, step: 1 },
+  { id: 'co11', emoji: '🍯', name: 'Mostassa', category: '🧂 Condiments', defaultUnit: 'ut', defaultLoc: StorageLocation.FRIDGE, step: 1 },
+  { id: 'co12', emoji: '🫙', name: 'Melmelada', category: '🍪 Snack', defaultUnit: 'ut', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'co13', emoji: '🍲', name: 'Brou de pollastre', category: '🥤 Beguda', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'co14', emoji: '🍲', name: 'Brou de peix', category: '🥤 Beguda', defaultUnit: 'l', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'co15', emoji: '🥘', name: 'Tomàquet fregit', category: '🧂 Condiments', defaultUnit: 'g', defaultLoc: StorageLocation.PANTRY, step: 400 },
+
+
+
+  // 🥖 CONGELATS RÀPIDS
+  { id: 'z1', emoji: '🍕', name: 'Pizza congelada', category: '🍪 Snack', defaultUnit: 'ut', defaultLoc: StorageLocation.FREEZER, step: 1 },
+  { id: 'z2', emoji: '🍟', name: 'Patates pre-fregides', category: '🥦 Verdura', defaultUnit: 'kg', defaultLoc: StorageLocation.FREEZER, step: 1 },
+  { id: 'z3', emoji: '🥘', name: 'Lassanya preparada', category: '🥩 Proteïna', defaultUnit: 'ut', defaultLoc: StorageLocation.FREEZER, step: 1 },
+  { id: 'z4', emoji: '🍘', name: 'Croquetes', category: '🥩 Proteïna', defaultUnit: 'g', defaultLoc: StorageLocation.FREEZER, step: 500 },
+
+  // 🍞 MÉS CEREALS I FORN
+  { id: 'c24', emoji: '🥐', name: 'Ensaïmada', category: '🥖 Cereals', defaultUnit: 'ut', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'c25', emoji: '🍰', name: 'Pa de pessic', category: '🥖 Cereals', defaultUnit: 'ut', defaultLoc: StorageLocation.PANTRY, step: 1 },
+  { id: 'c26', emoji: '🌮', name: 'Tortilles de blat', category: '🥖 Cereals', defaultUnit: 'ut', defaultLoc: StorageLocation.PANTRY, step: 1 },
 ];
 
 export const PRESET_CATEGORIES = Array.from(
