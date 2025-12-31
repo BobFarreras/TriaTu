@@ -14,34 +14,45 @@ describe('SaveGeneratedRecipe Use Case', () => {
       search: vi.fn(),
       findRandom: vi.fn(),
       addRating: vi.fn(),
-      getUserRatingForRecipe: vi.fn()
+      getUserRatingForRecipe: vi.fn(),
+      findAllByUser: vi.fn(), // Afegim els mètodes que falten al mock per si de cas
+      rate: vi.fn(),
+      getUserRatingsMap: vi.fn()
     };
 
     const useCase = new SaveGeneratedRecipe(mockRepo);
     
-    // 2. Dades de prova
-    const recipeProps = {
+    // 2. Dades de prova (INSTÀNCIA REAL DE RECIPE)
+    // Ara el constructor valida, així que hem de passar TOTS els camps requerits
+    const recipe = new Recipe({
       id: 'uuid-temporal-ia',
       authorId: 'ai-generated',
       name: 'Macarrons',
       ingredients: [{ name: 'Macarrons', quantity: 100, unit: 'g' }],
       steps: ['Bullir'],
       tags: [],
-      createdAt: new Date()
-    };
+      createdAt: new Date(),
+      // Camps obligatoris per passar la validació estricta:
+      dietaryTags: [],
+      prepTimeMinutes: 15,
+      likesCount: 0,
+      isPublic: false,
+      ratingSummary: { average: 0, count: 0, distribution: {} }
+    });
 
     // 3. Execució
-    await useCase.execute('user-123', recipeProps);
+    // ⚠️ CORRECCIÓ: L'ordre és (recipe, userId), no al revés.
+    await useCase.execute(recipe, 'user-123');
 
     // 4. Verificació
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
 
-    // ✅ CORRECCIÓ: Castegem a 'Mock' per accedir a .mock.calls de manera segura
-    // i castegem el resultat a 'Recipe' per poder llegir les props sense errors.
     const saveMock = mockRepo.save as Mock;
     const savedRecipe = saveMock.mock.calls[0][0] as Recipe;
 
     expect(savedRecipe).toBeInstanceOf(Recipe);
+    // Comprovem que s'ha fet l'"adopció" (canvi d'ID)
+    expect(savedRecipe.authorId).toBe('user-123'); 
     expect(savedRecipe.props.name).toBe('Macarrons');
   });
 });

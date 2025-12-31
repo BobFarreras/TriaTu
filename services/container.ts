@@ -1,5 +1,5 @@
 // src/services/container.ts
-
+import { SupabaseClient } from '@supabase/supabase-js'; // ✅ Importem el tipus
 // ADAPTERS - SUPABASE
 import { SupabaseDecisionRepository } from '@/adapters/supabase/SupabaseDecisionRepository';
 import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
@@ -57,7 +57,7 @@ import { SuggestRecipes } from '@/core/usecases/inventory/SuggestRecipes';
 import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe';
 import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
 import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration'; // ✅ NOU
-
+import { SupabaseRankingRepository } from '@/adapters/supabase/SupabaseRankingRepository';
 // --- INSTÀNCIES STATELESS (Singletons Implícits) ---
 // Són classes que no guarden estat intern, per tant podem reutilitzar la mateixa instància sempre.
 const decisionRepo = new SupabaseDecisionRepository();
@@ -68,7 +68,7 @@ const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
 const candidateRepo = new SupabaseCandidateRepository();
 const inventoryRepo = new SupabaseInventoryRepository();
-const recipeRepo = new SupabaseRecipeRepository(); 
+const recipeRepo = new SupabaseRecipeRepository();
 
 // --- SCANNER SERVICES ---
 const geminiAdapter = new GeminiImageRecognizer();
@@ -129,17 +129,17 @@ export const container = {
   },
 
   // === RECIPES (DATA & USE CASES) ===
-  
+
   // ✅ 1. EXPOSAR EL REPOSITORI (Necessari per les Actions com getRandomRecipes)
   getRecipeRepository: (): RecipeRepository => recipeRepo,
 
   getSaveGeneratedRecipe: () => new SaveGeneratedRecipe(recipeRepo),
-  
+
   getGetRecipe: () => new GetRecipe(recipeRepo),
 
   // ✅ 2. SUGGEST RECIPES (Mode Xef: Inventari + IA)
   getSuggestRecipes: () => {
-    const generator = container.getRecipeGenerator(); 
+    const generator = container.getRecipeGenerator();
     return new SuggestRecipes(
       inventoryRepo,
       recipeRepo,
@@ -155,4 +155,8 @@ export const container = {
   getRecipeById: () => ({
     execute: (id: string) => recipeRepo.findById(id)
   }),
+  // ✅ Tipatge estricte: Ara sabem que supabaseClient ha de ser un client real
+  getRankingRepository: (supabaseClient: SupabaseClient) => {
+    return new SupabaseRankingRepository(supabaseClient);
+  }
 };

@@ -1,81 +1,99 @@
-// src/core/domain/entities/Recipe.ts
-import { DietaryRestriction, RESTRICTION_KEYWORDS } from '../value-objects/DietaryRestriction';
+// ARXIU: core/domain/entities/Recipe.ts
 
-export interface Ingredient {
-  name: string;
-  quantity: number;
-  unit: string;
-}
-
-export interface RecipeRatingSummary {
-  average: number;
-  count: number;
-}
+import { DietaryRestriction } from "../value-objects/DietaryRestriction";
 
 export interface RecipeProps {
-  id: string;
-  authorId: string;    // ✅ NOU: Obligatori per saber qui l'ha creat
-  name: string;
-  ingredients: Ingredient[];
-  steps: string[];
-  tags: string[];
-  prepTimeMinutes?: number;
-  createdAt: Date;     // ✅ NOU: Per ordenar per novetat
-  ratingSummary?: RecipeRatingSummary; // ✅ NOU: Projecció per al llistat
+    id: string;
+    authorId: string;
+    name: string;
+    ingredients: { name: string; quantity: number; unit: string }[];
+    steps: string[];
+    tags: string[];
+    dietaryTags: string[];
+    prepTimeMinutes: number;
+    createdAt: Date;
+    likesCount: number;
+    isPublic: boolean;
+    ratingSummary: {
+        average: number;
+        count: number;
+        distribution: Record<number, number>;
+    };
 }
 
 export class Recipe {
-  constructor(public readonly props: RecipeProps) {
-    this.validate(props);
-    
-    // Inicialitzem valors per defecte si no venen
-    if (!this.props.ratingSummary) {
-      this.props.ratingSummary = { average: 0, count: 0 };
+    constructor(public readonly props: RecipeProps) {
+        this.validate(); 
     }
-  }
 
-  // Validació d'Invariants (Domain Logic Integrity)
-  private validate(props: RecipeProps): void {
-    if (!props.name || props.name.trim().length < 3) {
-      throw new Error("El nom de la recepta ha de tenir almenys 3 caràcters.");
+    // Getters
+    get id() { return this.props.id; }
+    get name() { return this.props.name; }
+    get ingredients() { return this.props.ingredients; }
+    get authorId() { return this.props.authorId; }
+    get steps() { return this.props.steps; }
+    get tags() { return this.props.tags; }
+    get dietaryTags() { return this.props.dietaryTags; }
+    get prepTimeMinutes() { return this.props.prepTimeMinutes; }
+    get createdAt() { return this.props.createdAt; }
+    get likesCount() { return this.props.likesCount; }
+    get isPublic() { return this.props.isPublic; }
+    get ratingSummary() { return this.props.ratingSummary; }
+
+    // 🧠 LÒGICA ACTUALITZADA PER SUPORTAR TAGS "SMART"
+    isSafeFor(restrictions: DietaryRestriction[]): boolean {
+        if (!restrictions || restrictions.length === 0) return true;
+
+        const normalizedRestrictions = restrictions.map(r => r.toLowerCase());
+        const ingredients = (this.props.ingredients || []).map(i => i.name.toLowerCase());
+        const tags = (this.props.dietaryTags || []).map(t => t.toLowerCase());
+
+        return normalizedRestrictions.every(restriction => {
+            // 1. SAFE OVERRIDE (WHITELIST)
+            // Si la recepta té un tag explícit que diu que és lliure d'això, és segura.
+            // Ex: restricció="gluten", tag="gluten-free" -> ✅ SAFE
+            if (tags.includes(`${restriction}-free`)) return true;
+            if (tags.includes(`no-${restriction}`)) return true;
+
+            // 2. DIET MATCHING (ADHERENCE)
+            // Si la restricció és un estil de vida (ex: "vegan") i la recepta té el tag "vegan", és segura.
+            // Abans això retornava false erròniament.
+            if (tags.includes(restriction)) return true;
+
+            // 3. INGREDIENT CHECK (BLACKLIST)
+            // Si no tenim permís explícit, mirem els ingredients per si de cas.
+            const hasBadIngredient = ingredients.some(ing => ing.includes(restriction));
+            if (hasBadIngredient) return false;
+            
+            // 4. EXPLICIT DANGER TAGS
+            // Si té un tag que diu explícitament que conté l'al·lergen.
+            if (tags.includes(`contains-${restriction}`)) return false;
+
+            return true;
+        });
     }
-    if (!props.ingredients || props.ingredients.length === 0) {
-      throw new Error("La recepta ha de tenir almenys un ingredient.");
+
+    validate(): void {
+        if (!this.props.name || this.props.name.length < 3) {
+            throw new Error("El nom ha de tenir almenys 3 caràcters.");
+        }
+
+        if (!this.props.ingredients || this.props.ingredients.length === 0) {
+            throw new Error("La recepta ha de tenir almenys un ingredient.");
+        }
+
+        for (const ingredient of this.props.ingredients) {
+            if (!ingredient.name || ingredient.quantity <= 0) {
+                throw new Error("Ingredient invàlid: cal nom i quantitat positiva.");
+            }
+        }
+
+        if (!this.props.steps || this.props.steps.length === 0) {
+             throw new Error("La recepta ha de tenir instruccions (passos).");
+        }
     }
-    if (!props.steps || props.steps.length === 0) {
-      throw new Error("La recepta ha de tenir instruccions (passos).");
+
+    toPrimitives(): RecipeProps {
+        return { ...this.props };
     }
-    if (!props.authorId) {
-      throw new Error("La recepta ha de tenir un autor.");
-    }
-  }
-
-  // Getters (Sucre sintàctic)
-  get id() { return this.props.id; }
-  get name() { return this.props.name; }
-  get ingredients() { return this.props.ingredients; }
-  get tags() { return this.props.tags; }
-  get authorId() { return this.props.authorId; }
-  get ratingSummary() { return this.props.ratingSummary!; }
-
-  // LÒGICA DE DOMINI: Seguretat Alimentària (MANTINGUDA INTACTA)
-  public isSafeFor(restrictions: DietaryRestriction[]): boolean {
-    if (restrictions.length === 0) return true;
-
-    const ingredientNames = this.props.ingredients.map(i => i.name.toLowerCase());
-    
-    // Nota: He eliminat el check de tags perquè era opcional i depèn de la consistència,
-    // però mantenim el check de keywords que és el més segur.
-    
-    return restrictions.every(restriction => {
-      const forbiddenWords = RESTRICTION_KEYWORDS[restriction];
-      if (!forbiddenWords) return true;
-
-      const hasForbiddenIngredient = ingredientNames.some(ingName => 
-        forbiddenWords.some(keyword => ingName.includes(keyword.toLowerCase()))
-      );
-
-      return !hasForbiddenIngredient;
-    });
-  }
 }

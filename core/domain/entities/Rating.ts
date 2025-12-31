@@ -1,9 +1,11 @@
 // src/core/domain/entities/Rating.ts
+
 export interface RatingProps {
   userId: string;
   value: number; // 1-5
   comment?: string;
   createdAt: Date;
+  recipeId: string; // ✅ Camp obligatori
 }
 
 export class Rating {
@@ -21,12 +23,16 @@ export class Rating {
     if (!props.userId) {
       throw new Error("La valoració ha de tenir un usuari associat.");
     }
-    if (props.comment && props.comment.length > 500) {
-      throw new Error("El comentari no pot superar els 500 caràcters.");
+    // Validem invariants de negoci
+    if (!props.recipeId) {
+       throw new Error("La valoració ha d'estar vinculada a una recepta.");
     }
   }
 
+  // === GETTERS PÚBLICS ===
   get value() { return this.props.value; }
   get userId() { return this.props.userId; }
   get comment() { return this.props.comment; }
+  get recipeId() { return this.props.recipeId; } // ✅ AFEGIT
+  get createdAt() { return this.props.createdAt; }
 }

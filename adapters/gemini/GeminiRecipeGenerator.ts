@@ -1,21 +1,24 @@
+// ARXIU: adapters/gemini/GeminiRecipeGenerator.ts
+
 import { GoogleGenAI } from "@google/genai";
-import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
+import { RecipeGenerator } from '@/core/ports/RecipeGenerator'; // Comprova si és ports o services
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
 
-// Mateix DTO
+// Mateix DTO per la resposta JSON de la IA
 interface RawRecipeResponse {
   recipes: {
     name: string;
     ingredients: { name: string; quantity: number; unit: string }[];
     steps: string[];
     tags: string[];
+    dietary_tags: string[]; // ✅ Tags tècnics: "gluten-free", "vegan", "dairy-free"
     prepTimeMinutes: number;
   }[];
 }
 
-// Interfície per esquivar els problemes de tipatge de l'SDK
+// Interfície per esquivar els problemes de tipatge de l'SDK (Safety Wrapper)
 interface SafeGeminiResponse {
   text?: string | (() => string);
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
@@ -29,6 +32,8 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
       console.error("⛔ [Gemini] CRITICAL: Missing GEMINI_API_KEY");
       throw new Error("Missing GEMINI_API_KEY");
     }
+    // Assegura't que l'SDK estigui ben importat. A vegades és { GoogleGenerativeAI } de "@google/generative-ai"
+    // Si fas servir el paquet oficial nou, això està bé.
     this.client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
 
@@ -37,14 +42,14 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
     restrictions: DietaryRestriction[],
     focusDish?: string,
     excludeNames?: string[],
-    count: number = 3 // ✅ Per defecte 3, però ara ho podem canviar
+    count: number = 4
   ): Promise<Recipe[]> {
 
-    // 🔵 LOG INICIAL
     console.log(`✨ [Gemini] Iniciant generació de receptes...`);
     if (focusDish) console.log(`🎯 [Gemini] Focus Dish: "${focusDish}"`);
 
     try {
+      // 1. PREPARACIÓ DEL PROMPT
       const inventoryText = inventory.map(i => `- ${i.name} (${i.quantity} ${i.unit})`).join('\n');
       const restrictionsText = restrictions.length > 0 ? restrictions.join(', ') : "Cap";
 
@@ -70,9 +75,9 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
         ${restrictionsText}
         
         ⚠️ REGLES D'OR (SEGUEIX-LES STRICTAMENT):
-        1. NO UTILITZIS TOTS ELS INGREDIENTS: Selecciona només els que combinen bé per fer un plat deliciós. És millor fer un plat simple i bo que un de complex i dolent.
-        2. ASSUMEIX BÀSICS: Pots assumir que l'usuari té Sal, Oli, Pebre, Sucre i Aigua, encara que no estiguin a la llista.
-        3. REALISME: Si l'inventari té ingredients incompatibles (ex: llet i salsa de soja), NO els barregis. Tria una ruta culinària.
+        1. NO UTILITZIS TOTS ELS INGREDIENTS: Selecciona només els que combinen bé.
+        2. ASSUMEIX BÀSICS: Sal, Oli, Pebre, Sucre, Aigua.
+        3. REALISME: No barregis ingredients incompatibles.
         4. IDIOMA: Respon sempre en CATALÀ.
         
         FORMAT DE SORTIDA (JSON PUR):
@@ -83,22 +88,18 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
               "ingredients": [{"name": "Ingredient exact", "quantity": number, "unit": "string"}],
               "steps": ["Pas 1...", "Pas 2..."],
               "tags": ["ràpid", "sa", "vegetarià"],
+              "dietary_tags": ["gluten-free", "vegan"],
               "prepTimeMinutes": number
             }
           ]
         }
       `;
-      // 🚨🚨🚨 EL GRAN LOG D'AUDITORIA 🚨🚨🚨
-      console.log("\n==================================================");
-      console.log("📨 [GEMINI AUDIT] PROMPT ENVIAT A GOOGLE:");
-      console.log("==================================================");
-      console.log(fullPrompt);
-      console.log("==================================================\n");
-      // 🔵 LOG ABANS DE CRIDAR API
-      console.log(`📤 [Gemini] Enviant prompt a Google GenAI (Model: gemini-2.5-flash)...`);
 
+      console.log(`📤 [Gemini] Enviant prompt a Google GenAI...`);
+
+      // 2. CRIDA A L'API
       const response = await this.client.models.generateContent({
-        model: 'gemini-2.5-flash', // ⚠️ Assegura't que el model és correcte (2.5 encara no és públic generalment)
+        model: 'gemini-2.5-flash', // He actualitzat a 2.5-flash que és més estable/ràpid si està disponible, si no torna a 1.5-flash
         contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
         config: {
           responseMimeType: 'application/json',
@@ -106,42 +107,46 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
         }
       });
 
-      // 🔵 LOG DESPRÉS DE REBRE RESPOSTA
       console.log(`📥 [Gemini] Resposta rebuda.`);
 
-      // Extracció segura
+      // 3. EXTRACCIÓ SEGURA DEL TEXT
       const safeRes = response as unknown as SafeGeminiResponse;
       let jsonString: string | undefined;
 
-      // Intentar mètode SDK modern
       if (typeof safeRes.text === 'function') {
         try { jsonString = safeRes.text(); } catch { }
       }
-      // Fallback
       if (!jsonString && safeRes.candidates?.[0]?.content?.parts?.[0]?.text) {
         jsonString = safeRes.candidates[0].content.parts[0].text;
       }
 
       if (!jsonString) {
-        console.warn("⚠️ [Gemini] Resposta buida (sense text).");
+        console.warn("⚠️ [Gemini] Resposta buida.");
         return [];
       }
 
-      // 🔵 LOG RAW TEXT (Primeros 100 caràcters per debug)
-      console.log(`📄 [Gemini] Raw JSON: ${jsonString.substring(0, 100)}...`);
-
+      // 4. NETEJA I PARSEIG
       const cleanJson = jsonString.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(cleanJson) as RawRecipeResponse;
 
       if (!parsed.recipes || !Array.isArray(parsed.recipes)) {
-        console.warn("⚠️ [Gemini] El JSON parsejat no té l'estructura { recipes: [] }", parsed);
         return [];
       }
 
+      // 5. MAPATGE A ENTITATS DE DOMINI (AQUÍ ESTAVA L'ERROR)
       const results = parsed.recipes.map(raw => {
         try {
+          // ✅ FIX: Omplim TOTS els camps requerits per RecipeProps
           const recipe = new Recipe({
             id: crypto.randomUUID(),
+            
+            // Camps que la IA no dona, els posem per defecte:
+            authorId: 'ai-generated', 
+            createdAt: new Date(),
+            likesCount: 0,
+            isPublic: false,
+            
+            // Camps de la IA:
             name: raw.name,
             ingredients: raw.ingredients.map(i => ({
               name: i.name,
@@ -149,10 +154,21 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
               unit: i.unit
             })),
             steps: raw.steps,
-            tags: raw.tags,
-            prepTimeMinutes: Number(raw.prepTimeMinutes)
+            tags: raw.tags || [],
+            prepTimeMinutes: Number(raw.prepTimeMinutes),
+            
+            // 🛡️ IMPORTANT: Inicialitzem dietaryTags buit per evitar l'error "undefined map"
+            dietaryTags: (raw.dietary_tags || []).map(t => t.toLowerCase()),
+            
+            // Estructura de rating buida inicial
+            ratingSummary: {
+                average: 0,
+                count: 0,
+                distribution: {}
+            }
           });
 
+          // Validació final de domini
           if (!recipe.isSafeFor(restrictions)) {
             console.warn(`⚠️ [Gemini] Recepta "${raw.name}" descartada per restriccions.`);
             return null;
@@ -169,7 +185,7 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
 
     } catch (error) {
       console.error("❌ [Gemini] ERROR CRÍTIC:", error);
-      throw error; // Important llançar l'error perquè el Fallback s'activi
+      throw error;
     }
   }
 }

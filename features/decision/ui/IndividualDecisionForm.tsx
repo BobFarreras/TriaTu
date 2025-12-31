@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useIndividualDecision } from '../logic/useIndividualDecision';
 import { RecipeGrid } from '@/features/recipes/ui/RecipeGrid';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react'; // ✅ Importem Chevron
 import { FateView } from './views/FateView';
 import { ChefView } from './views/ChefView';
 
@@ -11,7 +12,10 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
   const logic = useIndividualDecision(userId);
   const isFate = logic.mode === 'FATE';
 
-  // --- VISTA 1: RESULTATS ---
+  // ✅ ESTAT: Controlem l'expansió en mòbil
+  const [isMobileExpanded, setIsMobileExpanded] = useState(true);
+
+  // --- VISTA 1: RESULTATS (Aquesta sol ocupar tota la pantalla, no la toquem normalment) ---
   if (logic.showResults) {
     return (
       <div className="h-full w-full flex flex-col animate-in fade-in zoom-in-95 duration-300 bg-zinc-900/90 rounded-[2rem] overflow-hidden border border-zinc-800">
@@ -30,27 +34,56 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
     );
   }
 
-  // --- VISTA 2: FORMULARI ---
+  // --- VISTA 2: FORMULARI (Aquí apliquem la lògica de recollir-se) ---
   return (
-    <div className="w-full h-full flex flex-col bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] border-2 border-zinc-800 shadow-2xl overflow-hidden relative transition-all">
+    // ✅ CANVI CLAU AL CONTAINER:
+    // En mòbil: Si està expandit 'h-[550px]' (o la mida que vulguis), si no 'h-14' (només header).
+    // En desktop (lg): Sempre 'lg:h-full'.
+    <div className={`
+        w-full flex flex-col bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] border-2 border-zinc-800 shadow-2xl overflow-hidden relative transition-all duration-500 ease-in-out
+        ${isMobileExpanded ? 'h-[580px]' : 'h-14'} 
+        lg:h-full lg:transition-none
+    `}>
         
-        {/* Glow de fons (Canvia a Vermell si hi ha error) */}
+        {/* Glow de fons */}
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] blur-[80px] rounded-full pointer-events-none transition-colors duration-500
             ${logic.error ? 'bg-red-500/20 opacity-40' : (isFate ? 'bg-emerald-500/20' : 'bg-purple-500/20')} 
             opacity-20`} 
         />
 
-        {/* 1. HEADER INTEGRAT */}
+        {/* 1. HEADER INTEGRAT (On has demanat el botó) */}
+        {/* Afegim 'cursor-pointer lg:cursor-default' per indicar que en mòbil es pot clicar el header sencer si vols, o només el botó */}
         <div className="h-14 shrink-0 bg-zinc-950/40 border-b border-white/5 flex items-center justify-between px-3 md:px-4 z-20">
+            
             <div className="flex items-center gap-2">
+                {/* Icona d'Estat */}
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${logic.error ? 'bg-red-900/50 text-red-200' : (isFate ? 'bg-emerald-600 text-white' : 'bg-purple-600 text-white')}`}>
                     <span className="text-lg">{logic.error ? '⚠️' : '⚡'}</span>
                 </div>
-                <span className="hidden sm:block font-black text-white text-xs uppercase tracking-wide">Mode Ràpid</span>
+
+                {/* ✅ BOTÓ PLEGAT (Només Mòbil) */}
+                <button 
+                    onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+                    className="lg:hidden flex items-center gap-2 group text-left outline-none"
+                >
+                    <span className="font-black text-white text-xs uppercase tracking-wide">
+                        {isMobileExpanded ? 'Mode Ràpid' : 'Obrir Accions'}
+                    </span>
+                    <ChevronDown 
+                        size={16} 
+                        className={`text-zinc-400 transition-transform duration-300 ${isMobileExpanded ? 'rotate-180' : ''} group-active:scale-90`} 
+                    />
+                </button>
+
+                {/* Títol Desktop (Estàtic) */}
+                <span className="hidden lg:block font-black text-white text-xs uppercase tracking-wide">
+                    Mode Ràpid
+                </span>
             </div>
 
-            {/* SELECTOR (Desactivat si hi ha error visualment, o el deixem actiu per canviar) */}
-            <div className="flex bg-black/40 p-1 rounded-lg border border-white/10">
+            {/* SELECTOR */}
+            {/* Ocultem el selector en mòbil si està tancat per netejar la vista, o el deixem. Jo l'oculto quan està tancat per evitar clicks accidentals. */}
+            <div className={`flex bg-black/40 p-1 rounded-lg border border-white/10 transition-opacity duration-300 ${!isMobileExpanded ? 'opacity-0 pointer-events-none lg:opacity-100 lg:pointer-events-auto' : 'opacity-100'}`}>
                 <button
                     onClick={() => logic.setMode('FATE')}
                     className={`px-3 py-1.5 rounded-md text-[10px] font-bold flex items-center gap-1.5 transition-all
@@ -69,13 +102,13 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
         </div>
 
         {/* 2. COS PRINCIPAL */}
-        <div className="flex-1 flex flex-col p-4 md:p-6 z-10 min-h-0">
+        {/* Afegim una transició d'opacitat perquè quedi suau quan es tanca */}
+        <div className={`flex-1 flex flex-col p-4 md:p-6 z-10 min-h-0 transition-opacity duration-300 ${!isMobileExpanded ? 'opacity-0 lg:opacity-100' : 'opacity-100'}`}>
             
-            {/* ZONA CENTRAL: CONDICIONAL (EMOJI vs ERROR) */}
+            {/* ZONA CENTRAL */}
             <div className="flex-1 flex flex-col items-center justify-center min-h-0 text-center">
                 
                 {logic.error ? (
-                    // --- ESTAT D'ERROR (Substitueix l'Emoji) ---
                     <div className="animate-in zoom-in duration-300 flex flex-col items-center">
                         <div className="text-6xl md:text-7xl mb-3 filter drop-shadow-2xl animate-shake select-none">
                             🚫
@@ -90,7 +123,6 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
                         </div>
                     </div>
                 ) : (
-                    // --- ESTAT NORMAL (Emoji + Text) ---
                     <div className="animate-in zoom-in duration-300 flex flex-col items-center">
                         <div className="text-6xl md:text-7xl mb-3 filter drop-shadow-2xl key={logic.mode} select-none">
                             {isFate ? (
@@ -111,7 +143,7 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
                 )}
             </div>
 
-            {/* ZONA INFERIOR: Controls */}
+            {/* ZONA INFERIOR */}
             <div className="shrink-0 w-full mt-2">
                 {isFate ? (
                     <FateView onDecide={logic.executeAction} isPending={logic.isPending} />

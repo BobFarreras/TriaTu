@@ -1,5 +1,5 @@
 
-\restrict nLfSMvzHVAq2GNQDJLuW2L0ejDHhuiHVBBjCy61hJ4u4WMUuDYFZm2MGwoW8pgd
+\restrict r9Jd1ETQy7P926379c9qanqoaFnMx6AGzDyjpl7LXKe06HM6FVMx5sXYtzDsBQs
 
 
 SET statement_timeout = 0;
@@ -37,9 +37,68 @@ $$;
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
 
+
+CREATE OR REPLACE FUNCTION "public"."update_recipe_rating_stats"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    _avg numeric;
+    _count integer;
+    _dist jsonb;
+BEGIN
+    -- Calculem estadístiques
+    SELECT 
+        COALESCE(AVG(value), 0), 
+        COUNT(*)
+    INTO _avg, _count
+    FROM public.recipe_ratings
+    WHERE recipe_id = COALESCE(NEW.recipe_id, OLD.recipe_id);
+
+    -- Calculem distribució (estrelles: vots)
+    SELECT jsonb_object_agg(stars, count)
+    INTO _dist
+    FROM (
+        SELECT value as stars, count(*) as count
+        FROM public.recipe_ratings
+        WHERE recipe_id = COALESCE(NEW.recipe_id, OLD.recipe_id)
+        GROUP BY value
+    ) t;
+
+    -- Actualitzem la recepta
+    UPDATE public.saved_recipes
+    SET 
+        rating_avg = ROUND(_avg, 2),
+        rating_count = _count,
+        rating_distribution = COALESCE(_dist, '{}'::jsonb)
+    WHERE id = COALESCE(NEW.recipe_id, OLD.recipe_id);
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_recipe_rating_stats"() OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."community_recipes" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "author_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "ingredients" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "steps" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "tags" "text"[] DEFAULT '{}'::"text"[],
+    "prep_time_minutes" integer,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "community_recipes_title_check" CHECK (("char_length"("title") >= 3))
+);
+
+
+ALTER TABLE "public"."community_recipes" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."decision_outcomes" (
@@ -122,6 +181,38 @@ CREATE TABLE IF NOT EXISTS "public"."preference_profiles" (
 ALTER TABLE "public"."preference_profiles" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."recipe_ratings" (
+    "recipe_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "value" integer NOT NULL,
+    "comment" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "recipe_ratings_comment_check" CHECK (("char_length"("comment") <= 500)),
+    CONSTRAINT "recipe_ratings_value_check" CHECK ((("value" >= 1) AND ("value" <= 5)))
+);
+
+
+ALTER TABLE "public"."recipe_ratings" OWNER TO "postgres";
+
+
+CREATE OR REPLACE VIEW "public"."recipes_with_stats" AS
+SELECT
+    NULL::"uuid" AS "id",
+    NULL::"uuid" AS "author_id",
+    NULL::"text" AS "title",
+    NULL::"text" AS "description",
+    NULL::"jsonb" AS "ingredients",
+    NULL::"jsonb" AS "steps",
+    NULL::"text"[] AS "tags",
+    NULL::integer AS "prep_time_minutes",
+    NULL::timestamp with time zone AS "created_at",
+    NULL::double precision AS "average_rating",
+    NULL::integer AS "rating_count";
+
+
+ALTER VIEW "public"."recipes_with_stats" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."room_candidates" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "room_id" "uuid" NOT NULL,
@@ -153,11 +244,22 @@ CREATE TABLE IF NOT EXISTS "public"."saved_recipes" (
     "tags" "jsonb" DEFAULT '[]'::"jsonb",
     "prep_time_minutes" integer,
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "dietary_tags" "text"[] DEFAULT '{}'::"text"[]
+    "dietary_tags" "text"[] DEFAULT '{}'::"text"[],
+    "is_public" boolean DEFAULT false,
+    "author_name" "text" DEFAULT 'IA'::"text",
+    "likes_count" integer DEFAULT 0,
+    "rating_avg" numeric(3,2) DEFAULT 0,
+    "rating_count" integer DEFAULT 0,
+    "rating_distribution" "jsonb" DEFAULT '{}'::"jsonb"
 );
 
 
 ALTER TABLE "public"."saved_recipes" OWNER TO "postgres";
+
+
+ALTER TABLE ONLY "public"."community_recipes"
+    ADD CONSTRAINT "community_recipes_pkey" PRIMARY KEY ("id");
+
 
 
 ALTER TABLE ONLY "public"."decision_outcomes"
@@ -190,6 +292,11 @@ ALTER TABLE ONLY "public"."preference_profiles"
 
 
 
+ALTER TABLE ONLY "public"."recipe_ratings"
+    ADD CONSTRAINT "recipe_ratings_pkey" PRIMARY KEY ("recipe_id", "user_id");
+
+
+
 ALTER TABLE ONLY "public"."room_candidates"
     ADD CONSTRAINT "room_candidates_pkey" PRIMARY KEY ("id");
 
@@ -205,7 +312,46 @@ ALTER TABLE ONLY "public"."saved_recipes"
 
 
 
+CREATE INDEX "idx_community_recipes_author" ON "public"."community_recipes" USING "btree" ("author_id");
+
+
+
+CREATE INDEX "idx_community_recipes_tags" ON "public"."community_recipes" USING "gin" ("tags");
+
+
+
+CREATE INDEX "idx_recipe_ratings_recipe" ON "public"."recipe_ratings" USING "btree" ("recipe_id");
+
+
+
 CREATE INDEX "idx_saved_recipes_dietary_tags" ON "public"."saved_recipes" USING "gin" ("dietary_tags");
+
+
+
+CREATE OR REPLACE VIEW "public"."recipes_with_stats" AS
+ SELECT "r"."id",
+    "r"."author_id",
+    "r"."title",
+    "r"."description",
+    "r"."ingredients",
+    "r"."steps",
+    "r"."tags",
+    "r"."prep_time_minutes",
+    "r"."created_at",
+    (COALESCE("avg"("rt"."value"), (0)::numeric))::double precision AS "average_rating",
+    ("count"("rt"."value"))::integer AS "rating_count"
+   FROM ("public"."community_recipes" "r"
+     LEFT JOIN "public"."recipe_ratings" "rt" ON (("r"."id" = "rt"."recipe_id")))
+  GROUP BY "r"."id";
+
+
+
+CREATE OR REPLACE TRIGGER "on_vote_update_recipe" AFTER INSERT OR DELETE OR UPDATE ON "public"."recipe_ratings" FOR EACH ROW EXECUTE FUNCTION "public"."update_recipe_rating_stats"();
+
+
+
+ALTER TABLE ONLY "public"."community_recipes"
+    ADD CONSTRAINT "community_recipes_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -221,6 +367,16 @@ ALTER TABLE ONLY "public"."group_decisions"
 
 ALTER TABLE ONLY "public"."inventory_items"
     ADD CONSTRAINT "inventory_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."recipe_ratings"
+    ADD CONSTRAINT "recipe_ratings_recipe_id_fkey" FOREIGN KEY ("recipe_id") REFERENCES "public"."saved_recipes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."recipe_ratings"
+    ADD CONSTRAINT "recipe_ratings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -241,6 +397,18 @@ ALTER TABLE ONLY "public"."room_participants"
 
 ALTER TABLE ONLY "public"."saved_recipes"
     ADD CONSTRAINT "saved_recipes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+CREATE POLICY "Anyone can read ratings" ON "public"."recipe_ratings" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Authors can delete own recipes" ON "public"."community_recipes" FOR DELETE USING (("auth"."uid"() = "author_id"));
+
+
+
+CREATE POLICY "Authors can update own recipes" ON "public"."community_recipes" FOR UPDATE USING (("auth"."uid"() = "author_id"));
 
 
 
@@ -276,7 +444,23 @@ CREATE POLICY "Insert group decisions" ON "public"."group_decisions" USING (true
 
 
 
+CREATE POLICY "Public recipes are viewable by everyone" ON "public"."community_recipes" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Public recipes are viewable by everyone" ON "public"."saved_recipes" FOR SELECT USING ((("auth"."uid"() = "user_id") OR ("is_public" = true)));
+
+
+
+CREATE POLICY "Ratings are viewable by everyone" ON "public"."recipe_ratings" FOR SELECT USING (true);
+
+
+
 CREATE POLICY "Read group decisions" ON "public"."group_decisions" USING (true);
+
+
+
+CREATE POLICY "Users can create recipes" ON "public"."community_recipes" FOR INSERT WITH CHECK (("auth"."uid"() = "author_id"));
 
 
 
@@ -292,12 +476,23 @@ CREATE POLICY "Users can manage their own recipes" ON "public"."saved_recipes" U
 
 
 
+CREATE POLICY "Users can rate" ON "public"."recipe_ratings" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can rate recipes" ON "public"."recipe_ratings" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
 CREATE POLICY "Users can update their own inventory" ON "public"."inventory_items" FOR UPDATE USING (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Users can view their own inventory" ON "public"."inventory_items" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
+
+
+ALTER TABLE "public"."community_recipes" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."decision_outcomes" ENABLE ROW LEVEL SECURITY;
@@ -316,6 +511,9 @@ ALTER TABLE "public"."inventory_items" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."preference_profiles" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."recipe_ratings" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."room_candidates" ENABLE ROW LEVEL SECURITY;
@@ -356,6 +554,18 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."update_recipe_rating_stats"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_recipe_rating_stats"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_recipe_rating_stats"() TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."community_recipes" TO "anon";
+GRANT ALL ON TABLE "public"."community_recipes" TO "authenticated";
+GRANT ALL ON TABLE "public"."community_recipes" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."decision_outcomes" TO "anon";
 GRANT ALL ON TABLE "public"."decision_outcomes" TO "authenticated";
 GRANT ALL ON TABLE "public"."decision_outcomes" TO "service_role";
@@ -389,6 +599,18 @@ GRANT ALL ON TABLE "public"."inventory_items" TO "service_role";
 GRANT ALL ON TABLE "public"."preference_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."preference_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."preference_profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."recipe_ratings" TO "anon";
+GRANT ALL ON TABLE "public"."recipe_ratings" TO "authenticated";
+GRANT ALL ON TABLE "public"."recipe_ratings" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."recipes_with_stats" TO "anon";
+GRANT ALL ON TABLE "public"."recipes_with_stats" TO "authenticated";
+GRANT ALL ON TABLE "public"."recipes_with_stats" TO "service_role";
 
 
 
@@ -440,6 +662,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict nLfSMvzHVAq2GNQDJLuW2L0ejDHhuiHVBBjCy61hJ4u4WMUuDYFZm2MGwoW8pgd
+\unrestrict r9Jd1ETQy7P926379c9qanqoaFnMx6AGzDyjpl7LXKe06HM6FVMx5sXYtzDsBQs
 
 RESET ALL;

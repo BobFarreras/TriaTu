@@ -1,14 +1,15 @@
-import { InventoryRepository } from '@/core/ports/InventoryRepository';
+// ARXIU: adapters/supabase/SupabaseInventoryRepository.ts
+
+import { InventoryRepository } from '@/core/ports/InventoryRepository'; // o domain/repositories
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
-import { createClient } from '@/adapters/supabase/server';
+import { createClient } from '@/adapters/supabase/server'; // o adapters/supabase/server
 
-// DTO actualitzat amb el camp emoji (que pot ser null a la DB)
 interface InventoryItemRow {
   id: string;
   user_id: string;
   name: string;
-  emoji: string | null; // ✅ AFEGIT
+  emoji: string | null;
   quantity: number;
   unit: string;
   location: string;
@@ -16,32 +17,23 @@ interface InventoryItemRow {
   added_at: string;
 }
 
-// Funció Helper per separar l'emoji del text (retrocompatibilitat)
-// Funció Helper per separar l'emoji del text (Versió compatible ES5/ES6)
+// Helper per separar emojis
 function splitEmoji(text: string): { emoji: string | undefined; name: string } {
-  // Regex compatible que busca rangs Unicode d'emojis comuns sense usar \p
   const regex = /^([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])\s*/;
-  
   const match = text.match(regex);
-  
   if (match) {
-    return { 
-      emoji: match[1], 
-      name: text.replace(match[0], '').trim() 
-    };
+    return { emoji: match[1], name: text.replace(match[0], '').trim() };
   }
   return { emoji: undefined, name: text.trim() };
 }
 
 export class SupabaseInventoryRepository implements InventoryRepository {
 
-  // --- MAPPER INTEL·LIGENT ---
   private toDomain(row: InventoryItemRow): InventoryItem {
     let finalEmoji = row.emoji;
     let finalName = row.name;
 
-    // 🛠️ MIGRACIÓ AUTOMÀTICA AL VOL:
-    // Si no tenim emoji a la columna 'emoji', però el nom en té un enganxat...
+    // Migració automàtica: si l'emoji està al nom, l'extraiem
     if (!finalEmoji && finalName) {
         const separated = splitEmoji(finalName);
         if (separated.emoji) {
@@ -53,8 +45,8 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     return InventoryItem.create({
       id: row.id,
       userId: row.user_id,
-      name: finalName,   // Nom net
-      emoji: finalEmoji || undefined, // Emoji separat (o undefined si no en té)
+      name: finalName,
+      emoji: finalEmoji || undefined, // Ara TS no es queixarà
       quantity: Number(row.quantity),
       unit: row.unit,
       location: row.location as StorageLocation,
@@ -63,26 +55,22 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     });
   }
 
-  // --- IMPLEMENTACIÓ DEL CONTRACTE ---
-
   async save(item: InventoryItem): Promise<void> {
     const supabase = await createClient();
 
     const row = {
-      id: item.props.id,
-      user_id: item.props.userId,
-      name: item.props.name,
-      emoji: item.props.emoji, // ✅ Ara guardem l'emoji a la seva columna
-      quantity: item.props.quantity,
-      unit: item.props.unit,
-      location: item.props.location,
-      expiry_date: item.props.expiryDate ? item.props.expiryDate.toISOString() : null,
-      added_at: item.props.addedAt.toISOString()
+      id: item.id,
+      user_id: item.userId,
+      name: item.name,
+      emoji: item.emoji, // Guardem l'emoji net
+      quantity: item.quantity,
+      unit: item.unit,
+      location: item.location,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString() : null,
+      added_at: item.addedAt.toISOString()
     };
 
-    const { error } = await supabase
-      .from('inventory_items')
-      .upsert(row);
+    const { error } = await supabase.from('inventory_items').upsert(row);
 
     if (error) {
       console.error('Error saving inventory item:', error);
@@ -92,7 +80,6 @@ export class SupabaseInventoryRepository implements InventoryRepository {
 
   async findById(id: string): Promise<InventoryItem | null> {
     const supabase = await createClient();
-
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
@@ -100,13 +87,13 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       .single();
 
     if (error || !data) return null;
-
     return this.toDomain(data as InventoryItemRow);
   }
 
   async findByUser(userId: string): Promise<InventoryItem[]> {
     const supabase = await createClient();
-
+    
+    // Utilitzem reduce per filtrar errors silenciosament (Robustesa)
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
@@ -114,8 +101,18 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       .order('expiry_date', { ascending: true, nullsFirst: false });
 
     if (error) throw new Error(error.message);
+    if (!data) return [];
 
-    return (data as InventoryItemRow[]).map(row => this.toDomain(row));
+    return (data as InventoryItemRow[]).reduce((acc: InventoryItem[], row) => {
+        try {
+            // Filtrem negatius extrems, però acceptem 0
+            if (Number(row.quantity) < 0) return acc;
+            acc.push(this.toDomain(row));
+        } catch (e) {
+            console.warn(`Item ignorat: ${row.id} | ${row.name} | ${row.quantity} | ${e}`);
+        }
+        return acc;
+    }, []);
   }
 
   async delete(id: string): Promise<void> {
@@ -143,24 +140,18 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     return (data as InventoryItemRow[]).map(row => this.toDomain(row));
   }
 
+  // Batch methods (opcionals segons la teva interfície)
   async batchUpdate(updates: { id: string; quantity: number }[]): Promise<void> {
     const supabase = await createClient();
     const promises = updates.map(update =>
-      supabase
-        .from('inventory_items')
-        .update({ quantity: update.quantity })
-        .eq('id', update.id)
+      supabase.from('inventory_items').update({ quantity: update.quantity }).eq('id', update.id)
     );
     await Promise.all(promises);
   }
 
   async batchDelete(ids: string[]): Promise<void> {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from('inventory_items')
-      .delete()
-      .in('id', ids);
-
+    const { error } = await supabase.from('inventory_items').delete().in('id', ids);
     if (error) throw new Error(error.message);
   }
 }

@@ -1,26 +1,43 @@
 // src/core/usecases/community/PublishRecipe.ts
-import { Recipe, RecipeProps } from '@/core/domain/entities/Recipe';
-import { RecipeRepository } from '@/core/ports/RecipeRepository'; // O ports/RecipeRepository segons la teva estructura
+import { RecipeRepository } from '../../ports/RecipeRepository';
+import { Recipe, Ingredient } from '../../domain/entities/Recipe';
+
+// Definim el DTO d'entrada (el que ve del formulari/acció)
+export interface PublishRecipeRequest {
+  name: string;
+  ingredients: Ingredient[];
+  steps: string[];
+  tags: string[];
+  dietaryTags: string[];
+  prepTimeMinutes: number;
+  isPublic?: boolean;
+}
 
 export class PublishRecipe {
-  constructor(private recipeRepo: RecipeRepository) {}
+  constructor(private readonly recipeRepo: RecipeRepository) { }
 
-  async execute(userId: string, input: Omit<RecipeProps, 'id' | 'authorId' | 'createdAt' | 'ratingSummary'>): Promise<void> {
-    
-    // 1. Generem l'ID aquí o deixem que la DB ho faci. 
-    // Per DDD pur, l'entitat ha de tenir ID al néixer. Usem un generador simple o UUID.
-    const newId = crypto.randomUUID(); 
-
-    // 2. Creem l'entitat. Això dispararà les validacions d'invariants (títol curt, ingredients buits...)
-    const recipe = new Recipe({
-      ...input,
-      id: newId,
-      authorId: userId,
+  async execute(authorId: string, request: PublishRecipeRequest): Promise<void> {
+    const newRecipe = new Recipe({
+      id: crypto.randomUUID(),
+      authorId: authorId,
+      name: request.name,
+      ingredients: request.ingredients,
+      steps: request.steps,
+      tags: request.tags,
+      dietaryTags: request.dietaryTags,
+      prepTimeMinutes: request.prepTimeMinutes,
       createdAt: new Date(),
-      ratingSummary: { average: 0, count: 0 }
+      isPublic: request.isPublic ?? true,
+
+      likesCount: 0,
+      // FIX: Afegim distribution al literal de l'objecte
+      ratingSummary: {
+        average: 0,
+        count: 0,
+        distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } // Inicialització explícita (opcional, {} també valdria)
+      }
     });
 
-    // 3. Guardem via el port
-    await this.recipeRepo.save(recipe);
+    await this.recipeRepo.save(newRecipe);
   }
 }

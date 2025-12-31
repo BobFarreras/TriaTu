@@ -1,8 +1,7 @@
-
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
-import { DashboardContent } from '@/features/dashboard/ui/DashboardContent';
-import { container } from '@/services/container'; // ✅ Importem el contenidor
+import { DashboardContent } from '@/features/dashboard/ui/DashboardContent'; // Assegura't que la ruta és correcta
+import { container } from '@/services/container';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -16,13 +15,34 @@ export default async function DashboardPage() {
   const getUserRooms = container.getUserRooms();
   const rooms = await getUserRooms.execute(user.id);
 
-  // ✅ 2. Mapegem a DTO simple
+  // ✅ 2. RECUPEREM EL PERFIL (NOU)
+  // Nota: Si tens un UseCase 'getUserProfile', usa'l. Si no, fem una crida directa segura (Read Model).
+  const { data: rawProfile } = await supabase
+    .from('preference_profiles')
+    .select('food_preferences, exclusions')
+    .eq('user_id', user.id)
+    .single();
+
+  // Normalitzem per evitar errors si és null
+  const profile = {
+    foodPreferences: rawProfile?.food_preferences || [],
+    exclusions: rawProfile?.exclusions || []
+  };
+
+  // ✅ 3. Mapegem a DTO simple per a les sales
   const roomsDTO = rooms.map(r => ({
     id: r.id,
     name: r.name,
     isHost: r.hostUserId === user.id
   }));
 
-  // ✅ 3. Passem les sales al client
-  return <DashboardContent userName={name} userId={user.id} userRooms={roomsDTO} />;
+  // ✅ 4. Passem totes les dades al client
+  return (
+    <DashboardContent 
+      userName={name} 
+      userId={user.id} 
+      userRooms={roomsDTO} 
+      profileData={profile} // Ara 'profile' ja existeix
+    />
+  );
 }

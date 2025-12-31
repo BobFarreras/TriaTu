@@ -9,26 +9,36 @@ export async function toggleIngredientStockAction(
     quantityRequired: number, 
     action: 'CONSUME' | 'RESTORE'
 ) {
+    console.log(`\n🕵️‍♂️ [ACTION START] User: ${userId} | Ing: "${ingredientName}" | Qty: ${quantityRequired} | Action: ${action}`);
+
     const supabase = await createClient();
 
     try {
-        // 1. Busquem l'item a l'inventari (Match fuzzy per nom)
-        // Nota: Això és una simplificació. L'ideal seria tenir IDs exactes, però la IA genera noms de text.
-        const { data: items } = await supabase
-            .from('inventory_items')
+        // 1. Busquem l'item (CORRECCIÓ DE TAULA AQUÍ 👇)
+        const searchQuery = `%${ingredientName}%`;
+        
+        const { data: items, error: searchError } = await supabase
+            .from('inventory_items') // ✅ ABANS ERA 'inventory'
             .select('*')
             .eq('user_id', userId)
-            .ilike('name', `%${ingredientName}%`); // Busquem similitud
+            .ilike('name', searchQuery);
 
-        // Si no trobem res semblant, no podem restar
-        if (!items || items.length === 0) {
-            return { success: false, error: 'Producte no trobat al rebost.' };
+        if (searchError) {
+            console.error("❌ [ACTION ERROR] Error cercant a Supabase:", searchError);
+            return { success: false, error: 'Error de base de dades.' };
         }
 
-        // Agafem el millor candidat (el primer)
+        console.log(`🕵️‍♂️ [ACTION SEARCH] Query: "${searchQuery}" -> Trobats: ${items?.length || 0} items.`);
+
+        if (!items || items.length === 0) {
+            console.warn(`⚠️ [ACTION WARN] No s'ha trobat cap producte semblant a "${ingredientName}"`);
+            return { success: false, error: `Producte "${ingredientName}" no trobat al rebost.` };
+        }
+
         const item = items[0];
+        console.log(`✅ [ACTION MATCH] Item seleccionat: "${item.name}" (ID: ${item.id}) | Stock actual: ${item.quantity}`);
+
         const currentQty = Number(item.quantity);
-        
         let newQty = currentQty;
 
         if (action === 'CONSUME') {
@@ -37,13 +47,20 @@ export async function toggleIngredientStockAction(
             newQty = currentQty + quantityRequired;
         }
 
-        // 2. Actualitzem
-        const { error } = await supabase
-            .from('inventory_items')
+        console.log(`🧮 [ACTION CALC] ${currentQty} -> ${newQty} (${action})`);
+
+        // 2. Actualitzem (CORRECCIÓ DE TAULA AQUÍ 👇)
+        const { error: updateError } = await supabase
+            .from('inventory_items') // ✅ ABANS ERA 'inventory'
             .update({ quantity: newQty })
             .eq('id', item.id);
 
-        if (error) throw error;
+        if (updateError) {
+            console.error("❌ [ACTION UPDATE ERROR]", updateError);
+            throw updateError;
+        }
+
+        console.log(`💾 [ACTION SAVE] Actualització correcta a DB.`);
 
         revalidatePath('/inventory');
         revalidatePath(`/recipes`); 
@@ -51,7 +68,7 @@ export async function toggleIngredientStockAction(
         return { success: true, newQuantity: newQty, unit: item.unit };
 
     } catch (error) {
-        console.error('Error updating stock:', error);
+        console.error('❌ [ACTION EXCEPTION]', error);
         return { success: false, error: 'Error de connexió.' };
     }
 }

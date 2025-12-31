@@ -1,42 +1,34 @@
-// src/core/usecases/community/RateRecipe.ts
 import { Rating } from '@/core/domain/entities/Rating';
-import { RecipeRepository } from '@/core/ports/RecipeRepository'; // O ports/RecipeRepository segons la teva estructura
+import { RecipeRepository } from '@/core/ports/RecipeRepository';
 
-interface RateRecipeInput {
-  recipeId: string;
+interface RateRecipeRequest {
   userId: string;
+  recipeId: string;
   value: number;
   comment?: string;
 }
 
 export class RateRecipe {
-  constructor(private recipeRepo: RecipeRepository) {}
+  constructor(private readonly repository: RecipeRepository) {}
 
-  async execute(input: RateRecipeInput): Promise<void> {
-    // 1. Validar que la recepta existeix
-    const recipe = await this.recipeRepo.findById(input.recipeId);
+  async execute(request: RateRecipeRequest): Promise<void> {
+    // 1. Comprovar existència (Test: "fallar si la recepta no existeix")
+    const recipe = await this.repository.findById(request.recipeId);
     if (!recipe) {
-      throw new Error("La recepta no existeix.");
+      throw new Error("La recepta no existeix");
     }
 
-    // 2. Regla de Negoci: No pots votar la teva pròpia recepta?
-    // (Ho deixem comentat, depèn de si vols permetre l'auto-bombo)
-    /* if (recipe.authorId === input.userId) {
-       throw new Error("No pots valorar la teva pròpia recepta.");
-    }
-    */
-
-    // 3. Crear el Value Object (valida que sigui 1-5 i comentari < 500 chars)
+    // 2. Crear l'Entitat (Aquí és on fallava el test)
+    // L'entitat Rating validarà si el valor és entre 1 i 5
     const rating = new Rating({
-      userId: input.userId,
-      value: input.value,
-      comment: input.comment,
-      createdAt: new Date()
+      userId: request.userId,
+      value: request.value,
+      comment: request.comment,
+      createdAt: new Date(),
+      recipeId: request.recipeId // ✅ AFEGIT: Ara passem la ID necessària
     });
 
-    // 4. Persistir
-    // Nota: El repositori s'encarregarà de si és un INSERT o un UPDATE
-    // i de recalcular la mitjana si cal (o ho fem via trigger a DB al Pas 3)
-    await this.recipeRepo.addRating(input.recipeId, rating);
+    // 3. Persistir
+    await this.repository.addRating(request.recipeId, rating);
   }
 }

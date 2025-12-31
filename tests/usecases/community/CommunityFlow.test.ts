@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { PublishRecipe } from '@/core/usecases/community/PublishRecipe';
 import { RateRecipe } from '@/core/usecases/community/RateRecipe';
-import { RecipeRepository } from '@/core/ports/RecipeRepository'; // Ajusta la ruta al teu Port
+import { RecipeRepository } from '@/core/ports/RecipeRepository'; // O '@/core/domain/repositories/RecipeRepository'
 import { Recipe } from '@/core/domain/entities/Recipe';
 
 describe('Community Features Use Cases', () => {
@@ -11,7 +11,6 @@ describe('Community Features Use Cases', () => {
   let rateUseCase: RateRecipe;
 
   beforeEach(() => {
-    // Mock manual del repo
     mockRepo = {
       save: vi.fn(),
       findById: vi.fn(),
@@ -20,7 +19,6 @@ describe('Community Features Use Cases', () => {
       delete: vi.fn(),
       findRandom: vi.fn(),
       getUserRatingForRecipe: vi.fn(),
-      // ... altres mètodes del teu port
     } as unknown as RecipeRepository;
 
     publishUseCase = new PublishRecipe(mockRepo);
@@ -28,12 +26,14 @@ describe('Community Features Use Cases', () => {
   });
 
   describe('PublishRecipe', () => {
-    it('hauria de crear i guardar una recepta vàlida', async () => {
+    it('hauria de crear i guardar una recepta vàlida amb tots els camps requerits', async () => {
       const input = {
         name: 'Paella Valenciana',
         ingredients: [{ name: 'Arròs', quantity: 500, unit: 'g' }],
         steps: ['Sofregir', 'Bullir'],
-        tags: ['Diumenge']
+        tags: ['Diumenge'],
+        dietaryTags: ['Gluten-Free'],
+        prepTimeMinutes: 45
       };
 
       await publishUseCase.execute('user-chef', input);
@@ -44,29 +44,45 @@ describe('Community Features Use Cases', () => {
       const savedRecipe = saveMock.mock.calls[0][0] as Recipe;
       
       expect(savedRecipe.authorId).toBe('user-chef');
-      expect(savedRecipe.ratingSummary.average).toBe(0);
+      expect(savedRecipe.ratingSummary.average).toBe(0); 
+      expect(savedRecipe.isPublic).toBe(true);
       expect(savedRecipe.id).toBeDefined();
     });
 
     it('hauria de fallar si l\'entitat rebutja les dades (ex: sense passos)', async () => {
-        const invalidInput = {
-            name: 'Paella Fail',
-            ingredients: [{ name: 'Arròs', quantity: 500, unit: 'g' }],
-            steps: [], // Buit -> Error de Domini
-            tags: []
-        };
+       const invalidInput = {
+           name: 'Paella Fail',
+           ingredients: [{ name: 'Arròs', quantity: 500, unit: 'g' }],
+           steps: [], 
+           tags: [],
+           dietaryTags: [],
+           prepTimeMinutes: 0
+       };
   
-        await expect(publishUseCase.execute('user-chef', invalidInput))
-          .rejects.toThrow(/instruccions/);
+       await expect(publishUseCase.execute('user-chef', invalidInput))
+         .rejects.toThrow(/instruccions/); 
     });
   });
 
   describe('RateRecipe', () => {
     it('hauria de permetre votar una recepta existent', async () => {
-      // Simulem que la recepta existeix
-      (mockRepo.findById as Mock).mockResolvedValue(new Recipe({
-          id: 'r1', authorId: 'other', name: 'Test', ingredients: [{name:'a', quantity:1, unit:'u'}], steps: ['s'], tags: [], createdAt: new Date()
-      }));
+      // ✅ FIX: Afegim 'prepTimeMinutes' aquí
+      const existingRecipe = new Recipe({
+          id: 'r1', 
+          authorId: 'other', 
+          name: 'Test', 
+          ingredients: [{name:'a', quantity:1, unit:'u'}], 
+          steps: ['s'], 
+          tags: [], 
+          createdAt: new Date(),
+          dietaryTags: [],
+          prepTimeMinutes: 15, // <--- AFEGIT PERQUÈ PASSIN ELS TESTS
+          likesCount: 0,
+          isPublic: true,
+          ratingSummary: { average: 0, count: 0, distribution: {} }
+      });
+
+      (mockRepo.findById as Mock).mockResolvedValue(existingRecipe);
 
       await rateUseCase.execute({
           userId: 'voter-1',
@@ -91,13 +107,25 @@ describe('Community Features Use Cases', () => {
       })).rejects.toThrow("La recepta no existeix");
     });
 
-    it('hauria de fallar si la puntuació és invàlida (validació de Value Object)', async () => {
-       // Mock de recepta existent
-       (mockRepo.findById as Mock).mockResolvedValue(new Recipe({
-        id: 'r1', authorId: 'other', name: 'Test', ingredients: [{name:'a', quantity:1, unit:'u'}], steps: ['s'], tags: [], createdAt: new Date()
-       }));
+    it('hauria de fallar si la puntuació és invàlida', async () => {
+       // ✅ FIX: Afegim 'prepTimeMinutes' aquí també
+       const existingRecipe = new Recipe({
+        id: 'r1', 
+        authorId: 'other', 
+        name: 'Test', 
+        ingredients: [{name:'a', quantity:1, unit:'u'}], 
+        steps: ['s'], 
+        tags: [], 
+        createdAt: new Date(),
+        dietaryTags: [],
+        prepTimeMinutes: 15, // <--- AFEGIT PERQUÈ PASSIN ELS TESTS
+        likesCount: 0,
+        isPublic: true,
+        ratingSummary: { average: 0, count: 0, distribution: {} }
+       });
 
-       // Valor 10 -> Error
+       (mockRepo.findById as Mock).mockResolvedValue(existingRecipe);
+
        await expect(rateUseCase.execute({
         userId: 'voter-1',
         recipeId: 'r1',

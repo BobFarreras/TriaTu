@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { signOutAction } from '@/app/actions/auth-actions';
 
@@ -41,7 +41,7 @@ export function DashboardHeader({ userName }: Props) {
         <div className="flex flex-col min-w-0">
              <div className="flex items-baseline gap-2 min-w-0">
                 <h1 className="text-xl md:text-2xl font-black text-white tracking-tight leading-none truncate">
-                    Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">{userName}</span>
+                    Hola, <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-400">{userName}</span>
                 </h1>
                 <span className="text-xl animate-wave origin-bottom-right">👋</span>
              </div>
@@ -67,7 +67,7 @@ export function DashboardHeader({ userName }: Props) {
 
             {/* ✅ FIX: z-[100] per assegurar que quedi per sobre de tot */}
             {isLangOpen && (
-                <div className="absolute top-full right-0 mt-2 bg-zinc-900 border border-zinc-700 p-1.5 rounded-xl shadow-2xl flex flex-col gap-1 z-[100] min-w-[50px] animate-in zoom-in-95 duration-200">
+                <div className="absolute top-full right-0 mt-2 bg-zinc-900 border border-zinc-700 p-1.5 rounded-xl shadow-2xl flex flex-col gap-1 z-100 min-w-12.5 animate-in zoom-in-95 duration-200">
                     {langs.map((l) => (
                         <button
                             key={l.code}
@@ -83,13 +83,7 @@ export function DashboardHeader({ userName }: Props) {
 
         <div className="w-px h-5 bg-white/10 mx-0.5"></div>
 
-        {/* 2. PERFIL */}
-        <Link 
-            href="/profile"
-            className="w-9 h-9 bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center justify-center border-b-[3px] border-indigo-900 active:border-b-0 active:translate-y-1 transition-all group"
-        >
-            <span className="text-lg group-hover:rotate-12 transition-transform">😎</span>
-        </Link>
+     
 
         {/* 3. LOGOUT */}
         <button

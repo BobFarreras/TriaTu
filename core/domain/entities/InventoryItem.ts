@@ -1,9 +1,12 @@
-import { StorageLocation } from './StorageLocation'; // Assegura't que la ruta és correcta segons la teva estructura
+// ARXIU: core/domain/entities/InventoryItem.ts
+
+import { StorageLocation } from './StorageLocation';
 
 export interface InventoryItemProps {
   id: string;
   userId: string;
   name: string;
+  emoji?: string; // ✅ AFEGIT: Opcional, perquè potser no en té
   quantity: number;
   unit: string;
   location: StorageLocation;
@@ -19,8 +22,9 @@ export class InventoryItem {
   }
 
   public static create(props: InventoryItemProps): InventoryItem {
-    if (props.quantity <= 0) {
-      throw new Error("La quantitat ha de ser positiva");
+    // Validació de quantitat (recorda: permetem 0, però no negatius)
+    if (props.quantity < 0) {
+      throw new Error("La quantitat no pot ser negativa");
     }
     if (!props.name || props.name.trim().length === 0) {
         throw new Error("El nom de l'article no pot estar buit");
@@ -28,20 +32,23 @@ export class InventoryItem {
     return new InventoryItem(props);
   }
 
-  // ✅ MÈTODE QUE FALTAVA
   public updateQuantity(newQuantity: number): InventoryItem {
-    // Reutilitzem el mètode create per mantenir les validacions (ex: no permetre negatius)
     return InventoryItem.create({
-      ...this.props,
+      ...this.props, // Això manté l'emoji si existeix
       quantity: newQuantity
     });
   }
 
   // Getters
   get id() { return this.props.id; }
-  get quantity() { return this.props.quantity; }
-  get name() { return this.props.name; }
   get userId() { return this.props.userId; }
+  get name() { return this.props.name; }
+  get emoji() { return this.props.emoji; } // ✅ AFEGIT GETTER
+  get quantity() { return this.props.quantity; }
+  get unit() { return this.props.unit; }
+  get location() { return this.props.location; }
+  get expiryDate() { return this.props.expiryDate; }
+  get addedAt() { return this.props.addedAt; }
 
   // Lògica de domini
   public isExpired(): boolean {

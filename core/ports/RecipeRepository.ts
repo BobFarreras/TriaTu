@@ -1,31 +1,31 @@
-// src/core/domain/repositories/RecipeRepository.ts
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { Rating } from '@/core/domain/entities/Rating';
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
 
 export interface RecipeFilter {
-  authorId?: string;
-  searchTerm?: string;
-  minRating?: number;
-  maxTime?: number;
+    searchTerm?: string;
+    maxTimeMinutes?: number;
+    minRating?: number;
+    tags?: string[];
+    limit?: number;
+    offset?: number;
 }
 
 export interface RecipeRepository {
-  // Escriptura
-  save(recipe: Recipe): Promise<void>;
-  delete(id: string): Promise<void>;
-  
-  // Lectura
-  findById(id: string): Promise<Recipe | null>;
-  search(filter: RecipeFilter): Promise<Recipe[]>;
-  
-  // Legacy / Helpers
-  findRandom(count: number, restrictions: DietaryRestriction[]): Promise<Recipe[]>;
-
-  // Gestió de Vots (Separació de responsabilitats)
-  // Guardem el vot i internament el repo actualitzarà la mitjana de la recepta
-  addRating(recipeId: string, rating: Rating): Promise<void>;
-  
-  // Per saber si un usuari ja ha votat una recepta concreta
-  getUserRatingForRecipe(userId: string, recipeId: string): Promise<Rating | null>;
+    save(recipe: Recipe): Promise<void>;
+    search(filter: RecipeFilter): Promise<{ recipes: Recipe[]; total: number }>;
+    findById(id: string): Promise<Recipe | null>;
+    
+    // ✅ IMPRESCINDIBLE per SuggestRecipes
+    findAllByUser(userId: string): Promise<Recipe[]>;
+    
+    findRandom(count: number, restrictions: DietaryRestriction[]): Promise<Recipe[]>;
+    delete(id: string): Promise<void>;
+    
+    // ✅ IMPRESCINDIBLE per RateRecipe (addRating estava faltant a la interfície)
+    rate(rating: Rating): Promise<void>;
+    addRating(recipeId: string, rating: Rating): Promise<void>;
+    
+    getUserRatingForRecipe(userId: string, recipeId: string): Promise<Rating | null>;
+    getUserRatingsMap(userId: string, recipeIds: string[]): Promise<Record<string, number>>;
 }

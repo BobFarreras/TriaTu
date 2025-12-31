@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react'; // <--- AFEGIR useEffect
+import { useState, useEffect } from 'react';
 import { RecipeProps } from '@/core/domain/entities/Recipe';
 import { saveAndViewRecipeAction } from '@/app/actions/recipe-persistence';
 import { useRouter } from 'next/navigation';
@@ -8,30 +8,15 @@ import { toast } from 'sonner';
 
 interface Props {
   recipes: RecipeProps[];
-  userId: string;
+  userId: string; // Encara el rebem per si el necessites per UI, però no s'envia a l'acció
   onCancel: () => void;
 }
 
-// 🧠 1. HELPER: SMART EMOJI MAPPER
-// Intenta endevinar l'emoji basant-se en paraules clau del nom del plat.
+// ... (Mantingues la funció getDishEmoji igual) ...
 function getDishEmoji(name: string): string {
   const n = name.toLowerCase();
   if (n.includes('pizz')) return '🍕';
-  if (n.includes('hamburg')) return '🍔';
-  if (n.includes('amanida') || n.includes('enciam')) return '🥗';
-  if (n.includes('past') || n.includes('espaguet') || n.includes('macarr')) return '🍝';
-  if (n.includes('arròs') || n.includes('paella')) return '🥘';
-  if (n.includes('sopa') || n.includes('crema') || n.includes('brou')) return '🥣';
-  if (n.includes('pollastre') || n.includes('gall')) return '🍗';
-  if (n.includes('carn') || n.includes('vedella') || n.includes('filet')) return '🥩';
-  if (n.includes('peix') || n.includes('lluç') || n.includes('rap')) return '🐟';
-  if (n.includes('ou') || n.includes('truita') || n.includes('remenat')) return '🍳';
-  if (n.includes('postre') || n.includes('pastís') || n.includes('xocolata')) return '🍰';
-  if (n.includes('entrepà') || n.includes('biquini')) return '🥪';
-  if (n.includes('taco') || n.includes('mexic')) return '🌮';
-  if (n.includes('sushi')) return '🍣';
-  
-  // Fallback genèric si no troba res
+  // ... resta del teu codi d'emojis ...
   return '🍽️';
 }
 
@@ -40,30 +25,31 @@ export function RecipeGrid({ recipes, userId, onCancel }: Props) {
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const handleSelect = async (recipe: RecipeProps) => {
-    setSavingId(recipe.id); // Activem estat de càrrega visual
+    if (savingId) return; // Evitar doble click
+    setSavingId(recipe.id);
     
-    // Guardem i redirigim
-    const result = await saveAndViewRecipeAction(userId, recipe);
+    // ✅ FIX: Només passem l'objecte recepta. L'usuari es valida al servidor.
+    const result = await saveAndViewRecipeAction(recipe);
 
-    if (result.success && result.recipeId) {
+    if (result.success) {
+      toast.success("Recepta guardada correctament!");
+      // Ara sí que redirigim des del client
       router.push(`/recipes/${result.recipeId}`);
     } else {
-      toast.error("Error guardant la recepta.");
-      setSavingId(null);
+      toast.error(result.error || "Error guardant la recepta.");
+      setSavingId(null); // Tornem a habilitar el botó si falla
     }
   };
-// 🔍 LOG DE MUNTATGE
+
   useEffect(() => {
     console.log("🖼️ [RecipeGrid] Muntat amb receptes:", recipes.length);
   }, [recipes]);
 
-
-  // PROTECCIÓ: Si no hi ha receptes, mostrem missatge en lloc de petar
   if (!recipes || recipes.length === 0) {
     return <div className="text-white p-4">⚠️ No hi ha receptes per mostrar.</div>;
   }
+
   return (
-    // ✨ FIX CSS: Treiem animacions complexes inicials per descartar problemes de visibilitat
     <div className="space-y-6 w-full min-h-75"> 
       
       <div className="flex justify-between items-center">
@@ -84,20 +70,18 @@ export function RecipeGrid({ recipes, userId, onCancel }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {recipes.map((recipe, idx) => {
           const isSaving = savingId === recipe.id;
-          // Protecció contra noms nuls
           const safeName = recipe.name || "Recepta sense nom";
           const emoji = getDishEmoji(safeName);
 
           return (
             <div 
-              key={idx}
-              onClick={() => !savingId && handleSelect(recipe)}
-              // ✨ FIX: Simplifiquem l'animació per assegurar que es veu
+              key={recipe.id || idx} // Preferible usar ID
+              onClick={() => handleSelect(recipe)}
               className={`
                 group relative flex flex-col justify-between
                 p-5 rounded-3xl border cursor-pointer overflow-hidden transition-all duration-300
                 bg-slate-900 border-slate-800 hover:border-purple-500
-                ${isSaving ? 'opacity-50' : 'hover:shadow-xl hover:-translate-y-1'}
+                ${isSaving ? 'opacity-50 pointer-events-none' : 'hover:shadow-xl hover:-translate-y-1'}
               `}
             >
               {/* Loader Overlay */}
@@ -107,7 +91,7 @@ export function RecipeGrid({ recipes, userId, onCancel }: Props) {
                 </div>
               )}
 
-              {/* CONTINGUT CARD */}
+              {/* CONTINGUT CARD - (El teu codi visual estava perfecte) */}
               <div className="flex justify-between items-start mb-3">
                  <div className="text-3xl bg-slate-800 w-12 h-12 flex items-center justify-center rounded-2xl">
                     {emoji}

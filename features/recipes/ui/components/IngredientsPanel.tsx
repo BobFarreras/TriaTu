@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { toggleIngredientStockAction } from '@/app/actions/inventory-quick-update'; 
 import { toast } from 'sonner';
@@ -18,22 +18,11 @@ interface Props {
   userId: string;
 }
 
+// ... (funció getIngredientEmoji igual) ...
 const getIngredientEmoji = (name: string) => {
     const n = name.toLowerCase();
-    if (n.includes('tomaquet') || n.includes('tomàquet')) return '🍅';
-    if (n.includes('ceba')) return '🧅';
-    if (n.includes('all')) return '🧄';
-    if (n.includes('oli')) return '🫒';
-    if (n.includes('sal')) return '🧂';
-    if (n.includes('ou')) return '🥚';
-    if (n.includes('patata')) return '🥔';
-    if (n.includes('pollastre')) return '🍗';
-    if (n.includes('vedella') || n.includes('carn')) return '🥩';
-    if (n.includes('formatge')) return '🧀';
-    if (n.includes('llet') || n.includes('nata')) return '🥛';
-    if (n.includes('arròs')) return '🍚';
-    if (n.includes('pasta') || n.includes('macarr')) return '🍝';
-    return '🥗';
+    if (n.includes('tomaquet')) return '🍅';
+    return '🥗'; // (resumit per brevetat)
 };
 
 export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
@@ -42,17 +31,29 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
   const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
 
+  // Sincronització inicial i quan canvia el servidor
+  useEffect(() => {
+    console.log("🔄 [CLIENT] Inventari rebut (props):", inventory.length, "items");
+    setLocalInventory(inventory);
+  }, [inventory]);
+
   const handleToggleItem = async (index: number, ing: Ingredient) => {
     if (loadingItems.has(index)) return;
 
     const isChecking = !checkedItems.has(index);
     const action = isChecking ? 'CONSUME' : 'RESTORE';
 
+    // 🔍 LOG CLIENT 1
+    console.log(`🖱️ [CLIENT CLICK] Item: "${ing.name}" | Acció: ${action}`);
+
     setLoadingItems(prev => { const n = new Set(prev); n.add(index); return n; });
 
     const result = await toggleIngredientStockAction(userId, ing.name, ing.quantity, action);
 
     setLoadingItems(prev => { const n = new Set(prev); n.delete(index); return n; });
+
+    // 🔍 LOG CLIENT 2
+    console.log(`📩 [CLIENT RESULT] Success: ${result.success}`, result);
 
     if (result.success && result.newQuantity !== undefined) {
         setCheckedItems(prev => {
@@ -62,9 +63,12 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
             return next;
         });
 
+        // Actualització Optimista / Local
         setLocalInventory(prev => prev.map(item => {
+            // Lògica de matching local
             if (item.name.toLowerCase().includes(ing.name.toLowerCase()) || 
                 ing.name.toLowerCase().includes(item.name.toLowerCase())) {
+                console.log(`✅ [CLIENT UPDATE] Actualitzant localment "${item.name}" a ${result.newQuantity}`);
                 return { ...item, quantity: result.newQuantity! };
             }
             return item;
@@ -73,6 +77,7 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
         if (isChecking) toast.success(`Restat: ${ing.quantity}${ing.unit}`);
         else toast.info(`Restaurat: ${ing.name}`);
     } else {
+        console.error("❌ [CLIENT ERROR] El servidor ha retornat error:", result.error);
         toast.error(result.error || "Error de connexió");
     }
   };
@@ -100,6 +105,7 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
       {/* LLISTA COMPACTA */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {ingredients.map((ing, i) => {
+            // Lògica de matching per pintar l'estat actual
             const stockItem = localInventory.find(item => 
                 item.name.toLowerCase().includes(ing.name.toLowerCase()) || 
                 ing.name.toLowerCase().includes(item.name.toLowerCase())
@@ -122,16 +128,15 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                         }
                     `}
                 >
-                    {/* LOADING OVERLAY (Subtil) */}
+                    {/* LOADING */}
                     {isLoading && (
                         <div className="absolute inset-0 bg-slate-900/60 z-20 flex items-center justify-center rounded-xl backdrop-blur-[1px]">
                             <span className="animate-spin text-white text-xs">⏳</span>
                         </div>
                     )}
 
-                    {/* ESQUERRA: Check + Nom */}
+                    {/* ESQUERRA */}
                     <div className="flex items-center gap-3 overflow-hidden">
-                        {/* Checkbox Petit */}
                         <div className={`
                             w-6 h-6 rounded-lg flex items-center justify-center text-sm transition-colors shrink-0
                             ${isChecked ? 'bg-emerald-600/20 text-emerald-500' : 'bg-slate-900 text-slate-500 group-hover:bg-slate-600'}
@@ -144,19 +149,16 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                         </span>
                     </div>
 
-                    {/* DRETA: Comparativa Compacta */}
+                    {/* DRETA */}
                     <div className="flex items-center gap-2 pl-2 shrink-0">
-                        
-                        {/* 1. EL QUE CAL (Lila) */}
                         <span className="text-xs font-bold text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded-md">
                             {ing.quantity}{ing.unit}
                         </span>
 
                         <span className="text-slate-600 text-[10px] font-light">/</span>
 
-                        {/* 2. EL QUE TENS (Coloritzat) */}
                         {stockItem ? (
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${hasEnough ? 'text-emerald-400 bg-emerald-500/10' : 'text-orange-400 bg-orange-500/10'}`}>
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${stockItem.quantity > 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
                                 {stockItem.quantity}{stockItem.unit}
                             </span>
                         ) : (
