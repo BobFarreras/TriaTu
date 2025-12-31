@@ -13,7 +13,6 @@ describe('CookRecipe Use Case', () => {
   // Fixtures
   const userId = 'user-123';
 
-  // ✅ CORRECCIÓ: Usem .create() en lloc de new InventoryItem()
   const existingItem = InventoryItem.create({ 
       id: '1', 
       userId, 
@@ -27,7 +26,6 @@ describe('CookRecipe Use Case', () => {
   const existingInventory = [existingItem];
 
   beforeEach(() => {
-    // Mock del repositori
     mockRepo = {
       findByUser: vi.fn().mockResolvedValue(existingInventory),
       batchUpdate: vi.fn().mockResolvedValue(undefined),
@@ -43,8 +41,13 @@ describe('CookRecipe Use Case', () => {
 
   it('hauria de restar estoc si hi ha ingredients suficients', async () => {
     const recipe = new Recipe({
-      id: 'r1', name: 'Truita', ingredients: [{ name: 'Ous', quantity: 2, unit: 'ut' }],
-      steps: [], tags: []
+      id: 'r1', 
+      authorId: 'chef-test', // Afegit per complir invariant
+      name: 'Truita', 
+      ingredients: [{ name: 'Ous', quantity: 2, unit: 'ut' }],
+      steps: ['Batre'],      // Afegit per complir invariant
+      tags: [],
+      createdAt: new Date()  // Afegit per complir invariant
     });
 
     await useCase.execute(userId, recipe);
@@ -56,13 +59,18 @@ describe('CookRecipe Use Case', () => {
 
   it('hauria de llançar error si falten ingredients', async () => {
     const hugeRecipe = new Recipe({
-      id: 'r2', name: 'Truita Gegant', ingredients: [{ name: 'Ous', quantity: 50, unit: 'ut' }],
-      steps: [], tags: []
+      id: 'r2', 
+      authorId: 'chef-test',
+      name: 'Truita Gegant', 
+      ingredients: [{ name: 'Ous', quantity: 50, unit: 'ut' }],
+      steps: ['Batre molt'],
+      tags: [],
+      createdAt: new Date()
     });
 
     await expect(useCase.execute(userId, hugeRecipe))
       .rejects
-      .toThrow('No tens prou ingredients');
+      .toThrow('No tens prou ingredients'); // Assegura't que el missatge coincideix amb el del teu domini
     
     expect(mockRepo.batchUpdate).not.toHaveBeenCalled();
   });

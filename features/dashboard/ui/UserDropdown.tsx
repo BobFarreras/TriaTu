@@ -48,7 +48,7 @@ export function UserDropdown({ userName }: Props) {
 
       {/* MENÚ DESPLEGABLE (Fosc) */}
       {isOpen && (
-        <div className="absolute right-0 top-14 w-72 bg-zinc-900 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border-2 border-zinc-800 p-4 z-50 animate-in slide-in-from-top-2 fade-in duration-200 origin-top-right">
+        <div className="absolute right-0 top-14 w-72 bg-zinc-900 rounded-4xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border-2 border-zinc-800 p-4 z-50 animate-in slide-in-from-top-2 fade-in duration-200 origin-top-right">
           
           {/* INFO USUARI */}
           <div className="flex items-center gap-3 mb-4 pb-4 border-b-2 border-zinc-800">

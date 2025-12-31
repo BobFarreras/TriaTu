@@ -36,7 +36,8 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
     inventory: InventoryItemProps[],
     restrictions: DietaryRestriction[],
     focusDish?: string,
-    excludeNames?: string[]
+    excludeNames?: string[],
+    count: number = 3 // ✅ Per defecte 3, però ara ho podem canviar
   ): Promise<Recipe[]> {
 
     // 🔵 LOG INICIAL
@@ -53,7 +54,7 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
         promptContext = `TASCA: Genera UNA recepta detallada per a "${focusDish}".`;
       } else {
         const exclusionText = excludeNames?.length ? `NO REPETEIXIS: ${excludeNames.join(', ')}.` : "";
-        promptContext = `TASCA: Genera 3 receptes creatives i viables. ${exclusionText}`;
+        promptContext = `TASCA: Genera ${count} receptes creatives i viables. ${exclusionText}`;
       }
 
       const fullPrompt = `

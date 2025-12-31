@@ -1,53 +1,63 @@
 import { container } from '@/services/container';
-import { BackButton } from '@/components/ui/BackButton';
-import { CreateRoomCard } from '@/components/rooms/CreateRoomCard'; // Assumeixo que ja tens aquest component o similar
-import { JoinRoomCard } from '@/components/rooms/JoinRoomCard';     // Assumeixo que ja tens aquest component o similar
-import { RoomList } from '@/components/rooms/RoomList';
 import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
+import { BackButton } from '@/components/ui/BackButton';
+import { RoomQuickActions } from '@/components/rooms/RoomQuickActions'; // 👈 Nou
+import { RoomsGrid, UserRoom } from '@/components/rooms/RoomsGrid';   // 👈 Nou
+
+// Tipus per a la DB (només el necessitem aquí per transformar)
+interface RoomFromDB {
+  id: string;
+  name: string;
+  host_user_id?: string;
+  hostUserId?: string;
+  admin_id?: string; 
+  owner_id?: string;
+  created_by?: string;
+}
 
 export default async function RoomsPage() {
-  // 1. Auth Check
+  // 1. AUTH
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // 2. Fetch de les sales de l'usuari
+  // 2. DATA
   const getUserRooms = container.getUserRooms();
-  const myRooms = await getUserRooms.execute(user.id);
+  const rawRooms = await getUserRooms.execute(user.id) as RoomFromDB[];
 
+  // 3. TRANSFORM (Lògica de negoci)
+  const myRooms: UserRoom[] = rawRooms.map((room) => {
+    const bossId = room.host_user_id || room.hostUserId || room.owner_id || room.admin_id || room.created_by;
+    return {
+      id: room.id,
+      name: room.name,
+      isHost: bossId === user.id
+    };
+  });
+
+  // 4. VIEW (Renderitzat net)
   return (
-    <main className="min-h-screen bg-slate-950 pb-24 p-4 md:p-8">
+    <main className="min-h-dvh w-full p-4 md:p-6 flex flex-col relative bg-[#131f24] bg-gamified-pattern overflow-y-auto">
       
-      {/* HEADER */}
-      <div className="max-w-5xl mx-auto mb-8">
+      {/* DECORACIÓ */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-900/10 rounded-full blur-[100px] pointer-events-none animate-pulse"></div>
+      
+      <div className="relative z-10 w-full max-w-4xl mx-auto pb-24">
+        
+        {/* HEADER */}
         <div className="flex items-center gap-4 mb-6">
-          <BackButton href="/dashboard" />
-          <h1 className="text-2xl font-black text-white">
-            Espai de <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Decisió</span>
-          </h1>
+            <BackButton href="/dashboard" />
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none">
+                Zona Social
+            </h1>
         </div>
 
-        {/* ACCIONS PRINCIPALS (Crear / Unir-se) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-            {/* Aquí pots reutilitzar els components que tenies al dashboard o fer-ne de nous simples */}
-            <div className="bg-slate-900/50 p-1 rounded-3xl border border-slate-800">
-               {/* Si encara no tens components separats, pots posar-hi el codi directament o importar-los */}
-               <CreateRoomCard userId={user.id} />
-            </div>
-            <div className="bg-slate-900/50 p-1 rounded-3xl border border-slate-800">
-               <JoinRoomCard userId={user.id} />
-            </div>
-        </div>
+        {/* COMPONENT 1: ACCIONS */}
+        <RoomQuickActions />
 
-        {/* LLISTA DE SALES ACTIVES */}
-        <div>
-            <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span>📂</span> Les teves sales
-            </h2>
-            
-            <RoomList rooms={myRooms} currentUserId={user.id} />
-        </div>
+        {/* COMPONENT 2: LLISTA */}
+        <RoomsGrid rooms={myRooms} />
 
       </div>
     </main>

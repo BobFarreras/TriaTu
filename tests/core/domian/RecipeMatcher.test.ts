@@ -1,3 +1,4 @@
+// tests/core/domian/RecipeMatcher.test.ts
 import { describe, it, expect } from 'vitest';
 import { RecipeMatcher } from '@/core/domain/services/RecipeMatcher';
 import { Recipe } from '@/core/domain/entities/Recipe';
@@ -10,22 +11,22 @@ describe('RecipeMatcher Service', () => {
   const inventory: InventoryItemProps[] = [
     { 
         id: '1', 
-        userId: 'test-user', // ✅ AFEGIT
+        userId: 'test-user', 
         name: 'Ous', 
         quantity: 4, 
         unit: 'ut', 
         location: StorageLocation.FRIDGE,
-        addedAt: new Date(), // ✅ AFEGIT
+        addedAt: new Date(), 
         expiryDate: new Date('2025-01-01') 
     },
     { 
         id: '2', 
-        userId: 'test-user', // ✅ AFEGIT
+        userId: 'test-user', 
         name: 'Llet', 
         quantity: 1, 
         unit: 'l', 
         location: StorageLocation.FRIDGE,
-        addedAt: new Date(), // ✅ AFEGIT
+        addedAt: new Date(), 
         expiryDate: new Date('2025-01-01')
     }
   ];
@@ -33,9 +34,12 @@ describe('RecipeMatcher Service', () => {
   it('hauria de validar una recepta si tenim prou quantitat', () => {
     const feasibleRecipe = new Recipe({
       id: 'r1',
+      authorId: 'test',
       name: 'Truita',
       ingredients: [{ name: 'Ous', quantity: 3, unit: 'ut' }],
-      steps: [], tags: []
+      steps: ['Pas 1'], 
+      tags: [],
+      createdAt: new Date()
     });
 
     const result = matcher.match(feasibleRecipe, inventory);
@@ -47,9 +51,12 @@ describe('RecipeMatcher Service', () => {
   it('hauria de rebutjar si no tenim prou quantitat', () => {
     const impossibleRecipe = new Recipe({
       id: 'r2',
+      authorId: 'test',
       name: 'Pastís Gegant',
       ingredients: [{ name: 'Ous', quantity: 10, unit: 'ut' }],
-      steps: [], tags: []
+      steps: ['Pas 1'], 
+      tags: [],
+      createdAt: new Date()
     });
 
     const result = matcher.match(impossibleRecipe, inventory);
@@ -62,9 +69,13 @@ describe('RecipeMatcher Service', () => {
   it('hauria de detectar ingredients inexistents', () => {
     const noStockRecipe = new Recipe({
       id: 'r3',
-      name: 'Pa',
+      authorId: 'test',
+      // ✅ CANVI CRÍTIC: "Pa" -> "Pa casolà" (Per complir min length 3)
+      name: 'Pa casolà',
       ingredients: [{ name: 'Farina', quantity: 500, unit: 'g' }],
-      steps: [], tags: []
+      steps: ['Pas 1'], 
+      tags: [],
+      createdAt: new Date()
     });
 
     const result = matcher.match(noStockRecipe, inventory);

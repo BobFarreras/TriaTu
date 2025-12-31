@@ -1,5 +1,5 @@
 
-\restrict IJqpT0thh058fjDtFAyuSbVOXQlLv7zgBDGXEoh2DGjLTI34LZ2ZnwEutW6aSxh
+\restrict nLfSMvzHVAq2GNQDJLuW2L0ejDHhuiHVBBjCy61hJ4u4WMUuDYFZm2MGwoW8pgd
 
 
 SET statement_timeout = 0;
@@ -93,6 +93,22 @@ CREATE TABLE IF NOT EXISTS "public"."group_decisions" (
 ALTER TABLE "public"."group_decisions" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."inventory_items" (
+    "id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "quantity" numeric DEFAULT 1 NOT NULL,
+    "unit" "text" DEFAULT 'units'::"text" NOT NULL,
+    "location" "text" NOT NULL,
+    "expiry_date" timestamp with time zone,
+    "added_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "emoji" "text"
+);
+
+
+ALTER TABLE "public"."inventory_items" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."preference_profiles" (
     "user_id" "uuid" NOT NULL,
     "food_preferences" "text"[] DEFAULT '{}'::"text"[],
@@ -128,6 +144,22 @@ CREATE TABLE IF NOT EXISTS "public"."room_participants" (
 ALTER TABLE "public"."room_participants" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."saved_recipes" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "ingredients" "jsonb" NOT NULL,
+    "steps" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "tags" "jsonb" DEFAULT '[]'::"jsonb",
+    "prep_time_minutes" integer,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "dietary_tags" "text"[] DEFAULT '{}'::"text"[]
+);
+
+
+ALTER TABLE "public"."saved_recipes" OWNER TO "postgres";
+
+
 ALTER TABLE ONLY "public"."decision_outcomes"
     ADD CONSTRAINT "decision_outcomes_pkey" PRIMARY KEY ("decision_id");
 
@@ -148,6 +180,11 @@ ALTER TABLE ONLY "public"."group_decisions"
 
 
 
+ALTER TABLE ONLY "public"."inventory_items"
+    ADD CONSTRAINT "inventory_items_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."preference_profiles"
     ADD CONSTRAINT "preference_profiles_pkey" PRIMARY KEY ("user_id");
 
@@ -163,6 +200,15 @@ ALTER TABLE ONLY "public"."room_participants"
 
 
 
+ALTER TABLE ONLY "public"."saved_recipes"
+    ADD CONSTRAINT "saved_recipes_pkey" PRIMARY KEY ("id");
+
+
+
+CREATE INDEX "idx_saved_recipes_dietary_tags" ON "public"."saved_recipes" USING "gin" ("dietary_tags");
+
+
+
 ALTER TABLE ONLY "public"."decision_outcomes"
     ADD CONSTRAINT "decision_outcomes_decision_id_fkey" FOREIGN KEY ("decision_id") REFERENCES "public"."decisions"("id") ON DELETE CASCADE;
 
@@ -170,6 +216,11 @@ ALTER TABLE ONLY "public"."decision_outcomes"
 
 ALTER TABLE ONLY "public"."group_decisions"
     ADD CONSTRAINT "group_decisions_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."inventory_items"
+    ADD CONSTRAINT "inventory_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -185,6 +236,11 @@ ALTER TABLE ONLY "public"."room_candidates"
 
 ALTER TABLE ONLY "public"."room_participants"
     ADD CONSTRAINT "room_participants_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."saved_recipes"
+    ADD CONSTRAINT "saved_recipes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -224,6 +280,26 @@ CREATE POLICY "Read group decisions" ON "public"."group_decisions" USING (true);
 
 
 
+CREATE POLICY "Users can delete their own inventory" ON "public"."inventory_items" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their own inventory" ON "public"."inventory_items" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can manage their own recipes" ON "public"."saved_recipes" USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update their own inventory" ON "public"."inventory_items" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own inventory" ON "public"."inventory_items" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
 ALTER TABLE "public"."decision_outcomes" ENABLE ROW LEVEL SECURITY;
 
 
@@ -236,6 +312,9 @@ ALTER TABLE "public"."decisions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."group_decisions" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."inventory_items" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."preference_profiles" ENABLE ROW LEVEL SECURITY;
 
 
@@ -243,6 +322,9 @@ ALTER TABLE "public"."room_candidates" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."room_participants" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."saved_recipes" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "smart_delete_candidates" ON "public"."room_candidates" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "user_id"));
@@ -298,6 +380,12 @@ GRANT ALL ON TABLE "public"."group_decisions" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."inventory_items" TO "anon";
+GRANT ALL ON TABLE "public"."inventory_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."inventory_items" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."preference_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."preference_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."preference_profiles" TO "service_role";
@@ -313,6 +401,12 @@ GRANT ALL ON TABLE "public"."room_candidates" TO "service_role";
 GRANT ALL ON TABLE "public"."room_participants" TO "anon";
 GRANT ALL ON TABLE "public"."room_participants" TO "authenticated";
 GRANT ALL ON TABLE "public"."room_participants" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."saved_recipes" TO "anon";
+GRANT ALL ON TABLE "public"."saved_recipes" TO "authenticated";
+GRANT ALL ON TABLE "public"."saved_recipes" TO "service_role";
 
 
 
@@ -346,6 +440,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict IJqpT0thh058fjDtFAyuSbVOXQlLv7zgBDGXEoh2DGjLTI34LZ2ZnwEutW6aSxh
+\unrestrict nLfSMvzHVAq2GNQDJLuW2L0ejDHhuiHVBBjCy61hJ4u4WMUuDYFZm2MGwoW8pgd
 
 RESET ALL;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { Minus, Plus, Clock } from 'lucide-react';
 
 interface Props {
   energy: number;
@@ -19,6 +20,15 @@ export function EnergyTimeSliders({ energy, time, onEnergyChange, onTimeChange }
   const { t } = useLanguage();
   const sliderPercentage = (energy / 10) * 100;
 
+  // Lògica per incrementar/decrementar temps (de 5 en 5 minuts)
+  const handleTimeChange = (amount: number) => {
+    const newVal = time + amount;
+    // Mínim 5 minuts, màxim el que vulguis (ex: 240 min)
+    if (newVal >= 5) {
+      onTimeChange(newVal);
+    }
+  };
+
   const getEnergyLabel = (level: number) => {
     if (level <= 3) return t.decision.energy_levels.low;
     if (level <= 7) return t.decision.energy_levels.mid;
@@ -27,7 +37,8 @@ export function EnergyTimeSliders({ energy, time, onEnergyChange, onTimeChange }
 
   return (
     <div className="space-y-4">
-      {/* ENERGIA */}
+      
+      {/* --- SECCIÓ ENERGIA (Mantiguda igual) --- */}
       <div className="space-y-3 bg-black/20 p-4 rounded-2xl border-2 border-dashed border-zinc-700">
         <div className="flex justify-between items-end">
           <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">
@@ -65,22 +76,42 @@ export function EnergyTimeSliders({ energy, time, onEnergyChange, onTimeChange }
         </p>
       </div>
 
-      {/* TEMPS */}
-      <div className="space-y-1">
-        <label className="text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">
-          {t.decision.time_label}
+      {/* --- SECCIÓ TEMPS (Renovada i Centrada) --- */}
+      <div className="bg-black/20 p-4 rounded-2xl border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center gap-3">
+        
+        <label className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+           <Clock className="w-4 h-4" /> {t.decision.time_label}
         </label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">⏱️</span>
-          <input
-            type="number"
-            value={time}
-            onChange={(e) => onTimeChange(Number(e.target.value))}
-            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-zinc-700 bg-black/30 text-white font-bold text-lg focus:outline-none focus:ring-4 focus:ring-blue-900/50 focus:border-blue-500 transition-all placeholder-zinc-600"
-          />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-500">min</span>
+
+        <div className="flex items-center gap-6">
+            
+            {/* Botó Menys */}
+            <button 
+                onClick={() => handleTimeChange(-5)}
+                className="w-12 h-12 rounded-xl bg-zinc-800 border-2 border-zinc-600 flex items-center justify-center text-white hover:bg-zinc-700 hover:border-zinc-500 active:scale-95 transition-all shadow-lg"
+            >
+                <Minus className="w-6 h-6" />
+            </button>
+
+            {/* Visualitzador Central */}
+            <div className="flex flex-col items-center w-24">
+                <span className="text-5xl font-black text-white leading-none tracking-tight">
+                    {time}
+                </span>
+                <span className="text-xs font-bold text-zinc-500 uppercase">minuts</span>
+            </div>
+
+            {/* Botó Més */}
+            <button 
+                onClick={() => handleTimeChange(5)}
+                className="w-12 h-12 rounded-xl bg-zinc-800 border-2 border-zinc-600 flex items-center justify-center text-white hover:bg-zinc-700 hover:border-zinc-500 active:scale-95 transition-all shadow-lg"
+            >
+                <Plus className="w-6 h-6" />
+            </button>
+
         </div>
       </div>
+
     </div>
   );
 }
