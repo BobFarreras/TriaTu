@@ -6,35 +6,34 @@ type Input = {
   foodPreferences: string[];
   socialTolerance: number;
   exclusions: string[];
+  username?: string;
+  avatarEmoji?: string;
 };
 
 export class UpdateUserProfile {
-  constructor(private readonly repo: PreferenceRepository) {}
+  constructor(private repository: PreferenceRepository) {}
 
   async execute(input: Input): Promise<void> {
-    // 1. Recuperar perfil actual (o crear-ne un de nou)
-    let profile = await this.repo.findByUserId(input.userId);
+    
+    // 🚨 LOG 3: Dades dins del UseCase
+    console.log('3️⃣ [USECASE] Input rebut:', input);
 
-    if (!profile) {
-      profile = new PreferenceProfile({
-        id: input.userId,
-        foodPreferences: input.foodPreferences,
-        socialTolerance: input.socialTolerance,
-        exclusions: input.exclusions
-      });
-    } else {
-      // 2. Actualitzar propietats
-      // Nota: Hauríem de tenir setters a l'entitat o crear-ne una de nova.
-      // Per immutabilitat i simplicitat DDD, sovint és millor instanciar de nou amb les noves dades.
-      profile = new PreferenceProfile({
-        id: input.userId,
-        foodPreferences: input.foodPreferences,
-        socialTolerance: input.socialTolerance,
-        exclusions: input.exclusions
-      });
-    }
+    const profile = new PreferenceProfile({
+      id: input.userId,
+      username: input.username,       // Està arribant aquí?
+      avatarEmoji: input.avatarEmoji, // Està arribant aquí?
+      foodPreferences: input.foodPreferences,
+      socialTolerance: input.socialTolerance,
+      exclusions: input.exclusions
+    });
 
-    // 3. Persistir
-    await this.repo.save(profile);
+    // 🚨 LOG 4: L'Entitat creada té les dades?
+    console.log('4️⃣ [USECASE] Entitat creada:', {
+        id: profile.id,
+        username: profile.username,
+        avatar: profile.avatarEmoji
+    });
+
+    await this.repository.save(profile);
   }
 }

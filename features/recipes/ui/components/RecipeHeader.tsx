@@ -1,5 +1,7 @@
 'use client';
 
+import { Clock, Tag } from 'lucide-react';
+
 interface Props {
   name: string;
   prepTime?: number;
@@ -7,38 +9,51 @@ interface Props {
 }
 
 const getEmoji = (name: string) => {
-    if (name.match(/pizz|hamburg|amanid|sopa|carn|peix|arròs/i)) return '🍲'; 
-    return '🍽️';
+    const n = name.toLowerCase();
+    if (n.includes('pizza')) return '🍕';
+    if (n.includes('pasta')) return '🍝';
+    if (n.includes('burger')) return '🍔';
+    if (n.includes('amanida')) return '🥗';
+    if (n.includes('postre')) return '🍰';
+    if (n.includes('arròs')) return '🥘';
+    return '🍲';
 };
 
 export function RecipeHeader({ name, prepTime, tags }: Props) {
+  const emoji = getEmoji(name);
+
   return (
-    // ✨ FIX: Menys padding (p-4), alçada reduïda
-    <div className="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between gap-4 rounded-t-3xl">
-      <div className="flex items-center gap-3 overflow-hidden">
-        {/* Emoji més petit */}
-        <div className="shrink-0 text-2xl bg-slate-800 w-10 h-10 rounded-xl flex items-center justify-center shadow-inner border border-slate-700">
-            {getEmoji(name)}
-        </div>
-        <div className="min-w-0">
-            {/* Títol més compacte */}
-            <h1 className="text-lg md:text-xl font-black text-white leading-none truncate">{name}</h1>
-            <div className="flex gap-1 mt-1 overflow-x-auto no-scrollbar">
-                {tags.slice(0, 2).map(tag => (
-                    <span key={tag} className="text-[9px] uppercase font-bold bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
-                        {tag}
+    <div className="relative">
+      {/* Decoració de fons */}
+      <div className="absolute top-0 left-0 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl -z-10" />
+
+      <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+         {/* EMOJI GEGANT */}
+         <div className="text-7xl md:text-8xl drop-shadow-2xl animate-bounce-slow">
+            {emoji}
+         </div>
+
+         <div className="flex-1 space-y-3">
+            <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
+                {name}
+            </h1>
+            
+            <div className="flex flex-wrap items-center gap-3">
+                {prepTime && (
+                    <span className="flex items-center gap-1.5 bg-slate-900/50 border border-slate-700 px-3 py-1.5 rounded-full text-sm font-bold text-slate-300">
+                        <Clock size={14} className="text-purple-400" />
+                        {prepTime} min
+                    </span>
+                )}
+                
+                {tags.map(tag => (
+                    <span key={tag} className="flex items-center gap-1 bg-purple-900/20 border border-purple-500/30 px-3 py-1.5 rounded-full text-xs font-bold text-purple-300 uppercase tracking-wide">
+                        <Tag size={10} /> {tag}
                     </span>
                 ))}
             </div>
-        </div>
+         </div>
       </div>
-
-      {prepTime && (
-        <div className="shrink-0 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-full border border-slate-800">
-            <span className="text-sm">⏱️</span>
-            <span className="font-mono font-bold text-purple-300 text-sm">{prepTime}m</span>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,12 +1,12 @@
-// =================== FILE: app/profile/page.tsx ===================
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
 import { SupabasePreferenceRepository } from '@/adapters/supabase/SupabasePreferenceRepository';
 import { ProfileContent } from '@/features/profile/ui/ProfileContent';
 
-// Definim una interfície local per a les dades que esperem de la base de dades
-// Això evita l'ús de 'any' i satisfà el linter
+// ✅ 1. Ampliem la interfície local perquè TypeScript sàpiga que existeixen
 interface ProfileDTO {
+  username?: string;        // Nou
+  avatarEmoji?: string;     // Nou
   foodPreferences?: string[];
   exclusions?: string[];
   socialTolerance?: number;
@@ -21,17 +21,18 @@ export default async function ProfilePage() {
   const repo = new SupabasePreferenceRepository();
   const rawProfile = await repo.findByUserId(user.id);
 
-  // Fem un casting segur cap a la nostra interfície (ProfileDTO) en lloc de 'any'
-  // Utilitzem 'unknown' com a pas intermedi per evitar conflictes de tipus
+  // Casting segur
   const profile = rawProfile as unknown as ProfileDTO | null;
 
+  // ✅ 2. Passem les dades reals de la BD al client
+  // Si no hi ha dades a la BD, usem valors per defecte
   const initialData = {
+    username: profile?.username || '', 
+    avatarEmoji: profile?.avatarEmoji || '👨‍🍳',
     foodPreferences: profile?.foodPreferences || [],
-    exclusions: profile?.exclusions || [], // Ara TypeScript sap que 'exclusions' existeix (opcional)
+    exclusions: profile?.exclusions || [],
     socialTolerance: profile?.socialTolerance || 5
   };
 
-  const username = user.email?.split('@')[0] || 'Player 1';
-
-  return <ProfileContent initialData={initialData} username={username} />;
+  return <ProfileContent initialData={initialData} />;
 }

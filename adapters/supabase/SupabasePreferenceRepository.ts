@@ -4,11 +4,11 @@ import { supabase } from './client';
 
 // Helper per accedir a propietats privades sense 'any'
 interface ProfileWithExclusions {
-    exclusions: string[];
+  exclusions: string[];
 }
 
 export class SupabasePreferenceRepository implements PreferenceRepository {
-  
+
   async findByUserId(userId: string): Promise<PreferenceProfile | null> {
     const { data, error } = await supabase
       .from('preference_profiles')
@@ -18,8 +18,15 @@ export class SupabasePreferenceRepository implements PreferenceRepository {
 
     if (error || !data) return null;
 
+    // 🚨 AQUÍ ESTÀ EL PROBLEMA:
+    // Abans segurament no estaves mapejant 'username' i 'avatar_emoji'
     return new PreferenceProfile({
       id: data.user_id,
+
+      // ✅ AFEGEIX AQUESTES DUES LÍNIES:
+      username: data.username,           // De la DB (snake_case) al Domini
+      avatarEmoji: data.avatar_emoji,    // De la DB (snake_case) al Domini
+
       foodPreferences: data.food_preferences || [],
       socialTolerance: data.social_tolerance,
       exclusions: data.exclusions || []
@@ -38,9 +45,11 @@ export class SupabasePreferenceRepository implements PreferenceRepository {
         user_id: profile.id,
         food_preferences: profile.foodPreferences,
         social_tolerance: profile.socialTolerance,
-        exclusions: exclusions
+        exclusions: exclusions,
+        username: profile.username,         // ✅ Nou camp SQL
+        avatar_emoji: profile.avatarEmoji,  // ✅ Nou camp SQL (snake_case)
       });
-      
+
     if (error) throw new Error(error.message);
   }
 }

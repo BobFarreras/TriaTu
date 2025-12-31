@@ -2,11 +2,19 @@
 
 import { DietaryRestriction } from "../value-objects/DietaryRestriction";
 
+// ✅ 1. EXPORTEM LA INTERFÍCIE INGREDIENT
+// Això permet que altres fitxers (com PublishRecipe.ts) la puguin importar
+export interface Ingredient {
+    name: string;
+    quantity: number;
+    unit: string;
+}
+
 export interface RecipeProps {
     id: string;
     authorId: string;
     name: string;
-    ingredients: { name: string; quantity: number; unit: string }[];
+    ingredients: Ingredient[]; // ✅ Fem servir la interfície exportada
     steps: string[];
     tags: string[];
     dietaryTags: string[];
@@ -50,23 +58,17 @@ export class Recipe {
 
         return normalizedRestrictions.every(restriction => {
             // 1. SAFE OVERRIDE (WHITELIST)
-            // Si la recepta té un tag explícit que diu que és lliure d'això, és segura.
-            // Ex: restricció="gluten", tag="gluten-free" -> ✅ SAFE
             if (tags.includes(`${restriction}-free`)) return true;
             if (tags.includes(`no-${restriction}`)) return true;
 
             // 2. DIET MATCHING (ADHERENCE)
-            // Si la restricció és un estil de vida (ex: "vegan") i la recepta té el tag "vegan", és segura.
-            // Abans això retornava false erròniament.
             if (tags.includes(restriction)) return true;
 
             // 3. INGREDIENT CHECK (BLACKLIST)
-            // Si no tenim permís explícit, mirem els ingredients per si de cas.
             const hasBadIngredient = ingredients.some(ing => ing.includes(restriction));
             if (hasBadIngredient) return false;
             
             // 4. EXPLICIT DANGER TAGS
-            // Si té un tag que diu explícitament que conté l'al·lergen.
             if (tags.includes(`contains-${restriction}`)) return false;
 
             return true;

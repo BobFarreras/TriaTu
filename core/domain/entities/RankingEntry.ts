@@ -3,7 +3,7 @@
 export interface RankingEntry {
     userId: string;
     displayName: string;
-    
+    avatarEmoji?: string
     // Desglossem la puntuació per transparència
     qualityScore: number;   // Punts per estrelles rebudes (Reputació)
     pantryScore: number;    // Punts per tenir el rebost al dia (Hàbit)

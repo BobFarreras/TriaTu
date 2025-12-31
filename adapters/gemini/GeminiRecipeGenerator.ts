@@ -80,16 +80,26 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
         3. REALISME: No barregis ingredients incompatibles.
         4. IDIOMA: Respon sempre en CATALÀ.
         
+        ✨ 5. FORMAT INTERACTIU (MOLT IMPORTANT):
+           - Quan mencionis un ingredient dins dels passos, has de posar-lo entre claudàtors, EXACTAMENT com l'has anomenat a la llista d'ingredients.
+             Exemple: "Tallar la [Ceba] a daus i afegir el [Tomàquet]."
+           - Quan indiquis un temps d'espera o cocció, usa la icona del rellotge seguida dels minuts.
+             Exemple: "Deixar bullir durant ⏰ 10 min." o "Enfornar ⏰ 45 min."
+        
         FORMAT DE SORTIDA (JSON PUR):
         {
           "recipes": [
             {
               "name": "Títol atractiu del plat",
-              "ingredients": [{"name": "Ingredient exact", "quantity": number, "unit": "string"}],
-              "steps": ["Pas 1...", "Pas 2..."],
+              "ingredients": [{"name": "Ceba", "quantity": 1, "unit": "ut"}, {"name": "Tomàquet", "quantity": 2, "unit": "ut"}],
+              "steps": [
+                 "Primer, pelar i picar la [Ceba] finament.",
+                 "Sofregir en una paella amb oli durant ⏰ 5 min fins que estigui daurada.",
+                 "Afegir el [Tomàquet] trossejat i rectificar de sal."
+              ],
               "tags": ["ràpid", "sa", "vegetarià"],
               "dietary_tags": ["gluten-free", "vegan"],
-              "prepTimeMinutes": number
+              "prepTimeMinutes": 15
             }
           ]
         }
@@ -139,13 +149,13 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
           // ✅ FIX: Omplim TOTS els camps requerits per RecipeProps
           const recipe = new Recipe({
             id: crypto.randomUUID(),
-            
+
             // Camps que la IA no dona, els posem per defecte:
-            authorId: 'ai-generated', 
+            authorId: 'ai-generated',
             createdAt: new Date(),
             likesCount: 0,
             isPublic: false,
-            
+
             // Camps de la IA:
             name: raw.name,
             ingredients: raw.ingredients.map(i => ({
@@ -156,15 +166,15 @@ export class GeminiRecipeGenerator implements RecipeGenerator {
             steps: raw.steps,
             tags: raw.tags || [],
             prepTimeMinutes: Number(raw.prepTimeMinutes),
-            
+
             // 🛡️ IMPORTANT: Inicialitzem dietaryTags buit per evitar l'error "undefined map"
             dietaryTags: (raw.dietary_tags || []).map(t => t.toLowerCase()),
-            
+
             // Estructura de rating buida inicial
             ratingSummary: {
-                average: 0,
-                count: 0,
-                distribution: {}
+              average: 0,
+              count: 0,
+              distribution: {}
             }
           });
 

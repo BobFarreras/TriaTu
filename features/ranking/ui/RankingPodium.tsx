@@ -1,70 +1,100 @@
 import { RankingEntry } from '@/core/domain/entities/RankingEntry';
-import { Trophy, Medal, Crown } from 'lucide-react';
+import { Sparkles,} from 'lucide-react';
 
 interface Props {
     players: RankingEntry[];
 }
 
 export function RankingPodium({ players }: Props) {
-    // Si no hi ha prou jugadors, protegim el renderitzat
     if (players.length === 0) return null;
 
-    // Ordenació visual per al podi: [2n, 1r, 3r]
-    // Això fa que el 1r quedi al mig
     const first = players[0];
     const second = players[1];
     const third = players[2];
     
-    // Array ordenat visualment
+    // Ordre visual: 2n - 1r - 3r
     const podiumOrder = [second, first, third].filter(Boolean);
 
     return (
-        <div className="flex items-end justify-center gap-2 md:gap-4 h-56 md:h-64 w-full max-w-lg mx-auto mb-8">
+        <div className="flex items-end justify-center gap-2 md:gap-4 h-80 w-full pt-16 perspective-1000">
             {podiumOrder.map((player) => {
                 const isFirst = player.rank === 1;
                 const isSecond = player.rank === 2;
                 
-                // Estils dinàmics segons posició
-                const heightClass = isFirst ? 'h-48 md:h-56 w-1/3' : (isSecond ? 'h-36 md:h-40 w-1/4' : 'h-24 md:h-32 w-1/4');
+                // Mides i Estils
+                const heightClass = isFirst ? 'h-64 w-1/3' : (isSecond ? 'h-48 w-1/4' : 'h-40 w-1/4');
                 
-                const colorConfig = isFirst 
-                    ? { border: 'border-yellow-500', bg: 'from-yellow-500/20 to-yellow-900/5', text: 'text-yellow-400', icon: <Crown size={24} className="fill-yellow-500 text-yellow-100" /> }
+                const style = isFirst 
+                    ? { 
+                        bar: 'bg-gradient-to-t from-yellow-900/40 via-yellow-600/20 to-yellow-400/10 border-yellow-500/50 shadow-[0_0_40px_-10px_rgba(234,179,8,0.3)]', 
+                        text: 'text-yellow-400',
+                        emoji: 'text-6xl',
+                        avatarBorder: 'border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.4)]',
+                        delay: 'delay-200'
+                      }
                     : (isSecond 
-                        ? { border: 'border-zinc-400', bg: 'from-zinc-400/20 to-zinc-800/5', text: 'text-zinc-300', icon: <Medal size={20} className="text-zinc-300" /> }
-                        : { border: 'border-orange-600', bg: 'from-orange-600/20 to-orange-900/5', text: 'text-orange-500', icon: <Trophy size={18} className="text-orange-600" /> }
+                        ? { 
+                            bar: 'bg-gradient-to-t from-zinc-900/40 via-zinc-600/20 to-zinc-400/10 border-zinc-500/50', 
+                            text: 'text-zinc-300',
+                            emoji: 'text-4xl',
+                            avatarBorder: 'border-zinc-400',
+                            delay: 'delay-100'
+                          }
+                        : { 
+                            bar: 'bg-gradient-to-t from-orange-900/40 via-orange-600/20 to-orange-400/10 border-orange-500/50', 
+                            text: 'text-orange-400',
+                            emoji: 'text-4xl',
+                            avatarBorder: 'border-orange-600',
+                            delay: 'delay-0'
+                          }
                     );
 
                 return (
-                    <div key={player.userId} className={`flex flex-col items-center relative ${isFirst ? '-mt-6 z-10' : 'z-0'} ${heightClass}`}>
-                         
-                         {/* Avatar / Icona flotant */}
+                    <div 
+                        key={player.userId} 
+                        className={`relative flex flex-col justify-end ${heightClass} group z-10 hover:z-20 transition-all duration-300 hover:scale-105`}
+                    >
+                         {/* 1. BARRA (GLASSMORPHISM) */}
                          <div className={`
-                            absolute -top-6 rounded-full border-2 bg-zinc-900 flex items-center justify-center shadow-2xl animate-in zoom-in duration-500
-                            ${colorConfig.border}
-                            ${isFirst ? 'w-16 h-16' : 'w-12 h-12'}
+                            relative w-full h-full rounded-t-3xl border-x border-t backdrop-blur-md flex flex-col justify-end pb-6 items-center text-center
+                            animate-in slide-in-from-bottom-full duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] fill-mode-both ${style.delay}
+                            ${style.bar} overflow-hidden
                          `}>
-                             <span className="text-2xl">{isFirst ? '👨‍🍳' : (isSecond ? '🔪' : '🥄')}</span>
-                             
-                             {/* Badge de posició */}
-                             <div className="absolute -bottom-2 -right-1 bg-zinc-950 rounded-full p-1 border border-zinc-800">
-                                {colorConfig.icon}
+                             {/* Número de fons */}
+                             <span className={`absolute top-2 text-8xl font-black ${style.text} opacity-10 select-none`}>
+                                 {player.rank}
+                             </span>
+
+                             <div className="w-full px-1 z-10">
+                                <span className="block text-[10px] md:text-xs font-black uppercase tracking-widest truncate text-white drop-shadow-md">
+                                    {player.displayName}
+                                </span>
+                             </div>
+
+                             <div className="mt-2 bg-black/40 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm">
+                                 <span className="text-[10px] font-mono font-bold text-white">
+                                     {player.totalScore} pts
+                                 </span>
                              </div>
                          </div>
 
-                         {/* Bloc del Podi */}
+                         {/* 2. AVATAR (POSAT DESPRÉS PERQUÈ QUEDI A SOBRE) */}
                          <div className={`
-                            w-full h-full rounded-t-2xl border-x border-t backdrop-blur-md bg-linear-to-b flex flex-col justify-end pb-4 items-center text-center transition-all hover:brightness-110
-                            ${colorConfig.border} ${colorConfig.bg}
+                            absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center
+                            animate-in zoom-in slide-in-from-bottom-10 duration-1000 fill-mode-both ${style.delay}
                          `}>
-                             <span className={`text-3xl font-black mb-1 ${colorConfig.text}`}>
-                                 {player.rank}
-                             </span>
-                             <span className="text-[10px] md:text-xs font-bold uppercase tracking-wide px-1 truncate w-full opacity-90 text-white">
-                                 {player.displayName}
-                             </span>
-                             <span className="text-[10px] font-mono bg-black/40 px-2 rounded-full mt-1 text-zinc-400">
-                                 {player.totalScore} pts
-                             </span>
+                             {isFirst && (
+                                <Sparkles className="text-yellow-300 absolute -top-8 animate-bounce" size={32} fill="currentColor" />
+                             )}
+                             
+                             <div className={`
+                                w-auto h-auto aspect-square rounded-full bg-[#131f24] flex items-center justify-center p-2 border-4
+                                ${style.avatarBorder}
+                             `}>
+                                 <span className={`${style.emoji} filter drop-shadow-lg group-hover:animate-wiggle`}>
+                                    {player.avatarEmoji}
+                                 </span>
+                             </div>
                          </div>
                     </div>
                 );

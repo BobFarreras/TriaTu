@@ -23,11 +23,12 @@ export class InventoryItem {
 
   public static create(props: InventoryItemProps): InventoryItem {
     // Validació de quantitat (recorda: permetem 0, però no negatius)
-    if (props.quantity < 0) {
-      throw new Error("La quantitat no pot ser negativa");
+    // ✅ AFEGEIX AQUESTA VALIDACIÓ:
+    if (props.quantity <= 0) {
+      throw new Error("La quantitat ha de ser positiva.");
     }
     if (!props.name || props.name.trim().length === 0) {
-        throw new Error("El nom de l'article no pot estar buit");
+      throw new Error("El nom de l'article no pot estar buit");
     }
     return new InventoryItem(props);
   }

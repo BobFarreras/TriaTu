@@ -8,57 +8,66 @@ import { RankingEntry, calculateBadges } from '@/core/domain/entities/RankingEnt
 interface LeaderboardRowDTO {
     user_id: string;
     display_name: string;
+    avatar_emoji: string; // ✅ NOU CAMP
     quality_score: number | null;   // SQL pot retornar null si no hi ha dades
     pantry_score: number | null;
     community_score: number | null;
 }
 
 export class SupabaseRankingRepository implements RankingRepository {
-    // ✅ 2. Tipem el client correctament
-    constructor(private supabase: SupabaseClient) {}
+    constructor(private supabase: SupabaseClient) { }
 
     async getTopPlayers(limit: number = 20): Promise<RankingEntry[]> {
-        // ✅ 3. Utilitzem el mètode .returns<T>() de Supabase per tipar la resposta
-        // Això elimina l'error 'any' i ens dona autocomplete.
+        // 1. Fem la consulta
         const { data, error } = await this.supabase
             .from('user_leaderboard')
             .select('*')
-            .returns<LeaderboardRowDTO[]>(); 
+            .returns<LeaderboardRowDTO[]>();
+
+        // 🚨 CONSOLES DE DEPURACIÓ 🚨
+        console.log('--- 🏆 DEBUG RÀNQUING ---');
+        if (error) {
+            console.error('❌ Error Supabase:', error);
+        } else {
+            console.log(`✅ Dades rebudes: ${data?.length} usuaris`);
+            console.log('📋 Mostra (primer usuari):', data?.[0]);
+            // Si vols veure tots els IDs per comprovar qui falta:
+            console.log('👥 User IDs trobats:', data?.map(u => u.user_id));
+        }
+        console.log('-------------------------');
 
         if (error) {
             console.error('Error fetching leaderboard:', error);
             return [];
         }
 
-        // Si data és null (encara que rar amb returns), protegim
         if (!data) return [];
 
-        // ✅ 4. Mapeig amb tipus segurs (Ja no hi ha 'any')
+        // 2. Mapeig (es manté igual que abans)
         const players = data.map((row) => {
-            // Convertim nulls a 0 de forma segura
             const quality = Number(row.quality_score) ?? 0;
             const pantry = Number(row.pantry_score) ?? 0;
             const community = Number(row.community_score) ?? 0;
-            
+
             const total = quality + pantry + community;
 
-            // Retornem l'entitat de domini neta
             return {
                 userId: row.user_id,
                 displayName: row.display_name ?? 'Chef Anònim',
+                avatarEmoji: row.avatar_emoji ?? '👨‍🍳', // ✅ NOU CAMP AL DOMINI
                 qualityScore: quality,
                 pantryScore: pantry,
                 communityScore: community,
                 totalScore: total,
-                rank: 0, 
+                rank: 0,
                 badges: []
             };
         });
 
-        // Ordenar per puntuació total
+        // Ordenar
         players.sort((a, b) => b.totalScore - a.totalScore);
 
-        // Assignar Ranks i Medalles
+        // Retornar amb badges
         return players.slice(0, limit).map((player, index) => {
             const rank = index + 1;
             const badges = calculateBadges(
@@ -67,13 +76,17 @@ export class SupabaseRankingRepository implements RankingRepository {
                 player.communityScore,
                 player.pantryScore
             );
-
             return { ...player, rank, badges };
         });
     }
 
     async getUserRank(userId: string): Promise<RankingEntry | null> {
         const allPlayers = await this.getTopPlayers(1000);
-        return allPlayers.find(p => p.userId === userId) || null;
+        const found = allPlayers.find(p => p.userId === userId) || null;
+
+        // 🚨 DEBUG INDIVIDUAL
+        console.log(`🔍 Buscant usuari ${userId} al rànquing... ${found ? 'Trobat ✅' : 'No trobat ❌'}`);
+
+        return found;
     }
 }

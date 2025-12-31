@@ -215,6 +215,7 @@ function ItemBubble({ emoji, label, variant }: { emoji: string; label: string; v
             ref={triggerRef}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={() => setIsHovered(false)}
+            title={label} // <--- ADD THIS: Native tooltip and test accessibility
             className={`
                 w-12 h-12 shrink-0 rounded-lg border flex items-center justify-center text-lg cursor-help transition-all duration-200
                 ${styles[variant]}

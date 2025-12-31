@@ -6,13 +6,19 @@ import { TagInput } from '@/components/ui/TagInput';
 import { SearchableSectionGrid } from '@/components/ui/SearchableSectionGrid';
 import { EXCLUSION_DATA, FOOD_DATA } from '@/core/constants/profile-data';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { Save, CheckCircle2 } from 'lucide-react';
+import { Save, CheckCircle2, Edit3 } from 'lucide-react';
 
+// ✅ 1. ACTUALITZEM EL TIPUS DE DADES
 type ProfileData = {
+  username?: string;        // Opcional inicialment
+  avatarEmoji?: string;     // Opcional inicialment
   foodPreferences: string[];
   exclusions: string[];
   socialTolerance: number;
 };
+
+// Llista d'avatars predefinits
+const AVATAR_PRESETS = ['👨‍🍳', '👩‍🍳', '🦁', '👽', '🦄', '🤖', '🐸', '🦊', '🐯', '🐼', '🐙', '👻', '🧙‍♂️', '🥷'];
 
 const getAllIds = (categories: typeof EXCLUSION_DATA) =>
   categories.flatMap(c => c.items.map(i => i.id));
@@ -20,6 +26,10 @@ const getAllIds = (categories: typeof EXCLUSION_DATA) =>
 export function ProfileForm({ initialData }: { initialData: ProfileData }) {
   const { t } = useLanguage();
   const [state, action, isPending] = useActionState(updateProfileAction, {});
+
+  // ✅ 2. ESTATS PER LA IDENTITAT
+  const [username, setUsername] = useState(initialData.username || '');
+  const [avatar, setAvatar] = useState(initialData.avatarEmoji || '👨‍🍳');
 
   const knownFoodIds = getAllIds(FOOD_DATA);
   const knownExclusionIds = getAllIds(EXCLUSION_DATA);
@@ -59,8 +69,76 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
   return (
     <form action={action} className="space-y-6 pb-24">
       
-      {/* --- CARD 1: MENJAR (VERD) --- */}
-      {/* FONS FOSC (bg-zinc-900/70) */}
+      {/* --------------------------------------------------------- */}
+      {/* 1. NOVA SECCIÓ: IDENTITAT (Lila/Indigo)                   */}
+      {/* --------------------------------------------------------- */}
+      <div className="bg-zinc-900/70 backdrop-blur-xl rounded-[2.5rem] border-4 border-zinc-800 p-6 md:p-8 shadow-sm relative overflow-hidden group hover:border-indigo-500/30 transition-colors duration-500">
+          
+          {/* Barra superior decorativa */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-indigo-400 to-purple-600 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
+
+          <div className="flex flex-col md:flex-row items-center gap-8">
+              
+              {/* SELECCIÓ D'AVATAR */}
+              <div className="flex flex-col items-center gap-4 shrink-0">
+                  {/* Avatar Gran Actual */}
+                  <div className="relative group/avatar cursor-pointer">
+                      <div className="w-24 h-24 rounded-full bg-zinc-800 border-4 border-zinc-700 flex items-center justify-center text-5xl shadow-xl transition-transform group-hover/avatar:scale-105 group-hover/avatar:border-indigo-500">
+                          {avatar}
+                      </div>
+                      <div className="absolute bottom-0 right-0 bg-indigo-600 p-1.5 rounded-full text-white border-4 border-zinc-900">
+                          <Edit3 size={14} />
+                      </div>
+                      {/* Input ocult per enviar al server */}
+                      <input type="hidden" name="avatar_emoji" value={avatar} />
+                  </div>
+                  
+                  {/* Llista horitzontal d'avatars */}
+                  <div className="flex gap-2 max-w-60 overflow-x-auto pb-2 px-1 [scrollbar-width:none]">
+                      {AVATAR_PRESETS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => setAvatar(emoji)}
+                            className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all border-2 
+                                ${avatar === emoji 
+                                    ? 'bg-indigo-600 border-indigo-400 scale-110 shadow-lg' 
+                                    : 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700'
+                                }`}
+                          >
+                              {emoji}
+                          </button>
+                      ))}
+                  </div>
+              </div>
+
+              {/* INPUT DE NOM */}
+              <div className="flex-1 w-full">
+                  <label className="block text-xs font-black text-indigo-400 uppercase tracking-widest mb-2">
+                      Nom de Xef
+                  </label>
+                  <div className="relative">
+                      <input 
+                        type="text" 
+                        name="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Ex: Chef Ramsay"
+                        maxLength={20}
+                        className="w-full bg-zinc-950/50 border-2 border-zinc-700 rounded-2xl px-5 py-4 text-white font-bold text-lg focus:border-indigo-500 focus:outline-none transition-all placeholder:text-zinc-600"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-600 pointer-events-none">
+                          {username.length}/20
+                      </div>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 mt-2 pl-2">
+                      Aquest és el nom que veuran els altres al Rànquing.
+                  </p>
+              </div>
+          </div>
+      </div>
+
+      {/* --- CARD 2: MENJAR (VERD) --- */}
       <div className="bg-zinc-900/70 backdrop-blur-xl rounded-[2.5rem] border-4 border-zinc-800 p-6 md:p-8 shadow-sm relative overflow-hidden group hover:border-green-900/50 transition-colors duration-500">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-green-400 to-emerald-600 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
           
@@ -88,7 +166,7 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
           <input type="hidden" name="foodPreferences" value={selectedFood.join(',')} />
       </div>
 
-      {/* --- CARD 2: EXCLUSIONS (VERMELL) --- */}
+      {/* --- CARD 3: EXCLUSIONS (VERMELL) --- */}
       <div className="bg-zinc-900/70 backdrop-blur-xl rounded-[2.5rem] border-4 border-zinc-800 p-6 md:p-8 shadow-sm relative overflow-hidden group hover:border-red-900/50 transition-colors duration-500">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-red-400 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
 
@@ -130,7 +208,7 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
           </div>
       </div>
 
-      {/* --- CARD 3: TOLERÀNCIA (BLAU) --- */}
+      {/* --- CARD 4: TOLERÀNCIA (BLAU) --- */}
       <div className="bg-zinc-900/70 backdrop-blur-xl rounded-[2.5rem] border-4 border-zinc-800 p-6 md:p-8 shadow-sm relative overflow-hidden group hover:border-blue-900/50 transition-colors duration-500">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-blue-400 to-cyan-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
 
