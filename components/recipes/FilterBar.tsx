@@ -3,8 +3,10 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Hook
 
 export function FilterBar({ currentFilter, currentSearch }: { currentFilter: string, currentSearch: string }) {
+  const { t } = useLanguage(); // ✅
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,22 +22,21 @@ export function FilterBar({ currentFilter, currentSearch }: { currentFilter: str
     updateParam('q', term);
   }, 300);
 
-  // Afegeix aquí els filtres que vulguis.
-  // L'ID ('VEGAN', 'DESSERT') és el que enviarem per URL.
+  // ✅ Traduïm els labels fent servir el 't'
   const filters = [
-    { id: 'ALL', label: 'Totes', icon: '🌍' },
-    { id: 'FAST', label: 'Ràpides', icon: '⚡' },
-    { id: 'VEGGIE', label: 'Vegetarià', icon: '🥗' },
-    { id: 'VEGAN', label: 'Vegà', icon: '🌱' },
-    { id: 'GLUTEN_FREE', label: 'Sense Gluten', icon: '🌾🚫' },
-    { id: 'DAIRY_FREE', label: 'Sense Lactosa', icon: '🥛🚫' },
-    { id: 'DESSERT', label: 'Postres', icon: '🍰' },
+    { id: 'ALL', label: t.community.filters.all, icon: '🌍' },
+    { id: 'FAST', label: t.community.filters.fast, icon: '⚡' },
+    { id: 'VEGGIE', label: t.community.filters.veggie, icon: '🥗' },
+    { id: 'VEGAN', label: t.community.filters.vegan, icon: '🌱' },
+    { id: 'GLUTEN_FREE', label: t.community.filters.gluten_free, icon: '🌾🚫' },
+    { id: 'DAIRY_FREE', label: t.community.filters.dairy_free, icon: '🥛🚫' },
+    { id: 'DESSERT', label: t.community.filters.dessert, icon: '🍰' },
   ];
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 justify-between items-center bg-slate-900/80 backdrop-blur-xl p-2 pr-4 rounded-[2rem] border border-slate-800 shadow-xl sticky top-4 z-40">
       
-      {/* 🔮 FILTRES ANIMATS (Scrollable) */}
+      {/* FILTRES ANIMATS */}
       <div className="flex p-1 bg-black/20 rounded-full overflow-x-auto max-w-full no-scrollbar mask-linear-fade">
         {filters.map((f) => {
           const isActive = currentFilter === f.id;
@@ -59,14 +60,14 @@ export function FilterBar({ currentFilter, currentSearch }: { currentFilter: str
         })}
       </div>
       
-      {/* 🔍 CERCA ESTILITZADA */}
+      {/* CERCA */}
       <div className="relative w-full lg:w-auto min-w-[300px] group">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-lg">
             🔍
         </div>
         <input 
           type="text" 
-          placeholder="Cercar ingredients..." 
+          placeholder={t.community.search_placeholder} // ✅ Traduït
           defaultValue={currentSearch}
           onChange={(e) => handleSearch(e.target.value)}
           className="w-full bg-black/40 border border-slate-800 rounded-full pl-12 pr-6 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-inner"

@@ -2,21 +2,30 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {  X, Clock, AlertCircle } from 'lucide-react';
-import { EditorData } from './types'; // ✅ IMPORT
+import { X, Clock, AlertCircle } from 'lucide-react';
+import { EditorData } from './types';
 
 interface Props {
   data: EditorData;
-  update: (d: EditorData) => void; // ✅ ADÉU ANY
+  update: (d: EditorData) => void;
+  // ✅ Nova prop
+  labels: {
+    title: string;
+    placeholder: string;
+    quick_insert: string;
+    timer: string;
+    add_timer: string;
+    warning_ingredients: string;
+    add_btn: string;
+    empty_state: string;
+  }
 }
 
-export function StepsBuilder({ data, update }: Props) {
+export function StepsBuilder({ data, update, labels }: Props) {
   const [currentStep, setCurrentStep] = useState('');
 
-  // INSERIR VARIABLE AL TEXT
   const insertToken = (text: string) => {
     setCurrentStep(prev => `${prev} ${text} `);
-    // (Opcional: Si volguéssim fer focus al textarea podríem usar un ref)
   };
 
   const addStep = () => {
@@ -34,42 +43,40 @@ export function StepsBuilder({ data, update }: Props) {
        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
        
        <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-        <span className="text-2xl">👨‍🍳</span> Instruccions
+        <span className="text-2xl">👨‍🍳</span> {labels.title}
       </h2>
 
-      {/* EDITOR "n8n Style" */}
+      {/* EDITOR */}
       <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 focus-within:border-purple-500 transition-colors shadow-inner flex flex-col gap-3">
          
          <textarea 
-            value={currentStep}
-            onChange={(e) => setCurrentStep(e.target.value)}
-            placeholder="Escriu el pas aquí... (Clica els ingredients de sota per inserir-los)"
-            className="w-full bg-transparent text-white outline-none resize-none h-24 placeholder:text-slate-600 leading-relaxed"
-            onKeyDown={(e) => {
-                if(e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    addStep();
-                }
-            }}
+           value={currentStep}
+           onChange={(e) => setCurrentStep(e.target.value)}
+           placeholder={labels.placeholder}
+           className="w-full bg-transparent text-white outline-none resize-none h-24 placeholder:text-slate-600 leading-relaxed"
+           onKeyDown={(e) => {
+               if(e.key === 'Enter' && !e.shiftKey) {
+                   e.preventDefault();
+                   addStep();
+               }
+           }}
          />
 
-         {/* BARRA D'EINES MÀGICA (Variables) */}
+         {/* BARRA EINES */}
          <div className="flex flex-col gap-2 border-t border-slate-800 pt-3">
              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500">
-                <span>Inserir ràpid:</span>
-                <span className="flex items-center gap-1"><Clock size={10} /> Temporitzador</span>
+                <span>{labels.quick_insert}</span>
+                <span className="flex items-center gap-1"><Clock size={10} /> {labels.timer}</span>
              </div>
              
              <div className="flex flex-wrap gap-2">
-                {/* Botó Timer */}
                 <button 
                    onClick={() => insertToken("⏰ 5 min")}
                    className="bg-slate-800 hover:bg-slate-700 text-purple-300 border border-slate-700 px-2 py-1 rounded-md text-xs font-bold transition-all active:scale-95 flex items-center gap-1"
                 >
-                   + ⏰ Temps
+                   {labels.add_timer}
                 </button>
 
-                {/* Xips d'Ingredients (Dinàmics) */}
                 {data.ingredients.map((ing, i) => (
                     <button
                         key={i}
@@ -82,7 +89,7 @@ export function StepsBuilder({ data, update }: Props) {
                 
                 {data.ingredients.length === 0 && (
                     <span className="text-xs text-slate-600 flex items-center gap-1">
-                        <AlertCircle size={12} /> Afegeix ingredients a l'esquerra primer
+                        <AlertCircle size={12} /> {labels.warning_ingredients}
                     </span>
                 )}
              </div>
@@ -94,12 +101,12 @@ export function StepsBuilder({ data, update }: Props) {
                 disabled={!currentStep.trim()}
                 className="bg-white text-black font-bold px-4 py-2 rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
              >
-                Afegir Pas ↵
+                {labels.add_btn}
              </button>
          </div>
       </div>
 
-      {/* TIMELINE DE PASSOS */}
+      {/* TIMELINE */}
       <div className="mt-6 space-y-4 flex-1 overflow-y-auto">
          <AnimatePresence>
             {data.steps.map((step, i) => (
@@ -122,7 +129,6 @@ export function StepsBuilder({ data, update }: Props) {
                     
                     <div className="flex-1 bg-slate-900 border border-slate-800 p-4 rounded-xl rounded-tl-none relative group-hover:border-slate-700 transition-colors">
                         <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                            {/* Ressaltat simple dels tokens */}
                             {step.split(/(\[.*?\]|⏰.*?min)/g).map((part, idx) => {
                                 if (part.startsWith('[') && part.endsWith(']')) {
                                     return <span key={idx} className="font-bold text-purple-400 bg-purple-500/10 px-1 rounded">{part.slice(1, -1)}</span>
@@ -147,7 +153,7 @@ export function StepsBuilder({ data, update }: Props) {
          {data.steps.length === 0 && (
              <div className="flex flex-col items-center justify-center h-32 opacity-30">
                  <div className="w-1 bg-slate-700 h-10 mb-2"></div>
-                 <p className="text-sm">El camí cap a l'èxit comença aquí</p>
+                 <p className="text-sm">{labels.empty_state}</p>
              </div>
          )}
       </div>

@@ -1,43 +1,86 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RecipeProps } from '@/core/domain/entities/Recipe';
+
 import { saveAndViewRecipeAction } from '@/app/actions/recipe-persistence';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-
+import { Recipe, RecipeProps } from '@/core/domain/entities/Recipe';
 interface Props {
   recipes: RecipeProps[];
   userId: string; // Encara el rebem per si el necessites per UI, però no s'envia a l'acció
   onCancel: () => void;
 }
 
-// ... (Mantingues la funció getDishEmoji igual) ...
 function getDishEmoji(name: string): string {
+  if (!name) return '🍽️';
+
   const n = name.toLowerCase();
-  if (n.includes('pizz')) return '🍕';
-  // ... resta del teu codi d'emojis ...
+
+  // 🍕 Fast Food / Casual
+  if (n.includes('pizza')) return '🍕';
+  if (n.includes('burger') || n.includes('hamburg')) return '🍔';
+  if (n.includes('taco') || n.includes('fajita') || n.includes('burrito')) return '🌮';
+  if (n.includes('entrep') || n.includes('bocata') || n.includes('sandwich') || n.includes('bikini')) return '🥪';
+  if (n.includes('frit') || n.includes('fregit') || n.includes('croquet')) return '🍟';
+
+  // 🍝 Pasta & Arròs
+  if (n.includes('pasta') || n.includes('espagueti') || n.includes('macarron') || n.includes('ravioli')) return '🍝';
+  if (n.includes('arròs') || n.includes('paella') || n.includes('risotto')) return '🥘';
+  if (n.includes('fideu')) return '🍜';
+
+  // 🥗 Saludable / Verdures
+  if (n.includes('amanida') || n.includes('enciam') || n.includes('salad') || n.includes('verd')) return '🥗';
+  if (n.includes('sopa') || n.includes('crema') || n.includes('brou')) return '🥣';
+  if (n.includes('albergínia') || n.includes('carbassó') || n.includes('pastanaga')) return '🥦';
+
+  // 🥩 Proteïna
+  if (n.includes('pollastre') || n.includes('pavo') || n.includes('au')) return '🍗';
+  if (n.includes('carn') || n.includes('vedella') || n.includes('porc') || n.includes('filet') || n.includes('xai')) return '🥩';
+  if (n.includes('sushi') || n.includes('maki')) return '🍣';
+  if (n.includes('peix') || n.includes('luç') || n.includes('bacalla') || n.includes('salm') || n.includes('gamba')) return '🐟';
+  if (n.includes('ou') || n.includes('truita') || n.includes('remenat')) return '🍳';
+
+  // 🍰 Postres
+  if (n.includes('postre') || n.includes('pastís') || n.includes('cake') || n.includes('tiramisú')) return '🍰';
+  if (n.includes('gelat')) return '🍦';
+  if (n.includes('xocolata') || n.includes('bombó')) return '🍫';
+  if (n.includes('fruita') || n.includes('poma') || n.includes('maduixa')) return '🍎';
+  if (n.includes('galet')) return '🍪';
+
+  // 🥖 Acompanyaments
+  if (n.includes('pa ') || n.includes('torrada')) return '🥖';
+  if (n.includes('formatge')) return '🧀';
+
+  // Per defecte
   return '🍽️';
 }
 
-export function RecipeGrid({ recipes, userId, onCancel }: Props) {
+export function RecipeGrid({ recipes, onCancel }: Props) {
   const router = useRouter();
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  const handleSelect = async (recipe: RecipeProps) => {
-    if (savingId) return; // Evitar doble click
+  // ✅ TIPATGE SEGUR: Acceptem tant la Classe com les Props
+  const handleSelect = async (recipe: Recipe | RecipeProps) => {
+    if (savingId) return;
     setSavingId(recipe.id);
-    
-    // ✅ FIX: Només passem l'objecte recepta. L'usuari es valida al servidor.
-    const result = await saveAndViewRecipeAction(recipe);
+
+    // 🔍 DESEMPAQUETAT SEGUR:
+    // L'operador 'in' comprova si la propietat "props" existeix dins l'objecte.
+    // Si existeix, sabem que és la Classe i n'extraiem les dades.
+    // Si no, assumim que ja és l'objecte pla.
+    const plainData = 'props' in recipe ? recipe.props : recipe;
+
+    console.log("📤 Enviant al servidor:", plainData.name);
+
+    const result = await saveAndViewRecipeAction(plainData);
 
     if (result.success) {
       toast.success("Recepta guardada correctament!");
-      // Ara sí que redirigim des del client
       router.push(`/recipes/${result.recipeId}`);
     } else {
       toast.error(result.error || "Error guardant la recepta.");
-      setSavingId(null); // Tornem a habilitar el botó si falla
+      setSavingId(null);
     }
   };
 
@@ -50,18 +93,18 @@ export function RecipeGrid({ recipes, userId, onCancel }: Props) {
   }
 
   return (
-    <div className="space-y-6 w-full min-h-75"> 
-      
+    <div className="space-y-6 w-full min-h-75">
+
       <div className="flex justify-between items-center">
         <div className="flex flex-col">
-            <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <span>👨‍🍳</span> Propostes del Xef
-            </h3>
-            <p className="text-xs text-slate-400">Tria la que més t'agradi.</p>
+          <h3 className="text-xl font-black text-white flex items-center gap-2">
+            <span>👨‍🍳</span> Propostes del Xef
+          </h3>
+          <p className="text-xs text-slate-400">Tria la que més t'agradi.</p>
         </div>
-        <button 
-            onClick={onCancel} 
-            className="text-xs font-bold text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-700 px-3 py-1.5 rounded-full transition-colors"
+        <button
+          onClick={onCancel}
+          className="text-xs font-bold text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-700 px-3 py-1.5 rounded-full transition-colors"
         >
           Tancar
         </button>
@@ -74,7 +117,7 @@ export function RecipeGrid({ recipes, userId, onCancel }: Props) {
           const emoji = getDishEmoji(safeName);
 
           return (
-            <div 
+            <div
               key={recipe.id || idx} // Preferible usar ID
               onClick={() => handleSelect(recipe)}
               className={`
@@ -93,14 +136,14 @@ export function RecipeGrid({ recipes, userId, onCancel }: Props) {
 
               {/* CONTINGUT CARD - (El teu codi visual estava perfecte) */}
               <div className="flex justify-between items-start mb-3">
-                 <div className="text-3xl bg-slate-800 w-12 h-12 flex items-center justify-center rounded-2xl">
-                    {emoji}
-                 </div>
-                 {recipe.prepTimeMinutes && (
-                    <span className="text-[10px] font-bold bg-black/40 text-slate-300 px-2 py-1 rounded-full">
-                      {recipe.prepTimeMinutes} min
-                    </span>
-                 )}
+                <div className="text-3xl bg-slate-800 w-12 h-12 flex items-center justify-center rounded-2xl">
+                  {emoji}
+                </div>
+                {recipe.prepTimeMinutes && (
+                  <span className="text-[10px] font-bold bg-black/40 text-slate-300 px-2 py-1 rounded-full">
+                    {recipe.prepTimeMinutes} min
+                  </span>
+                )}
               </div>
 
               <h4 className="font-bold text-lg text-white mb-2 line-clamp-2">
@@ -108,16 +151,16 @@ export function RecipeGrid({ recipes, userId, onCancel }: Props) {
               </h4>
 
               <div className="flex flex-wrap gap-1 mb-4">
-                  {recipe.ingredients?.slice(0, 3).map((ing, i) => (
-                    <span key={i} className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
-                      {ing.name}
-                    </span>
-                  ))}
+                {recipe.ingredients?.slice(0, 3).map((ing, i) => (
+                  <span key={i} className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
+                    {ing.name}
+                  </span>
+                ))}
               </div>
 
               <div className="mt-auto pt-3 border-t border-slate-800 flex justify-between">
-                 <span className="text-[10px] uppercase font-bold text-purple-400">Cuinar</span>
-                 <span className="text-slate-500 text-xs">➔</span>
+                <span className="text-[10px] uppercase font-bold text-purple-400">Cuinar</span>
+                <span className="text-slate-500 text-xs">➔</span>
               </div>
             </div>
           );

@@ -1,3 +1,5 @@
+// core/domain/entities/Decision.ts
+
 import { DecisionContext } from '../value-objects/DecisionContext';
 import { DecisionOutcome } from '../value-objects/DecisionOutcome';
 
@@ -14,11 +16,18 @@ export enum DecisionStatus {
   CANCELLED = 'CANCELLED'
 }
 
+// Props per crear una NOVA decisió (ús habitual de negoci)
 export interface DecisionProps {
   id: string;
   userId: string;
   type: DecisionType;
   context: DecisionContext;
+}
+
+// Props esteses exclusivament per rehidratar des de BD
+export interface DecisionRestoreProps extends DecisionProps {
+  status: DecisionStatus;
+  outcome?: DecisionOutcome;
 }
 
 export class Decision {
@@ -35,7 +44,26 @@ export class Decision {
     this.userId = props.userId;
     this.type = props.type;
     this.context = props.context;
+    
+    // Per defecte, una nova decisió sempre neix PENDING
     this.status = DecisionStatus.PENDING;
+  }
+
+  /**
+   * ✅ MÈTODE FACTORY PER A INFRAESTRUCTURA
+   * Reconstitueix una decisió existent des de la persistència.
+   * Accedeix a propietats privades de forma segura sense trencar encapsulament.
+   */
+  public static restore(props: DecisionRestoreProps): Decision {
+    const decision = new Decision(props);
+    
+    // Sobreescriu l'estat per defecte amb l'estat real de la BD
+    decision.status = props.status;
+    
+    // Assignació directa permesa perquè estem dins de la classe
+    decision._outcome = props.outcome;
+    
+    return decision;
   }
 
   get outcome(): DecisionOutcome | undefined {

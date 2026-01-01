@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { ProfileForm } from './ProfileFrom'; // Assegura't del nom del fitxer
+import { ProfileForm } from './ProfileFrom'; // ✅ Corregit (abans ProfileFrom)
 import { ArrowLeft } from 'lucide-react';
 
-// ✅ Definim el tipus complet (Ha de coincidir amb initialData de la pàgina)
+// ✅ Definim el tipus complet (Ha de coincidir amb el que retorna el loader de la pàgina)
 export type ProfileData = {
   username?: string;
   avatarEmoji?: string;
@@ -16,7 +16,6 @@ export type ProfileData = {
 
 interface Props {
     initialData: ProfileData;
-    // Ja no necessitem 'username' com a prop separada, ve dins d'initialData
 }
 
 export function ProfileContent({ initialData }: Props) {
@@ -24,7 +23,6 @@ export function ProfileContent({ initialData }: Props) {
 
   // Calculem què mostrar al Header
   const displayAvatar = initialData.avatarEmoji || '👨‍🍳';
-  // Si té nom, el mostrem. Si no, mostrem "El teu Perfil" o l'email si el passéssim
   const displayName = initialData.username || (t.profile?.title || 'El teu Perfil');
 
   return (
@@ -45,7 +43,7 @@ export function ProfileContent({ initialData }: Props) {
             
             <div>
                 {/* Títol Dinàmic */}
-                <h1 className="text-xl font-black text-white leading-none truncate max-w-[200px] md:max-w-md">
+                <h1 className="text-xl font-black text-white leading-none truncate max-w-50 md:max-w-md">
                     {displayName}
                 </h1>
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">

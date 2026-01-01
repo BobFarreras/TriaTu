@@ -1,104 +1,89 @@
-import { RankingEntry } from '@/core/domain/entities/RankingEntry';
-import { Sparkles,} from 'lucide-react';
+'use client';
+
+import { Player } from '@/core/domain/entities/Player';
+import { Crown } from 'lucide-react';
 
 interface Props {
-    players: RankingEntry[];
+  players: Player[];
 }
 
 export function RankingPodium({ players }: Props) {
-    if (players.length === 0) return null;
+  // Assegurem que sempre tenim 3 posicions (encara que siguin undefined)
+  const [first, second, third] = [players[0], players[1], players[2]];
 
-    const first = players[0];
-    const second = players[1];
-    const third = players[2];
-    
-    // Ordre visual: 2n - 1r - 3r
-    const podiumOrder = [second, first, third].filter(Boolean);
+  return (
+    <div className="flex items-end justify-center gap-2 sm:gap-4 h-48 sm:h-56 mt-8">
+      
+      {/* 🥈 SEGON LLOC */}
+      <PodiumStep player={second} position={2} />
 
-    return (
-        <div className="flex items-end justify-center gap-2 md:gap-4 h-80 w-full pt-16 perspective-1000">
-            {podiumOrder.map((player) => {
-                const isFirst = player.rank === 1;
-                const isSecond = player.rank === 2;
-                
-                // Mides i Estils
-                const heightClass = isFirst ? 'h-64 w-1/3' : (isSecond ? 'h-48 w-1/4' : 'h-40 w-1/4');
-                
-                const style = isFirst 
-                    ? { 
-                        bar: 'bg-gradient-to-t from-yellow-900/40 via-yellow-600/20 to-yellow-400/10 border-yellow-500/50 shadow-[0_0_40px_-10px_rgba(234,179,8,0.3)]', 
-                        text: 'text-yellow-400',
-                        emoji: 'text-6xl',
-                        avatarBorder: 'border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.4)]',
-                        delay: 'delay-200'
-                      }
-                    : (isSecond 
-                        ? { 
-                            bar: 'bg-gradient-to-t from-zinc-900/40 via-zinc-600/20 to-zinc-400/10 border-zinc-500/50', 
-                            text: 'text-zinc-300',
-                            emoji: 'text-4xl',
-                            avatarBorder: 'border-zinc-400',
-                            delay: 'delay-100'
-                          }
-                        : { 
-                            bar: 'bg-gradient-to-t from-orange-900/40 via-orange-600/20 to-orange-400/10 border-orange-500/50', 
-                            text: 'text-orange-400',
-                            emoji: 'text-4xl',
-                            avatarBorder: 'border-orange-600',
-                            delay: 'delay-0'
-                          }
-                    );
+      {/* 🥇 PRIMER LLOC */}
+      <PodiumStep player={first} position={1} />
 
-                return (
-                    <div 
-                        key={player.userId} 
-                        className={`relative flex flex-col justify-end ${heightClass} group z-10 hover:z-20 transition-all duration-300 hover:scale-105`}
-                    >
-                         {/* 1. BARRA (GLASSMORPHISM) */}
-                         <div className={`
-                            relative w-full h-full rounded-t-3xl border-x border-t backdrop-blur-md flex flex-col justify-end pb-6 items-center text-center
-                            animate-in slide-in-from-bottom-full duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] fill-mode-both ${style.delay}
-                            ${style.bar} overflow-hidden
-                         `}>
-                             {/* Número de fons */}
-                             <span className={`absolute top-2 text-8xl font-black ${style.text} opacity-10 select-none`}>
-                                 {player.rank}
-                             </span>
+      {/* 🥉 TERCER LLOC */}
+      <PodiumStep player={third} position={3} />
 
-                             <div className="w-full px-1 z-10">
-                                <span className="block text-[10px] md:text-xs font-black uppercase tracking-widest truncate text-white drop-shadow-md">
-                                    {player.displayName}
-                                </span>
-                             </div>
+    </div>
+  );
+}
 
-                             <div className="mt-2 bg-black/40 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm">
-                                 <span className="text-[10px] font-mono font-bold text-white">
-                                     {player.totalScore} pts
-                                 </span>
-                             </div>
-                         </div>
+// Subcomponent intern per netejar el codi
+function PodiumStep({ player, position }: { player?: Player, position: number }) {
+  if (!player) {
+    // Placeholder buit si no hi ha jugador
+    return <div className="flex-1 h-full opacity-0"></div>;
+  }
 
-                         {/* 2. AVATAR (POSAT DESPRÉS PERQUÈ QUEDI A SOBRE) */}
-                         <div className={`
-                            absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center
-                            animate-in zoom-in slide-in-from-bottom-10 duration-1000 fill-mode-both ${style.delay}
-                         `}>
-                             {isFirst && (
-                                <Sparkles className="text-yellow-300 absolute -top-8 animate-bounce" size={32} fill="currentColor" />
-                             )}
-                             
-                             <div className={`
-                                w-auto h-auto aspect-square rounded-full bg-[#131f24] flex items-center justify-center p-2 border-4
-                                ${style.avatarBorder}
-                             `}>
-                                 <span className={`${style.emoji} filter drop-shadow-lg group-hover:animate-wiggle`}>
-                                    {player.avatarEmoji}
-                                 </span>
-                             </div>
-                         </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
+  const isFirst = position === 1;
+  const isSecond = position === 2;
+  
+  // Alçades relatives
+  const heightClass = isFirst ? 'h-full' : isSecond ? 'h-4/5' : 'h-3/5';
+  
+  // Colors segons posició
+  const colorClass = isFirst 
+    ? 'bg-linear-to-b from-yellow-400 to-yellow-600 border-yellow-300 shadow-yellow-900/40' 
+    : isSecond 
+      ? 'bg-linear-to-b from-slate-300 to-slate-500 border-slate-200 shadow-slate-900/40' 
+      : 'bg-linear-to-b from-orange-400 to-orange-700 border-orange-300 shadow-orange-900/40';
+
+  const glowColor = isFirst ? 'bg-yellow-500' : isSecond ? 'bg-slate-400' : 'bg-orange-500';
+
+  return (
+    <div className={`flex flex-col items-center justify-end w-1/3 max-w-[120px] ${heightClass} relative group`}>
+      
+      {/* Avatar flotant */}
+      <div className={`absolute -top-6 sm:-top-8 w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white/20 shadow-xl overflow-hidden z-20 flex items-center justify-center bg-zinc-800 transition-transform group-hover:scale-110 duration-300`}>
+         {player.avatarUrl ? (
+            <img src={player.avatarUrl} alt={player.username} className="w-full h-full object-cover" />
+         ) : (
+            <span className="text-white font-bold">{player.username.charAt(0)}</span>
+         )}
+         {isFirst && <Crown size={20} className="absolute -top-3 -right-2 text-yellow-300 fill-yellow-300 animate-bounce" />}
+      </div>
+
+      {/* Barra del Podi */}
+      <div className={`w-full flex-1 rounded-t-2xl border-t-4 ${colorClass} relative flex flex-col items-center justify-start pt-8 sm:pt-10 shadow-lg`}>
+         
+         {/* Brillo */}
+         <div className="absolute top-0 inset-x-0 h-1/2 bg-linear-to-b from-white/20 to-transparent pointer-events-none rounded-t-xl" />
+
+         <span className="text-2xl sm:text-4xl font-black text-white/90 drop-shadow-md">
+            {position}
+         </span>
+         
+         <div className="mt-1 flex flex-col items-center">
+            <span className="text-[10px] sm:text-xs font-bold text-white/80 truncate max-w-[80px]">
+                {player.username}
+            </span>
+            <span className="text-[9px] font-black bg-black/20 px-1.5 py-0.5 rounded text-white/60 mt-0.5">
+                {player.score}
+            </span>
+         </div>
+      </div>
+
+      {/* Efecte Glow al terra */}
+      <div className={`absolute bottom-0 w-full h-4 ${glowColor} blur-xl opacity-30`} />
+    </div>
+  );
 }

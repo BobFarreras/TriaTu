@@ -2,10 +2,11 @@ import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
 import { BackButton } from '@/components/ui/BackButton';
-import { RoomQuickActions } from '@/components/rooms/RoomQuickActions'; // 👈 Nou
-import { RoomsGrid, UserRoom } from '@/components/rooms/RoomsGrid';   // 👈 Nou
+import { RoomQuickActions } from '@/components/rooms/RoomQuickActions';
+import { RoomsGrid, UserRoom } from '@/components/rooms/RoomsGrid';
+import { SocialHeader } from '@/components/rooms/SocialHeader'; // ✅ Import nou
 
-// Tipus per a la DB (només el necessitem aquí per transformar)
+// Tipus per a la DB
 interface RoomFromDB {
   id: string;
   name: string;
@@ -48,9 +49,8 @@ export default async function RoomsPage() {
         {/* HEADER */}
         <div className="flex items-center gap-4 mb-6">
             <BackButton href="/dashboard" />
-            <h1 className="text-2xl font-black text-white tracking-tight leading-none">
-                Zona Social
-            </h1>
+            {/* Component Client per al títol traduït */}
+            <SocialHeader /> 
         </div>
 
         {/* COMPONENT 1: ACCIONS */}

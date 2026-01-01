@@ -8,6 +8,7 @@ export interface RecipeGenerator {
     restrictions: DietaryRestriction[],
     focusDish?: string,
     excludeNames?: string[], // <--- NOU: Llista negra de noms
-    count?: number // ✅ NOU PARÀMETRE
+    count?: number, // ✅ NOU PARÀMETRE
+    language?: string // ✅ NOU PARÀMETRE (opcional per compatibilitat, string 'ca', 'es', 'en')
   ): Promise<Recipe[]>;
 }

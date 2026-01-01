@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { RecipeProps } from '@/core/domain/entities/Recipe';
 import { motion } from 'framer-motion';
 import { RecipeCard } from './RecipeCard';
+import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅
 
 interface Props {
   recipes: RecipeProps[];
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function RecipeFeed({ recipes, userId, userRatings, totalPages, currentPage }: Props) {
+  const { t } = useLanguage(); // ✅
   const searchParams = useSearchParams();
 
   const createPageUrl = (pageNumber: number) => {
@@ -31,12 +33,7 @@ export function RecipeFeed({ recipes, userId, userRatings, totalPages, currentPa
   return (
     <div className="space-y-8 pb-12">
       
-      {/* GRID RESPONSIVE 
-          - sm: 1 col
-          - md: 2 cols
-          - lg: 3 cols
-          - xl: 4 cols (Perfecte per 8 items)
-      */}
+      {/* GRID */}
       <motion.div 
         variants={containerVariants}
         initial="hidden"
@@ -57,7 +54,7 @@ export function RecipeFeed({ recipes, userId, userRatings, totalPages, currentPa
       {recipes.length === 0 && (
         <div className="text-center py-20 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
             <div className="text-6xl mb-4 grayscale opacity-50">🥣</div>
-            <p className="text-slate-400 font-medium">No s'han trobat receptes.</p>
+            <p className="text-slate-400 font-medium">{t.community.empty_state}</p> {/* ✅ */}
         </div>
       )}
 
@@ -72,7 +69,7 @@ export function RecipeFeed({ recipes, userId, userRatings, totalPages, currentPa
           </Link>
           
           <span className="text-xs text-slate-500 font-mono">
-             Pàgina <span className="text-white">{currentPage}</span> de {totalPages}
+             {t.community.pagination.page} <span className="text-white">{currentPage}</span> {t.community.pagination.of} {totalPages}
           </span>
 
           <Link

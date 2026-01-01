@@ -1,4 +1,7 @@
+'use client'; // ✅ Necessari
+
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export interface UserRoom {
   id: string;
@@ -7,12 +10,14 @@ export interface UserRoom {
 }
 
 export function RoomsGrid({ rooms }: { rooms: UserRoom[] }) {
+  const { t } = useLanguage();
+
   return (
     <div>
       {/* HEADER PETIT */}
       <div className="flex items-center justify-between px-1 mb-3">
           <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-              Sales Actives
+              {t.social.grid.title}
           </h3>
           <span className="bg-slate-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-700">
               {rooms.length}
@@ -23,7 +28,7 @@ export function RoomsGrid({ rooms }: { rooms: UserRoom[] }) {
         // EMPTY STATE
         <div className="py-12 text-center border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/30">
             <span className="text-2xl opacity-50 grayscale mb-2 block">🕸️</span>
-            <p className="text-xs text-gray-500">Cap sala activa encara.</p>
+            <p className="text-xs text-gray-500">{t.social.grid.empty}</p>
         </div>
       ) : (
         // GRID DE 2 COLUMNES
@@ -44,7 +49,7 @@ export function RoomsGrid({ rooms }: { rooms: UserRoom[] }) {
                             {room.name}
                         </p>
                         <span className={`text-[9px] font-bold uppercase tracking-wider w-fit rounded ${room.isHost ? 'text-purple-400' : 'text-blue-400'}`}>
-                            {room.isHost ? 'Admin' : 'Membre'}
+                            {room.isHost ? t.social.grid.role_admin : t.social.grid.role_member}
                         </span>
                     </div>
 

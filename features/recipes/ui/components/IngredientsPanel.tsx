@@ -5,7 +5,7 @@ import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { toggleIngredientStockAction } from '@/app/actions/inventory-quick-update'; 
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-
+import { getIngredientEmoji } from '@/lib/utils/emojiUtils';
 interface Ingredient {
   name: string;
   quantity: number;
@@ -18,12 +18,6 @@ interface Props {
   userId: string;
 }
 
-// ... (funció getIngredientEmoji igual) ...
-const getIngredientEmoji = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes('tomaquet')) return '🍅';
-    return '🥗'; // (resumit per brevetat)
-};
 
 export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
   const router = useRouter();
@@ -111,7 +105,7 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                 ing.name.toLowerCase().includes(item.name.toLowerCase())
             );
             
-            const hasEnough = stockItem ? stockItem.quantity >= 0 : false;
+        
             const isChecked = checkedItems.has(i);
             const isLoading = loadingItems.has(i);
             const emoji = getIngredientEmoji(ing.name);

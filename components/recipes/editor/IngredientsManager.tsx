@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search,  X } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { EditorData, InventoryItemUI } from './types';
 import { FOOD_PRESETS, PRESET_CATEGORIES, FoodCategory } from "@/lib/food-presets"; 
 
@@ -10,17 +10,24 @@ interface Props {
   data: EditorData;
   update: (d: EditorData) => void;
   inventory: InventoryItemUI[];
+  // ✅ Nova prop
+  labels: {
+    title: string;
+    selected: string;
+    search_placeholder: string;
+    category_all: string;
+    empty_search: string;
+    basket_title: string;
+    basket_empty: string;
+  }
 }
 
-export function IngredientsManager({ data, update, inventory }: Props) {
+export function IngredientsManager({ data, update, inventory, labels }: Props) {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<FoodCategory | 'ALL'>('ALL');
-  
-  // Estat per al mini-formulari d'afegir
   const [activeItem, setActiveItem] = useState<{name: string, unit: string} | null>(null);
   const [qty, setQty] = useState(1);
 
-  // 1. Filtrar Presets segons Cerca i Categoria
   const filteredPresets = FOOD_PRESETS.filter(preset => {
     const matchesSearch = preset.name.toLowerCase().includes(query.toLowerCase());
     const matchesCategory = selectedCategory === 'ALL' || preset.category === selectedCategory;
@@ -57,40 +64,38 @@ export function IngredientsManager({ data, update, inventory }: Props) {
       {/* CAPÇALERA */}
       <div className="flex items-center justify-between mb-4 relative z-10">
           <h2 className="text-lg font-black text-white flex items-center gap-2">
-            <span className="text-2xl">🥕</span> Rebost Màgic
+            <span className="text-2xl">🥕</span> {labels.title}
           </h2>
           <span className="text-xs font-bold text-slate-500 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-            {data.ingredients.length} seleccionats
+            {data.ingredients.length} {labels.selected}
           </span>
       </div>
 
       {/* 1. CERCA I CATEGORIES */}
       <div className="space-y-3 mb-4 shrink-0">
-         {/* Input Cerca */}
-         <div className="flex gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800 focus-within:border-purple-500 transition-colors">
-            <Search className="text-slate-500 ml-2 mt-2.5" size={18} />
-            <input 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Què necessites? (ex: Tomàquet)"
-              className="flex-1 bg-transparent text-white outline-none p-2 placeholder:text-slate-600"
-            />
+          <div className="flex gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800 focus-within:border-purple-500 transition-colors">
+             <Search className="text-slate-500 ml-2 mt-2.5" size={18} />
+             <input 
+               value={query}
+               onChange={(e) => setQuery(e.target.value)}
+               placeholder={labels.search_placeholder}
+               className="flex-1 bg-transparent text-white outline-none p-2 placeholder:text-slate-600"
+             />
              {query && (
                 <button onClick={() => setQuery('')} className="p-2 text-slate-500 hover:text-white">
                     <X size={16} />
                 </button>
              )}
-         </div>
+          </div>
 
-         {/* Pestanyes Categories (Scrollable) */}
-         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mask-linear-fade">
-            <button
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mask-linear-fade">
+             <button
                 onClick={() => setSelectedCategory('ALL')}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${selectedCategory === 'ALL' ? 'bg-white text-black border-white' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-600'}`}
-            >
-                🌍 Tot
-            </button>
-            {PRESET_CATEGORIES.map(cat => (
+             >
+                {labels.category_all}
+             </button>
+             {PRESET_CATEGORIES.map(cat => (
                 <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
@@ -98,15 +103,14 @@ export function IngredientsManager({ data, update, inventory }: Props) {
                 >
                     {cat}
                 </button>
-            ))}
-         </div>
+             ))}
+          </div>
       </div>
 
-      {/* 2. GRID DE SELECCIÓ (Scrollable) */}
+      {/* 2. GRID SELECCIÓ */}
       <div className="flex-1 overflow-y-auto pr-1 space-y-6 custom-scrollbar">
-         
-         {/* Modal d'edició ràpida (Overlay) */}
-         <AnimatePresence>
+          
+          <AnimatePresence>
             {activeItem && (
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
@@ -134,8 +138,6 @@ export function IngredientsManager({ data, update, inventory }: Props) {
                             <option value="ut">ut</option>
                             <option value="g">g</option>
                             <option value="ml">ml</option>
-                            <option value="kg">kg</option>
-                            <option value="l">l</option>
                         </select>
                         <button onClick={confirmAddIngredient} className="bg-purple-600 text-white px-4 rounded-xl font-bold">
                             <Plus />
@@ -143,14 +145,11 @@ export function IngredientsManager({ data, update, inventory }: Props) {
                     </div>
                 </motion.div>
             )}
-         </AnimatePresence>
+          </AnimatePresence>
 
-         {/* GRID D'ITEMS */}
-         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {filteredPresets.map(preset => {
-                // Comprovem si l'usuari el té al seu inventari personal
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+             {filteredPresets.map(preset => {
                 const inPantry = inventory.some(i => i.name.toLowerCase().includes(preset.name.toLowerCase()));
-                
                 return (
                     <button
                         key={preset.id}
@@ -165,29 +164,28 @@ export function IngredientsManager({ data, update, inventory }: Props) {
                     >
                         <span className="text-2xl group-hover:scale-110 transition-transform">{preset.emoji}</span>
                         <span className="text-[10px] font-bold text-slate-300 leading-tight line-clamp-2 min-h-[2.5ex]">{preset.name}</span>
-                        
                         {inPantry && (
                             <div className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                         )}
                     </button>
                 )
-            })}
-         </div>
+             })}
+          </div>
 
-         {filteredPresets.length === 0 && (
-             <div className="text-center py-10 opacity-50">
-                 <p>No hem trobat res... prova amb una altra categoria.</p>
-             </div>
-         )}
+          {filteredPresets.length === 0 && (
+              <div className="text-center py-10 opacity-50">
+                  <p>{labels.empty_search}</p>
+              </div>
+          )}
       </div>
 
-      {/* 3. LLISTA SELECCIONADA (Mini footer) */}
+      {/* 3. FOOTER */}
       <div className="mt-4 pt-4 border-t border-slate-800 shrink-0">
-         <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">La teva cistella:</p>
-         <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
-            {data.ingredients.length === 0 && <span className="text-xs text-slate-600 italic">Encara buida...</span>}
-            
-            <AnimatePresence>
+          <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">{labels.basket_title}</p>
+          <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+             {data.ingredients.length === 0 && <span className="text-xs text-slate-600 italic">{labels.basket_empty}</span>}
+             
+             <AnimatePresence>
                 {data.ingredients.map((ing, i) => (
                     <motion.div 
                         layout
@@ -204,8 +202,8 @@ export function IngredientsManager({ data, update, inventory }: Props) {
                         </button>
                     </motion.div>
                 ))}
-            </AnimatePresence>
-         </div>
+             </AnimatePresence>
+          </div>
       </div>
     </div>
   );

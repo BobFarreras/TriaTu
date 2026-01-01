@@ -1,78 +1,81 @@
-import { RankingEntry } from '@/core/domain/entities/RankingEntry';
-import { Star, MessageSquare } from 'lucide-react';
+'use client';
+
+import { Player } from '@/core/domain/entities/Player'; // ✅ Usem l'entitat de domini
+import { Crown, Medal, Trophy, User } from 'lucide-react';
 
 interface Props {
-    players: RankingEntry[];
-    currentUserId?: string;
+  players: Player[];
+  currentUserId?: string;
 }
 
 export function RankingList({ players, currentUserId }: Props) {
-    if (players.length === 0) return <div className="p-10 text-center text-zinc-500 italic">Aquí no hi ha ningú... 👻</div>;
-
+  
+  if (players.length === 0) {
     return (
-        <div className="flex flex-col gap-2">
-            {players.map((player, index) => {
-                const isMe = player.userId === currentUserId;
-                
-                // Càlcul del retard per l'animació en cascada
-                const delay = `${index * 50}ms`;
-
-                return (
-                    <div 
-                        key={player.userId}
-                        style={{ animationDelay: delay }}
-                        className={`
-                            relative group flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300
-                            animate-in slide-in-from-bottom-4 fade-in fill-mode-both
-                            hover:scale-[1.02] hover:shadow-lg
-                            ${isMe 
-                                ? 'bg-indigo-600/20 border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.2)]' 
-                                : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
-                            }
-                        `}
-                    >
-                        {/* Rank */}
-                        <div className={`
-                            w-8 text-center font-black text-xl italic shrink-0
-                            ${player.rank <= 10 ? 'text-white text-shadow-glow' : 'text-zinc-600'}
-                        `}>
-                            #{player.rank}
-                        </div>
-                        
-                        {/* Avatar */}
-                        <div className="w-10 h-10 bg-zinc-800/80 rounded-xl flex items-center justify-center text-xl shadow-inner border border-white/5 group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                            {player.avatarEmoji}
-                        </div>
-
-                        {/* Info Central */}
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <div className="flex items-center gap-2">
-                                <span className={`font-bold text-sm truncate ${isMe ? 'text-indigo-300' : 'text-zinc-200 group-hover:text-white'}`}>
-                                    {player.displayName} {isMe && '(Tu)'}
-                                </span>
-                            </div>
-                            
-                            {/* Badges/Stats Mini */}
-                            <div className="flex items-center gap-2 mt-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                {player.qualityScore > 0 && (
-                                    <span className="flex items-center text-[9px] text-yellow-400 gap-0.5"><Star size={8} fill="currentColor"/> {player.qualityScore}</span>
-                                )}
-                                {player.communityScore > 0 && (
-                                    <span className="flex items-center text-[9px] text-purple-400 gap-0.5"><MessageSquare size={8} /> {player.communityScore}</span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Puntuació */}
-                        <div className="flex flex-col items-end shrink-0 pl-3 border-l border-white/5">
-                            <div className="font-black text-white text-lg leading-none group-hover:text-yellow-400 transition-colors">
-                                {player.totalScore}
-                            </div>
-                            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-wider">PTS</span>
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
+      <div className="text-center py-8 text-zinc-500 text-sm">
+        No hi ha més jugadors... encara.
+      </div>
     );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {players.map((player) => {
+        // Si el jugador no té rank definit, calculem segons la posició a la llista (+4 perquè els 3 primers són al podi)
+        const rank = player.rank || 0; 
+        const isMe = currentUserId === player.id;
+
+        return (
+          <div 
+            key={player.id}
+            className={`
+              flex items-center justify-between p-3 rounded-xl border transition-all
+              ${isMe 
+                ? 'bg-purple-900/20 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)]' 
+                : 'bg-zinc-800/30 border-white/5 hover:bg-zinc-800/60'
+              }
+            `}
+          >
+            {/* ESQUERRA: Rank + Info */}
+            <div className="flex items-center gap-4">
+              
+              {/* POSICIÓ */}
+              <div className="w-8 flex justify-center font-black text-zinc-500 font-mono text-sm">
+                #{rank}
+              </div>
+
+              {/* AVATAR + NOM */}
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-inner ${isMe ? 'bg-purple-600 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
+                   {player.avatarUrl ? (
+                      <img src={player.avatarUrl} alt={player.username} className="w-full h-full rounded-full object-cover" />
+                   ) : (
+                      <span>{player.username.charAt(0).toUpperCase()}</span>
+                   )}
+                </div>
+                
+                <div className="flex flex-col">
+                  <span className={`font-bold text-sm leading-none ${isMe ? 'text-purple-300' : 'text-zinc-200'}`}>
+                    {player.username} {isMe && '(Tu)'}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 font-medium mt-1 uppercase tracking-wide">
+                    {player.wins} Victòries
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* DRETA: Puntuació */}
+            <div className="flex flex-col items-end">
+              <span className="font-black text-white text-base leading-none">
+                {player.score.toLocaleString()}
+              </span>
+              <span className="text-[9px] text-zinc-600 font-bold uppercase">PTS</span>
+            </div>
+
+          </div>
+        );
+      })}
+    </div>
+  );
 }

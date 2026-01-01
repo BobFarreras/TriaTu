@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { addItemAction } from '@/app/actions/inventory';
 import { FOOD_PRESETS, PRESET_CATEGORIES, FoodPreset, FoodCategory } from '@/lib/food-presets';
 import { SmartDatePicker } from './SmartDatePicker';
@@ -14,6 +15,7 @@ const units: { val: UnitType; icon: string; label: string }[] = [
 ];
 
 export function AddItemForm() {
+  const { t } = useLanguage();
   const formRef = useRef<HTMLFormElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,8 +28,21 @@ export function AddItemForm() {
   const [expiryDate, setExpiryDate] = useState('');
   const [activeCategory, setActiveCategory] = useState<FoodCategory | null>(null);
 
+  // ✅ CORRECCIÓ: Tipat segur sense @ts-ignore
+  const getLocalizedName = (preset: FoodPreset) => {
+    // 1. Accedim de forma segura a l'objecte d'items (si encara no ha carregat, serà undefined)
+    const items = t.food?.items;
+    
+    // 2. Fem un "Type Assertion" per dir-li a TS que tracti això com un diccionari clau-valor
+    // Això és millor que ignorar l'error
+    const localizedItems = items as Record<string, string> | undefined;
+
+    // 3. Retornem la traducció o el nom original (fallback)
+    return localizedItems?.[preset.id] || preset.name;
+  };
+
   const selectPreset = (preset: FoodPreset) => {
-    setName(preset.name);
+    setName(getLocalizedName(preset)); // Utilitzem el nom traduït
     setEmoji(preset.emoji);
     setUnit(preset.defaultUnit);
     setLocation(preset.defaultLoc);
@@ -42,22 +57,11 @@ export function AddItemForm() {
       return Math.max(step, parseFloat(newVal.toFixed(2)));
     });
   };
+
   async function clientAction(formData: FormData) {
     setIsSubmitting(true);
-
-    // ❌ ELIMINAR LÒGICA ANTIGA:
-    // let finalName = name.trim();
-    // if (!finalName.includes(emoji)) { ... }
-
-    // ✅ CORRECCIÓ: Enviem dades netes
-    // Sobreescrivim el 'name' per assegurar que no porta espais extra, però sense emoji
     formData.set('name', name.trim());
-
-    // IMPORTANT: Com que l'emoji no és un input HTML, l'hem d'afegir manualment al FormData
-    // des de l'estat de React
     formData.set('emoji', emoji || '📦');
-
-    // Assegura't que la resta de camps s'envien bé (els inputs hidden ja ho fan)
 
     const result = await addItemAction(formData);
     setIsSubmitting(false);
@@ -65,7 +69,6 @@ export function AddItemForm() {
     if (!result.success) {
       alert(`⚠️ Error: ${result.error}`);
     } else {
-      // Reset del formulari
       setName('');
       setEmoji('📦');
       setQuantity(1);
@@ -75,10 +78,9 @@ export function AddItemForm() {
   }
 
   return (
-    // CANVI CLAU: w-full i max-w-5xl per fer-ho ample
     <div className="w-full max-w-5xl mx-auto bg-slate-900 border border-slate-700 p-6 md:p-8 rounded-3xl shadow-2xl">
 
-      {/* 1. CATEGORIES (Scroll Horitzontal net) */}
+      {/* 1. CATEGORIES */}
       <div className="mb-8">
         <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
           {PRESET_CATEGORIES.map((cat) => (
@@ -94,6 +96,7 @@ export function AddItemForm() {
                 }
               `}
             >
+              {/* Aquí també podríem traduir les categories si fos necessari, però de moment usem l'original */}
               {cat}
             </button>
           ))}
@@ -102,25 +105,30 @@ export function AddItemForm() {
         {/* Panell desplegable */}
         {activeCategory && (
           <div className="mt-4 p-6 bg-slate-950/50 rounded-3xl border border-slate-700 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4 animate-in fade-in slide-in-from-top-4">
-            {FOOD_PRESETS.filter(p => p.category === activeCategory).map(p => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => selectPreset(p)}
-                className="group flex flex-col items-center justify-center p-3 rounded-2xl hover:bg-slate-800 border border-transparent hover:border-slate-600 transition-all aspect-square relative"
-                title={p.name}
-              >
-                <span className="text-4xl mb-2 transition-transform group-hover:scale-125 drop-shadow-md">{p.emoji}</span>
-                <span className="text-[10px] text-slate-500 font-bold uppercase truncate w-full text-center group-hover:text-purple-300">{p.name}</span>
-              </button>
-            ))}
+            {FOOD_PRESETS.filter(p => p.category === activeCategory).map(p => {
+               const localizedName = getLocalizedName(p);
+               return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => selectPreset(p)}
+                  className="group flex flex-col items-center justify-center p-3 rounded-2xl hover:bg-slate-800 border border-transparent hover:border-slate-600 transition-all aspect-square relative"
+                  title={localizedName}
+                >
+                  <span className="text-4xl mb-2 transition-transform group-hover:scale-125 drop-shadow-md">{p.emoji}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase truncate w-full text-center group-hover:text-purple-300">
+                    {localizedName}
+                  </span>
+                </button>
+               );
+            })}
           </div>
         )}
       </div>
 
       <form ref={formRef} action={clientAction} className="space-y-8">
 
-        {/* 2. INPUT NOM (HERO) */}
+        {/* 2. INPUT NOM */}
         <div className="bg-slate-950 border border-slate-800 rounded-2xl p-2 flex items-center shadow-inner focus-within:ring-2 focus-within:ring-purple-500/50 transition-all">
           <div className="w-16 h-16 flex items-center justify-center text-4xl bg-slate-900 rounded-xl border border-slate-800 shadow-sm shrink-0">
             {emoji}
@@ -135,10 +143,10 @@ export function AddItemForm() {
           />
         </div>
 
-        {/* 3. GRAELLA DE CONTROLS (GRID LAYOUT AMPLE) */}
+        {/* 3. GRAELLA DE CONTROLS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
 
-          {/* COLUMNA ESQUERRA: Quantitat */}
+          {/* Quantitat */}
           <div className="bg-slate-950/30 p-6 rounded-3xl border border-slate-800 flex flex-col justify-between h-full">
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Quantitat</label>
 
@@ -164,10 +172,8 @@ export function AddItemForm() {
             </div>
           </div>
 
-          {/* COLUMNA DRETA: Ubicació + Data */}
+          {/* Ubicació + Data */}
           <div className="flex flex-col gap-6">
-
-            {/* LOCATION */}
             <div className="bg-slate-950/30 p-1 rounded-2xl border border-slate-800 grid grid-cols-3 gap-1">
               {[
                 { val: 'FRIDGE', icon: '❄️', label: 'Nevera' },
@@ -179,12 +185,12 @@ export function AddItemForm() {
                   type="button"
                   onClick={() => setLocation(opt.val)}
                   className={`
-                            py-4 rounded-xl flex flex-col items-center gap-2 transition-all
-                            ${location === opt.val
+                    py-4 rounded-xl flex flex-col items-center gap-2 transition-all
+                    ${location === opt.val
                       ? 'bg-slate-800 text-white shadow-lg ring-1 ring-white/10'
                       : 'text-slate-500 hover:bg-slate-900 hover:text-slate-300'
                     }
-                        `}
+                  `}
                 >
                   <span className="text-2xl">{opt.icon}</span>
                   <span className="text-[10px] uppercase font-bold tracking-widest">{opt.label}</span>
@@ -192,18 +198,15 @@ export function AddItemForm() {
               ))}
             </div>
 
-            {/* DATE PICKER (Dins la columna) */}
             <SmartDatePicker selectedDate={expiryDate} onDateSelect={setExpiryDate} />
           </div>
         </div>
 
-        {/* INPUTS OCULTS */}
         <input type="hidden" name="quantity" value={quantity} />
         <input type="hidden" name="unit" value={unit} />
         <input type="hidden" name="location" value={location} />
         <input type="hidden" name="expiryDate" value={expiryDate} />
 
-        {/* SUBMIT BUTTON GEGANT */}
         <button
           type="submit"
           disabled={isSubmitting}

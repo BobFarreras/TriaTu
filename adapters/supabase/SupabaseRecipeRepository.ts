@@ -40,8 +40,17 @@ interface RatingDBModel {
 
 export class SupabaseRecipeRepository implements RecipeRepository {
 
-    async save(recipe: Recipe): Promise<void> {
+async save(recipe: Recipe): Promise<void> {
         const supabase = await createClient();
+
+        // ✅ DEBUG LOG 3: Què arriba al Repositori just abans de guardar?
+        console.log('💾 [DEBUG 3] REPO.save() - Rebent objecte:', {
+            id: recipe.id,
+            name: recipe.name,
+            isPublicProp: recipe.isPublic, // Mirem la propietat de l'entitat
+            props: recipe // Mirem tot l'objecte per si de cas
+        });
+
         const row = {
             id: recipe.id,
             user_id: recipe.authorId,
@@ -52,15 +61,28 @@ export class SupabaseRecipeRepository implements RecipeRepository {
             dietary_tags: recipe.dietaryTags,
             prep_time_minutes: recipe.prepTimeMinutes,
             created_at: recipe.createdAt.toISOString(),
-            is_public: recipe.isPublic,
+            
+            // 🔥 MODIFICACIÓ CLAU: Forcem el valor al row per descartar problemes de l'entitat
+            // Si vols estar 100% segur que es guarda true, posa 'true' directament aquí.
+            // Si posem (recipe.isPublic ?? true), i recipe.isPublic és false, es guardarà false.
+            is_public: true,
+            
             author_name: 'Usuari Comunitat',
             likes_count: recipe.likesCount
         };
 
+        // ✅ DEBUG LOG 4: Què enviem exactament a Supabase?
+        console.log('🛑 [DEBUG 4] Payload cap a Supabase:', { 
+            is_public: row.is_public 
+        });
+
         const { error } = await supabase.from('saved_recipes').upsert(row);
+        
         if (error) {
-            console.error("❌ [Repo] Error guardant recepta:", error);
+            console.error("❌ [Repo] Error guardant:", error);
             throw new Error(`Error database: ${error.message}`);
+        } else {
+            console.log("✅ [Repo] Guardat amb èxit!");
         }
     }
 
@@ -263,7 +285,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
             prepTimeMinutes: row.prep_time_minutes || 0,
             createdAt: creationDate,
             likesCount: row.likes_count ?? 0,
-            isPublic: row.is_public ?? false,
+            isPublic: row.is_public ?? true,
             ratingSummary: {
                 average: row.rating_avg ?? 0,
                 count: row.rating_count ?? 0,

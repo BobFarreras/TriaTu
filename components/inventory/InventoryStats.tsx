@@ -1,7 +1,10 @@
+'use client'; // ✅ Necessari per al context
+
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { isItemExpiringSoon } from '@/lib/inventoryUtils';
-import { DashboardFilter } from './InventoryManager'; // <--- Atenció: importarem el tipus del nou Manager
+import { DashboardFilter } from './InventoryManager'; 
+import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Importem el Hook
 
 interface InventoryStatsProps {
   items: InventoryItemProps[];
@@ -10,7 +13,8 @@ interface InventoryStatsProps {
 }
 
 export function InventoryStats({ items, activeFilter, onFilterChange }: InventoryStatsProps) {
-  
+  const { t } = useLanguage(); // ✅ Obtenim les traduccions
+
   const stats = {
     [StorageLocation.FRIDGE]: items.filter(i => i.location === StorageLocation.FRIDGE).length,
     [StorageLocation.FREEZER]: items.filter(i => i.location === StorageLocation.FREEZER).length,
@@ -35,7 +39,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
       
       <MiniStatCard 
         icon="❄️" 
-        label="Nevera" 
+        label={t.inventory.form.location.fridge} // ✅ Traduït
         count={stats.FRIDGE} 
         color="bg-cyan-500/10 border-cyan-500/20 text-cyan-200"
         activeColor="bg-cyan-500/20 border-cyan-500 ring-1 ring-cyan-400/50"
@@ -45,7 +49,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
 
       <MiniStatCard 
         icon="🚪" 
-        label="Revost" 
+        label={t.inventory.form.location.pantry} // ✅ Traduït
         count={stats.PANTRY} 
         color="bg-orange-500/10 border-orange-500/20 text-orange-200"
         activeColor="bg-orange-500/20 border-orange-500 ring-1 ring-orange-400/50"
@@ -55,7 +59,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
 
       <MiniStatCard 
         icon="🧊" 
-        label="Congelador" 
+        label={t.inventory.form.location.freezer} // ✅ Traduït
         count={stats.FREEZER} 
         color="bg-indigo-500/10 border-indigo-500/20 text-indigo-200"
         activeColor="bg-indigo-500/20 border-indigo-500 ring-1 ring-indigo-400/50"
@@ -77,7 +81,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
         <div className="flex items-center gap-2">
             <span className="text-xl">⚠️</span>
             <span className={`text-[10px] font-bold uppercase tracking-widest ${isExpiringActive ? 'text-red-200' : 'text-slate-400'}`}>
-               Caduca
+               {t.inventory.list.status.expiring} {/* ✅ Traduït */}
             </span>
         </div>
         <span className={`text-xl font-black ${expiringCount > 0 ? 'text-red-400' : 'text-slate-600'}`}>

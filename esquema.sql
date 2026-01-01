@@ -1,5 +1,5 @@
 
-\restrict r9Jd1ETQy7P926379c9qanqoaFnMx6AGzDyjpl7LXKe06HM6FVMx5sXYtzDsBQs
+\restrict bdXv8qgcqZyfaEengau8VamF3cSJ6eUVHRdGQtrHO9iwS5X0k1FYJcx24MXY97a
 
 
 SET statement_timeout = 0;
@@ -174,7 +174,9 @@ CREATE TABLE IF NOT EXISTS "public"."preference_profiles" (
     "social_tolerance" integer DEFAULT 5,
     "exclusions" "text"[] DEFAULT '{}'::"text"[],
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "username" "text",
+    "avatar_emoji" "text" DEFAULT '👨‍🍳'::"text"
 );
 
 
@@ -255,6 +257,26 @@ CREATE TABLE IF NOT EXISTS "public"."saved_recipes" (
 
 
 ALTER TABLE "public"."saved_recipes" OWNER TO "postgres";
+
+
+CREATE OR REPLACE VIEW "public"."user_leaderboard" AS
+ SELECT "user_id",
+    COALESCE("username", ('Chef '::"text" || "substr"(("user_id")::"text", 1, 4))) AS "display_name",
+    COALESCE("avatar_emoji", '👨‍🍳'::"text") AS "avatar_emoji",
+    (COALESCE(( SELECT "sum"("rr"."value") AS "sum"
+           FROM ("public"."recipe_ratings" "rr"
+             JOIN "public"."saved_recipes" "r" ON (("r"."id" = "rr"."recipe_id")))
+          WHERE (("r"."user_id" = "p"."user_id") AND ("rr"."user_id" <> "p"."user_id"))), (0)::bigint) * 2) AS "quality_score",
+    LEAST(( SELECT "count"(*) AS "count"
+           FROM "public"."inventory_items" "i"
+          WHERE ("i"."user_id" = "p"."user_id")), (50)::bigint) AS "pantry_score",
+    (( SELECT "count"(*) AS "count"
+           FROM "public"."recipe_ratings" "rr"
+          WHERE ("rr"."user_id" = "p"."user_id")) * 5) AS "community_score"
+   FROM "public"."preference_profiles" "p";
+
+
+ALTER VIEW "public"."user_leaderboard" OWNER TO "postgres";
 
 
 ALTER TABLE ONLY "public"."community_recipes"
@@ -401,6 +423,14 @@ ALTER TABLE ONLY "public"."saved_recipes"
 
 
 CREATE POLICY "Anyone can read ratings" ON "public"."recipe_ratings" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Authenticated users can read all profiles" ON "public"."preference_profiles" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Authenticated users can read all ratings" ON "public"."recipe_ratings" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -632,6 +662,12 @@ GRANT ALL ON TABLE "public"."saved_recipes" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."user_leaderboard" TO "anon";
+GRANT ALL ON TABLE "public"."user_leaderboard" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_leaderboard" TO "service_role";
+
+
+
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
@@ -662,6 +698,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict r9Jd1ETQy7P926379c9qanqoaFnMx6AGzDyjpl7LXKe06HM6FVMx5sXYtzDsBQs
+\unrestrict bdXv8qgcqZyfaEengau8VamF3cSJ6eUVHRdGQtrHO9iwS5X0k1FYJcx24MXY97a
 
 RESET ALL;

@@ -1,8 +1,10 @@
+// src/components/profile/MobileUserPreferences.tsx
 'use client';
 
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { FOOD_DATA, EXCLUSION_DATA } from '@/core/constants/profile-data';
 
 interface Props {
@@ -26,6 +28,7 @@ const findItemData = (id: string, dataset: typeof FOOD_DATA): UIItem => {
 };
 
 export function MobileUserPreferences({ foodPreferences, exclusions, className }: Props) {
+  const { t } = useLanguage();
   
   const preferencesList = useMemo(() => {
     const safe = Array.isArray(foodPreferences) ? foodPreferences : [];
@@ -45,12 +48,12 @@ export function MobileUserPreferences({ foodPreferences, exclusions, className }
       {/* BOTÓ PERFIL */}
       <Link 
         href="/profile"
-        className="shrink-0 w-9 h-9 bg-indigo-600 hover:bg-indigo-500 rounded-xl flex items-center justify-center border-b-[3px] border-indigo-900 active:border-b-0 active:translate-y-[2px] transition-all shadow-lg shadow-indigo-900/20 z-10"
+        className="shrink-0 w-9 h-9 bg-indigo-600 hover:bg-indigo-500 rounded-xl flex items-center justify-center border-b-[3px] border-indigo-900 active:border-b-0 active:translate-y-0.5 transition-all shadow-lg shadow-indigo-900/20 z-10"
       >
         <span className="text-lg">😎</span>
       </Link>
 
-      <div className="h-6 w-[1px] bg-zinc-700/50 shrink-0" />
+      <div className="h-6 w-px bg-zinc-700/50 shrink-0" />
 
       {/* CINTA SCROLLABLE */}
       <div className="flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden mask-linear-fade">
@@ -70,7 +73,8 @@ export function MobileUserPreferences({ foodPreferences, exclusions, className }
 
           {!hasData && (
              <span className="text-zinc-500 text-xs italic whitespace-nowrap pl-2">
-               Sense dades...
+                {/* TRADUCCIÓ APLICADA */}
+                {t.profile.no_data}
              </span>
           )}
         </div>
@@ -79,6 +83,7 @@ export function MobileUserPreferences({ foodPreferences, exclusions, className }
   );
 }
 
+// ... (La resta de components auxiliars MobileBubble i MobilePortalTooltip es mantenen igual)
 // ----------------------------------------------------------------
 // BUBBLE MÒBIL AMB PORTAL TOOLTIP (CLICK)
 // ----------------------------------------------------------------
@@ -91,14 +96,11 @@ function MobileBubble({ emoji, label, variant }: { emoji: string; label: string;
     const handleClick = () => {
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
-            // Calculem posició: A sota de l'element
             setCoords({ 
-                top: rect.bottom + 8, // 8px de marge cap avall
-                left: rect.left + (rect.width / 2) // Centrat horitzontalment
+                top: rect.bottom + 8, 
+                left: rect.left + (rect.width / 2) 
             });
             setIsActive(true);
-            
-            // Auto-amagar després de 2.5 segons
             setTimeout(() => setIsActive(false), 2500);
         }
     };
@@ -121,8 +123,6 @@ function MobileBubble({ emoji, label, variant }: { emoji: string; label: string;
         >
             {emoji}
         </div>
-
-        {/* ETIQUETA FLOTANT (Portal) */}
         {isActive && (
             <MobilePortalTooltip top={coords.top} left={coords.left} label={label} />
         )}
@@ -139,13 +139,10 @@ function MobilePortalTooltip({ top, left, label }: { top: number, left: number, 
             style={{ 
                 top: top, 
                 left: left, 
-                transform: 'translateX(-50%)' // Centrat horitzontal respecte el punt
+                transform: 'translateX(-50%)'
             }}
         >
-            {/* Triangle cap amunt (apunta a la bombolla) */}
             <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-zinc-900 -mt-[6px] mb-[0px]"></div>
-            
-            {/* Text */}
             <div className="bg-zinc-900 border border-zinc-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap">
                 {label}
             </div>

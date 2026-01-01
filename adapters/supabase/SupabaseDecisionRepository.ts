@@ -1,11 +1,10 @@
 // adapters/supabase/SupabaseDecisionRepository.ts
+
 import { DecisionRepository } from '@/core/ports/DecisionRepository';
 import { Decision, DecisionStatus, DecisionType } from '@/core/domain/entities/Decision';
 import { DecisionContext } from '@/core/domain/value-objects/DecisionContext';
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 import { supabase } from './client';
-
-
 
 export class SupabaseDecisionRepository implements DecisionRepository {
 
@@ -18,7 +17,7 @@ export class SupabaseDecisionRepository implements DecisionRepository {
                 user_id: decision.userId,
                 type: decision.type,
                 status: decision.status,
-                context: decision.context
+                context: decision.context // Supabase ho serialitza automàticament a JSONB si la columna és jsonb
             });
 
         if (decisionError) throw new Error(`Error saving decision: ${decisionError.message}`);
@@ -48,44 +47,37 @@ export class SupabaseDecisionRepository implements DecisionRepository {
 
         if (error || !data) return null;
 
-        // MAPPER: Database -> Domain Entity
+        // 1. Reconstruir Value Objects
         const context = new DecisionContext({
             energyLevel: data.context.energyLevel,
             availableTimeMinutes: data.context.availableTimeMinutes,
             location: data.context.location
         });
 
-        const decision = new Decision({
+        let outcome: DecisionOutcome | undefined;
+        
+        // Gestionar si decision_outcomes ve com array (1:N) o objecte (1:1) segons configuració de Supabase
+        const outcomeData = Array.isArray(data.decision_outcomes)
+            ? data.decision_outcomes[0]
+            : data.decision_outcomes;
+
+        if (outcomeData) {
+            outcome = new DecisionOutcome({
+                choice: outcomeData.choice,
+                reason: outcomeData.reason,
+                // Assegurar que la data es restaura correctament
+                generatedAt: new Date(outcomeData.generated_at) 
+            });
+        }
+
+        // 2. ✅ ÚS DE RESTORE: Net, Tipat i Segur
+        return Decision.restore({
             id: data.id,
             userId: data.user_id,
             type: data.type as DecisionType,
-            context: context
+            context: context,
+            status: data.status as DecisionStatus, // Passem l'estat real de la BD
+            outcome: outcome // Passem l'outcome si existeix
         });
-
-        // Restaurar estat
-        if (data.status !== DecisionStatus.PENDING) {
-            decision.status = data.status as DecisionStatus;
-        }
-        // Restaurar Outcome
-        if (data.decision_outcomes) {
-            const outcomeData = Array.isArray(data.decision_outcomes)
-                ? data.decision_outcomes[0]
-                : data.decision_outcomes;
-
-            if (outcomeData) {
-                const outcome = new DecisionOutcome({
-                    choice: outcomeData.choice,
-                    reason: outcomeData.reason
-                });
-
-                // CORRECCIÓ: Casting a 'unknown' i després a un objecte que té la propietat _outcome.
-                // Això evita el problema de la intersecció amb 'private' i evita l'ús de 'any'.
-                (decision as unknown as { _outcome: DecisionOutcome })._outcome = outcome;
-            }
-        }
-
-        return decision;
-
-        return decision;
     }
 }

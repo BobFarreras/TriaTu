@@ -1,17 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Hook
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { ConsumeButton } from './ConsumeButton';
 import { isItemExpired, isItemExpiringSoon } from '@/lib/inventoryUtils';
 import { EditItemModal } from './EditItemModal'; 
 
 export function InventoryList({ items }: { items: InventoryItemProps[] }) {
+  const { t } = useLanguage();
+
   if (items.length === 0) {
     return (
       <div className="text-center py-12 bg-slate-900/50 rounded-3xl border border-dashed border-slate-800">
-        <p className="text-4xl mb-2 grayscale opacity-50">👻</p>
-        <p className="text-slate-500 text-sm">No s'han trobat aliments aquí.</p>
+        <p className="text-4xl mb-2 grayscale opacity-50">{t.inventory.list.empty_title}</p>
+        <p className="text-slate-500 text-sm">{t.inventory.list.empty_text}</p>
       </div>
     );
   }
@@ -27,6 +30,7 @@ export function InventoryList({ items }: { items: InventoryItemProps[] }) {
 }
 
 function InventoryItemCard({ item }: { item: InventoryItemProps }) {
+  const { t } = useLanguage(); // ✅ També necessitem traduccions aquí
   const [isEditing, setIsEditing] = useState(false);
 
   const expired = isItemExpired(item);
@@ -38,22 +42,22 @@ function InventoryItemCard({ item }: { item: InventoryItemProps }) {
   let bgClass = 'bg-slate-900 hover:bg-slate-800'; 
   let statusDot = null;
   
-  // Lògica d'estats (Caducat / A punt de caducar)
   if (expired) {
     borderClass = 'border-red-500/50';
     bgClass = 'bg-red-950/20 hover:bg-red-900/30';
     statusDot = (
-      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_red] z-10" title="Caducat" />
+      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_red] z-10" 
+            title={t.inventory.list.status.expired} />
     );
   } else if (expiringSoon) {
     borderClass = 'border-amber-500/50';
     bgClass = 'bg-amber-950/20 hover:bg-amber-900/30';
     statusDot = (
-      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_orange] z-10" title="Caduca Aviat" />
+      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_orange] z-10" 
+            title={t.inventory.list.status.expiring} />
     );
   }
 
-  // Color del badge segons la unitat (Visualment útil)
   const unitColor = item.unit === 'kg' || item.unit === 'g' ? 'text-blue-300' 
                   : item.unit === 'l' ? 'text-cyan-300' 
                   : 'text-purple-300';
@@ -69,9 +73,8 @@ function InventoryItemCard({ item }: { item: InventoryItemProps }) {
         `}
       >
         
-        {/* HEADER: Quantitat (Badge) + Status */}
+        {/* HEADER */}
         <div className="flex justify-between items-start w-full relative z-10">
-            {/* BADGE DE QUANTITAT (Més visible) */}
             <div className="bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-lg px-2 py-1 flex items-baseline gap-1 shadow-sm">
                 <span className="font-mono font-bold text-white text-sm">{item.quantity}</span>
                 <span className={`text-[10px] font-bold uppercase ${unitColor}`}>{item.unit}</span>
@@ -80,7 +83,7 @@ function InventoryItemCard({ item }: { item: InventoryItemProps }) {
             {statusDot}
         </div>
 
-        {/* CONTENT: Emoji + Nom */}
+        {/* CONTENT */}
         <div className="flex flex-col items-center text-center mt-2 mb-2">
             <div className="text-3xl mb-1 filter drop-shadow-md transition-transform group-hover:scale-110">
                 {displayEmoji}
@@ -91,18 +94,16 @@ function InventoryItemCard({ item }: { item: InventoryItemProps }) {
             </h4>
         </div>
   
-        {/* FOOTER: Botó Consumir */}
-        {/* stopPropagation és CLAU: evita que s'obri el modal quan vols gastar */}
+        {/* FOOTER */}
         <div 
             className="mt-auto pt-2 flex justify-center w-full" 
             onClick={(e) => e.stopPropagation()} 
         >
-           <ConsumeButton itemId={item.id} currentQty={item.quantity} />
+            <ConsumeButton itemId={item.id} currentQty={item.quantity} />
         </div>
 
       </div>
 
-      {/* MODAL */}
       {isEditing && (
         <EditItemModal 
           item={item} 

@@ -22,8 +22,8 @@ export function DashboardContent({ userName, userId, profileData }: Props) {
     <main className="min-h-dvh lg:h-dvh w-full flex flex-col relative bg-[#131f24] bg-gamified-pattern overflow-y-auto lg:overflow-hidden">
 
       {/* DECORACIÓ DE FONS */}
-      <div className="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="fixed bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed top-[-20%] left-[-10%] w-150 h-150 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed bottom-[-20%] right-[-10%] w-150 h-150 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
       
       <div className="flex-1 w-full max-w-350 mx-auto p-4 md:px-6 md:pb-6 flex flex-col min-h-0 relative z-10">
         

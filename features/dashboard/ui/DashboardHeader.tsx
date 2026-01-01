@@ -1,7 +1,7 @@
+// src/components/dashboard/DashboardHeader.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { signOutAction } from '@/app/actions/auth-actions';
 
@@ -10,13 +10,14 @@ interface Props {
 }
 
 export function DashboardHeader({ userName }: Props) {
+  // Obtenim l'objecte de traduccions 't' i el mètode per canviar idioma
   const { t, changeLanguage, locale } = useLanguage();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const langs = [
     { code: 'ca', emoji: '🐲', label: 'CAT' },
-    { code: 'es', emoji: '🍳', label: 'ESP' },
+    { code: 'es', emoji: '💃', label: 'ESP' },
     { code: 'en', emoji: '🍔', label: 'ENG' },
   ] as const;
 
@@ -33,7 +34,6 @@ export function DashboardHeader({ userName }: Props) {
   }, []);
 
   return (
-    // ✅ ADDED: relative i z-50 al header per establir context d'apilament
     <header className="relative z-50 w-full flex flex-nowrap items-center justify-between gap-2 mb-2 animate-in fade-in slide-in-from-top-4 duration-500 pt-2">
       
       {/* ESQUERRA */}
@@ -41,13 +41,15 @@ export function DashboardHeader({ userName }: Props) {
         <div className="flex flex-col min-w-0">
              <div className="flex items-baseline gap-2 min-w-0">
                 <h1 className="text-xl md:text-2xl font-black text-white tracking-tight leading-none truncate">
-                    Hola, <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-400">{userName}</span>
+                   {/* TRADUCCIÓ APLICADA */}
+                   {t.dashboard.greeting} <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-400">{userName}</span>
                 </h1>
                 <span className="text-xl animate-wave origin-bottom-right">👋</span>
              </div>
              <div className="flex mt-0.5">
                 <span className="text-[9px] font-black text-emerald-400 bg-emerald-900/40 px-1.5 py-0.5 rounded border border-emerald-500/30 uppercase tracking-widest shadow-[0_0_8px_rgba(16,185,129,0.2)]">
-                    {t.dashboard.level || "LVL 1"}
+                   {/* TRADUCCIÓ APLICADA (Fallback a LVL 1 si no existeix) */}
+                   {t.dashboard.level || "LVL 1"}
                 </span>
              </div>
         </div>
@@ -65,7 +67,6 @@ export function DashboardHeader({ userName }: Props) {
                 {currentLang.emoji}
             </button>
 
-            {/* ✅ FIX: z-[100] per assegurar que quedi per sobre de tot */}
             {isLangOpen && (
                 <div className="absolute top-full right-0 mt-2 bg-zinc-900 border border-zinc-700 p-1.5 rounded-xl shadow-2xl flex flex-col gap-1 z-100 min-w-12.5 animate-in zoom-in-95 duration-200">
                     {langs.map((l) => (
@@ -82,8 +83,6 @@ export function DashboardHeader({ userName }: Props) {
         </div>
 
         <div className="w-px h-5 bg-white/10 mx-0.5"></div>
-
-     
 
         {/* 3. LOGOUT */}
         <button
