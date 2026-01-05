@@ -20,7 +20,7 @@ export function IngredientActionSheet({ activeItem, qty, setQty, updateItemUnit,
   return (
     <AnimatePresence>
       {activeItem && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center">
+        <div id="tour-ing-input" className="fixed inset-0 z-9999 flex items-end justify-center sm:items-center">
           
           {/* Backdrop */}
           <motion.div 
@@ -33,7 +33,7 @@ export function IngredientActionSheet({ activeItem, qty, setQty, updateItemUnit,
           <motion.div 
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 350 }}
-            className="relative w-full sm:max-w-md bg-slate-900 border-t sm:border border-slate-700 rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden"
+            className="relative w-full sm:max-w-md bg-slate-900 border-t sm:border border-slate-700 rounded-t-4xl sm:rounded-4xl shadow-2xl overflow-hidden"
           >
             {/* Handle visual per mòbil */}
             <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-700 rounded-full sm:hidden" />

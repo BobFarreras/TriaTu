@@ -1,134 +1,123 @@
 // src/components/recipes/editor/RecipeEditor.tsx
 'use client'
 
-import { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { IngredientsManager } from './IngredientsManager';
 import { StepsBuilder } from './StepsBuilder';
 import { MetaControls } from './MetaControls';
-import { createRecipeAction } from '@/app/actions/create-recipe';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-import { Sparkles, ChefHat, ListChecks } from 'lucide-react';
-// ✅ Importem StepsLabels per tipar correctament
-import { EditorData, InventoryItemUI, StepsLabels } from './types'; 
+import { ChefHat, ListChecks, Save } from 'lucide-react';
+import { InventoryItemUI, StepsLabels } from './types';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { motion } from 'framer-motion';
+import { useOnboarding, TourStep } from '@/components/onboarding/OnboardingContext';
+import { TourTrigger } from '@/components/onboarding/TourTrigger';
+import { useRecipeForm } from './useRecipeForm';
 
 interface Props {
   userInventory: InventoryItemUI[];
 }
 
 export function RecipeEditor({ userInventory }: Props) {
-  const router = useRouter();
   const { t } = useLanguage();
-  const labels = t.create_recipe;
-  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'ingredients' | 'steps'>('ingredients');
 
-  const [data, setData] = useState<EditorData>({
-    name: '',
-    prepTimeMinutes: 30,
-    ingredients: [],
-    steps: [],
-    dietaryTags: []
-  });
+  const { data, setData, loading, errors, handleSave } = useRecipeForm(t.create_recipe, setActiveTab);
 
-  const handleSave = async () => {
-    if (!data.name) return toast.error(labels.toasts.missing_name);
-    if (data.ingredients.length === 0) return toast.error(labels.toasts.missing_ingredients);
-    if (data.steps.length === 0) return toast.error(labels.toasts.missing_steps);
+  const { startTour, currentStepIndex, isActive, steps: activeSteps } = useOnboarding();
 
-    setLoading(true);
-    const result = await createRecipeAction(data); 
-    setLoading(false);
+  const onboardingSteps: TourStep[] = useMemo(() => [
+    { targetId: 'tour-recipe-title', title: t.onboarding.editor.step1_title, description: t.onboarding.editor.step1_desc },
+    { targetId: 'tour-prep-time', title: t.onboarding.editor.step2_title, description: t.onboarding.editor.step2_desc },
+    { targetId: 'tour-dietary-tags', title: t.onboarding.editor.step3_title, description: t.onboarding.editor.step3_desc },
+    { targetId: 'tour-ing-input', title: t.onboarding.editor.step4_title, description: t.onboarding.editor.step4_desc, requiredTab: 'ingredients' },
+    { targetId: 'tour-ing-list', title: t.onboarding.editor.step5_title, description: t.onboarding.editor.step5_desc, requiredTab: 'ingredients' },
+    { targetId: 'tour-step-textarea', title: t.onboarding.editor.step6_title, description: t.onboarding.editor.step6_desc, requiredTab: 'steps' },
+    { targetId: 'tour-step-chips', title: t.onboarding.editor.step7_title, description: t.onboarding.editor.step7_desc, requiredTab: 'steps' },
+    { targetId: 'tour-save-btn', title: t.onboarding.editor.step8_title, description: t.onboarding.editor.step8_desc }
+  ], [t]);
 
-    if (result.success) {
-      toast.success(labels.toasts.success_title, { description: labels.toasts.success_desc });
-      router.push(`/recipes/${result.recipeId}`);
-    } else {
-      toast.error(labels.toasts.error_title, { description: result.error });
+  // 3. INICI I GESTIÓ DEL TOUR
+  useEffect(() => {
+    // Passem l'ID 'recipe-editor'
+    startTour('recipe-editor', onboardingSteps);
+  }, [startTour, onboardingSteps]);
+
+  // CANVI DE PESTANYA PEL TOUR
+  useEffect(() => {
+    if (!isActive) return;
+    const currentStep = activeSteps[currentStepIndex];
+    if (currentStep?.requiredTab && activeTab !== currentStep.requiredTab) {
+      const timer = setTimeout(() => setActiveTab(currentStep.requiredTab!), 100);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [currentStepIndex, isActive, activeSteps, activeTab]);
 
-  // ✅ SOLUCIÓ PROFESSIONAL (Sense 'any'):
-  // 1. Tractem 'labels.steps' com un diccionari genèric de strings.
-  //    Usem 'unknown' com a pas intermedi segur.
-  const rawStepsLabels = labels.steps as unknown as Record<string, string>;
-
-  // 2. Construïm l'objecte 'safeStepsLabels' assegurant que totes les propietats
-  //    requerides per la interfície 'StepsLabels' tenen un valor (del JSON o per defecte).
   const safeStepsLabels: StepsLabels = {
-    // Escampem totes les claus existents
-    ...rawStepsLabels,
-    // Assegurem les claus obligatòries amb valors per defecte (fallback)
-    title: rawStepsLabels.title || "Passos",
-    placeholder: rawStepsLabels.placeholder || "Ex: Tallar la ceba...",
-    empty_state: rawStepsLabels.empty_state || "Afegeix el primer pas...",
-    new_step_title: rawStepsLabels.new_step_title || "Nou Pas",
-    new_step_desc: rawStepsLabels.new_step_desc || "Escriu i prem Enter",
-  };
+    ...(t.create_recipe.steps as unknown as Record<string, string>),
+    title: "Passos", placeholder: "Ex: Tallar la ceba...", empty_state: "Afegeix el primer pas...",
+    new_step_title: "Nou Pas", new_step_desc: "Escriu i prem Enter"
+  } as StepsLabels;
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 relative"> 
-      
-      {/* 1. HEADER */}
-      <MetaControls data={data} update={setData} />
+    <div className="flex flex-col h-full bg-slate-950 relative">
 
-      {/* 2. TABS */}
-      <div className="shrink-0 px-4 py-2 bg-slate-950 border-b border-slate-900 z-40">
-          <div className="flex bg-slate-900/50 p-1 rounded-xl border border-slate-800/50 relative max-w-md mx-auto">
-             <motion.div 
-                layoutId="activeTab"
-                className={`absolute inset-y-1 rounded-lg bg-slate-800 shadow-sm ${activeTab === 'ingredients' ? 'left-1 w-[calc(50%-4px)]' : 'left-[calc(50%+4px)] w-[calc(50%-8px)]'}`}
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-             />
-             <button 
-                onClick={() => setActiveTab('ingredients')}
-                className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'ingredients' ? 'text-white' : 'text-slate-500'}`}
-             >
-                <ChefHat size={14} /> Ingredients 
-                {data.ingredients.length > 0 && <span className="bg-purple-600 text-white text-[9px] px-1.5 rounded-full">{data.ingredients.length}</span>}
-             </button>
-             <button 
-                onClick={() => setActiveTab('steps')}
-                className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'steps' ? 'text-white' : 'text-slate-500'}`}
-             >
-                <ListChecks size={14} /> Passos
-                {data.steps.length > 0 && <span className="bg-purple-600 text-white text-[9px] px-1.5 rounded-full">{data.steps.length}</span>}
-             </button>
-          </div>
+      {/* ✅ CORRECTE: El botó està aquí, fora de les pestanyes i del header */}
+      {/* top-4 right-4 el posiciona relatiu a tota la pantalla/contenidor */}
+      <div className="absolute top-4 right-4 z-9990">
+        <TourTrigger tourId="recipe-editor" steps={onboardingSteps} />
       </div>
 
-      {/* 3. ZONA DE CONTINGUT */}
-      <div className="flex-1 overflow-hidden relative w-full p-2 sm:p-4 md:p-6">
-        <div className="h-full w-full bg-slate-900/30 border border-slate-800/50 rounded-3xl overflow-hidden relative backdrop-blur-sm">
-            {activeTab === 'ingredients' ? (
-               <IngredientsManager 
-                  data={data} 
-                  update={setData} 
-                  inventory={userInventory} 
-                  labels={labels.ingredients} 
-               />
-            ) : (
-               <StepsBuilder 
-                  data={data} 
-                  update={setData} 
-                  labels={safeStepsLabels} // ✅ Ara té el tipat perfecte
-               />
-            )}
+      <MetaControls data={data} update={setData} hasError={errors.name} />
+
+      <div className="shrink-0 px-4 py-2 bg-slate-950 border-b border-slate-900 z-40">
+        <div id="tour-tabs" className="flex bg-slate-900/50 p-1 rounded-xl border border-slate-800/50 relative max-w-md mx-auto">
+          <motion.div
+            layoutId="activeTab"
+            className={`absolute inset-y-1 rounded-lg bg-slate-800 shadow-sm ${activeTab === 'ingredients' ? 'left-1 w-[calc(50%-4px)]' : 'left-[calc(50%+4px)] w-[calc(50%-8px)]'}`}
+          />
+          <TabButton
+            active={activeTab === 'ingredients'} onClick={() => setActiveTab('ingredients')} error={errors.ingredients}
+            icon={<ChefHat size={14} />} label="Ingredients" count={data.ingredients.length}
+          />
+          <TabButton
+            active={activeTab === 'steps'} onClick={() => setActiveTab('steps')} error={errors.steps}
+            icon={<ListChecks size={14} />} label="Passos" count={data.steps.length}
+          />
         </div>
       </div>
 
-      {/* 4. FAB 
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={handleSave}
-        disabled={loading}
-        className="absolute bottom-6 right-6 z-50 w-16 h-16 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl flex items-center justify-center ring-4 ring-slate-950/50 disabled:opacity-50 disabled:grayscale"
-      >
-         {loading ? <span className="animate-spin text-2xl">⏳</span> : <Sparkles className="w-7 h-7 fill-white animate-pulse" />}
-      </motion.button>*/}
+      <div className="flex-1 overflow-hidden relative w-full p-2 sm:p-4 md:p-6">
+        <div id="tour-content-area" className="h-full w-full bg-slate-900/30 border border-slate-800/50 rounded-3xl overflow-hidden relative backdrop-blur-sm">
+          {activeTab === 'ingredients' ? (
+            <IngredientsManager data={data} update={setData} inventory={userInventory} labels={t.create_recipe.ingredients} />
+          ) : (
+            <StepsBuilder data={data} update={setData} labels={safeStepsLabels} />
+          )}
+        </div>
+      </div>
+
+      <div className="absolute bottom-6 right-6 z-50">
+        <motion.button
+          id="tour-save-btn"
+          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+          onClick={handleSave} disabled={loading}
+          className={`w-16 h-16 rounded-full shadow-[0_0_40px_-10px_rgba(168,85,247,0.6)] flex items-center justify-center ring-4 transition-all ${loading ? 'bg-slate-800 cursor-wait ring-slate-700' : 'bg-linear-to-r from-purple-600 to-pink-600 hover:shadow-purple-500/40 cursor-pointer ring-slate-950/80'
+            }`}
+        >
+          {loading ? <span className="animate-spin text-2xl">⏳</span> : <Save className="w-7 h-7 text-white stroke-[2.5px]" />}
+        </motion.button>
+      </div>
     </div>
+  );
+}
+
+interface TabButtonProps {
+  active: boolean; onClick: () => void; error: boolean; icon: React.ReactNode; label: string; count: number;
+}
+function TabButton({ active, onClick, error, icon, label, count }: TabButtonProps) {
+  return (
+    <button onClick={onClick} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 ${error ? 'text-red-400 animate-pulse' : (active ? 'text-white' : 'text-slate-500')}`}>
+      {icon} {error ? `Falten ${label}!` : label} {count > 0 && !error && <span className="bg-purple-600 text-white text-[9px] px-1.5 rounded-full">{count}</span>}
+    </button>
   );
 }

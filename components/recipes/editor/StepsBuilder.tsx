@@ -25,18 +25,16 @@ export function StepsBuilder({ data, update, labels }: Props) {
     handleReorder
   } = useStepsManager(data, update);
 
-  // Estat visual només per a mòbil
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
 
   const handleAddStep = () => {
     addStep();
-    // Opcional: Feedback visual o canvi de vista
   };
 
   return (
     <div className="h-full flex flex-col lg:grid lg:grid-cols-2 lg:divide-x divide-slate-800 relative">
       
-      {/* --- MOBILE TOGGLE (Ocult en Desktop 'lg:hidden') --- */}
+      {/* MOBILE TOGGLE */}
       <div className="lg:hidden shrink-0 flex p-1 bg-slate-900 border-b border-slate-800">
           <button
             onClick={() => setMobileView('edit')}
@@ -60,11 +58,7 @@ export function StepsBuilder({ data, update, labels }: Props) {
           </button>
       </div>
 
-      {/* 1. INPUT + CONTEXT (COLUMNA ESQUERRA)
-          Lògica CSS:
-          - mobileView === 'preview'? -> hidden (oculta en mòbil)
-          - lg:flex -> PERÒ en Desktop FORÇA que es vegi sempre (Split View)
-      */}
+      {/* INPUT + CONTEXT (Sense ID aquí, està a dins) */}
       <div className={`
           flex-col h-full overflow-hidden
           ${mobileView === 'preview' ? 'hidden lg:flex' : 'flex'}
@@ -79,19 +73,14 @@ export function StepsBuilder({ data, update, labels }: Props) {
           />
       </div>
 
-      {/* 2. LLISTA VISUAL (COLUMNA DRETA)
-          Lògica CSS:
-          - mobileView === 'edit'? -> hidden (oculta en mòbil)
-          - lg:flex -> PERÒ en Desktop FORÇA que es vegi sempre
-          - bg-slate-950/40 -> Fons lleugerament diferent per separar visualment
-      */}
+      {/* LLISTA VISUAL */}
       <div className={`
           flex-col h-full overflow-hidden bg-slate-950/40
           ${mobileView === 'edit' ? 'hidden lg:flex' : 'flex'}
       `}>
           <StepsList 
             steps={data.steps}
-            ingredients={data.ingredients} // ✅ Crucial: Passem ingredients pel lookup
+            ingredients={data.ingredients} 
             onReorder={handleReorder}
             onRemove={removeStep}
             listEndRef={listEndRef}

@@ -4,7 +4,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import logo from '@/public/icon1.png'; // Assegura't que aquesta ruta existeix
-
+import { NavbarInstallButton } from '@/features/landing/components/NavbarInstallbutton';
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -27,6 +27,7 @@ export default async function Home() {
            {/* TEXT: Forçat a text-white (Correcte) */}
            <span className="font-black text-xl tracking-tighter text-white">TriaTu</span>
         </div>
+        <NavbarInstallButton />
         <LanguageSwitcher />
       </nav>
 

@@ -1,0 +1,31 @@
+// =================== FILE: src/proxy.ts ===================
+import { type NextRequest} from 'next/server';
+import { updateSession } from '@/adapters/supabase/middleware';
+
+// ⚠️ CANVI CLAU: La funció ara es diu 'proxy'
+export async function proxy(request: NextRequest) {
+  
+  // 1. Refresquem la sessió de Supabase (CRÍTIC)
+  // Això gestiona la rotació del refresh token i les cookies.
+  // Sense això, la sessió caduca en 1 hora.
+  const response = await updateSession(request);
+
+  // 2. Security Headers (Bones pràctiques OWASP)
+  // Protegeixen tota l'aplicació d'atacs comuns
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  return response;
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Matcher netejat:
+     * Intercepta-ho tot EXCEPTE fitxers estàtics, imatges i assets.
+     * Inclou /api per si de cas, però sobretot protegeix les pàgines normals.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+};

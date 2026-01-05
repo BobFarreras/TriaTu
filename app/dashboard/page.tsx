@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
 import { DashboardContent } from '@/features/dashboard/ui/DashboardContent'; // Assegura't que la ruta és correcta
 import { container } from '@/services/container';
-
+import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
+import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -38,11 +39,14 @@ export default async function DashboardPage() {
 
   // ✅ 4. Passem totes les dades al client
   return (
-    <DashboardContent 
-      userName={name} 
-      userId={user.id} 
-      userRooms={roomsDTO} 
-      profileData={profile} // Ara 'profile' ja existeix
-    />
+    <OnboardingProvider> {/* 👈 IMPORTANT */}
+      <OnboardingOverlay /> {/* 👈 IMPORTANT */}
+      <DashboardContent
+        userName={name}
+        userId={user.id}
+        userRooms={roomsDTO}
+        profileData={profile} // Ara 'profile' ja existeix
+      />
+    </OnboardingProvider>
   );
 }

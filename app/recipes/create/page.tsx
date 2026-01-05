@@ -3,7 +3,9 @@ import { createClient } from '@/adapters/supabase/server';
 import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository';
 import { RecipeEditor } from '@/components/recipes/editor/RecipeEditor';
 import { InventoryItemUI } from '@/components/recipes/editor/types';
-
+// ✅ Imports nous
+import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
+import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 export default async function CreateRecipePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -19,11 +21,18 @@ export default async function CreateRecipePage() {
       emoji: item.emoji || null 
   }));
 
-  return (
-    // ✅ CANVI CLAU: h-dvh assegura que ocupa el 100% de la pantalla del mòbil sense scroll
-    // i overflow-hidden evita que res surti fora.
-    <main className="h-dvh w-full bg-slate-950 text-white overflow-hidden flex flex-col">
-       <RecipeEditor userInventory={plainInventory} />
-    </main>
+return (
+    // 1. Envoltem amb el Provider
+    <OnboardingProvider>
+        
+        {/* 2. Afegim l'Overlay visual (estarà ocult fins que s'activi) */}
+        <OnboardingOverlay />
+        
+        {/* 3. L'Editor de sempre */}
+        <div className="h-[calc(100vh-(--spacing(16)))] lg:h-screen">
+            <RecipeEditor userInventory={plainInventory} />
+        </div>
+
+    </OnboardingProvider>
   );
 }

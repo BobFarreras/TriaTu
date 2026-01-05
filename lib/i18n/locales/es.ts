@@ -745,5 +745,76 @@ export const es = {
         dessert: 'Postre'
       }
     }
+  },
+  onboarding: {
+    buttons: {
+      next: "Siguiente",
+      back: "Atrás",
+      finish: "¡Entendido! 🚀",
+      skip: "Saltar tour"
+    },
+    // Aquí pondremos los textos específicos del editor
+    editor: {
+      step1_title: "1. Bautiza tu creación",
+      step1_desc: "Todo empieza con un buen nombre. ¡Escribe algo que abra el apetito!",
+
+      step2_title: "2. El Tiempo es Oro",
+      step2_desc: "¿Cuánto tardaremos? Sé realista, no queremos que se nos queme el arroz.",
+
+      step3_title: "3. Etiquétalo",
+      step3_desc: "¿Es Vegano? ¿Sin Gluten? ¿Picante? Ayuda a la gente a filtrar.",
+
+      step4_title: "4. ¡A la Cesta!",
+      step4_desc: "Busca ingredientes (ej: 'Cebolla') y añade cantidades. ¡Usa tu inventario!",
+
+      step5_title: "5. Gestión de Ingredientes",
+      step5_desc: "Aquí verás la lista. Si te equivocas, haz clic en el icono para eliminarlos.",
+
+      step6_title: "6. La Magia (Paso a Paso)",
+      step6_desc: "Explica cómo se hace. Sé claro y conciso.",
+
+      step7_title: "7. Superpoder: Inserción Rápida",
+      step7_desc: "Haz clic en estos ingredientes para añadirlos al texto con su icono. ¡Queda súper pro!",
+
+      step8_title: "8. Publicar",
+      step8_desc: "Revísalo todo y pulsa el botón mágico para guardar."
+    },
+    dashboard: {
+      step1_title: "¡Bienvenido a la Cocina! 🏠",
+      step1_desc: "Este es tu centro de mando. Desde aquí puedes gestionarlo todo.",
+
+      step2_title: "Preferencias (Barra Lateral)",
+      step2_desc: "Aquí ves lo que te gusta y lo que no. ¡Importante para cuando la IA te recomiende recetas!",
+
+      step3_title: "Acciones Rápidas",
+      step3_desc: "Acceso directo a las salas recientes o acciones sugeridas para ti.",
+
+      step4_title: "Navegación Principal",
+      step4_desc: "El menú principal. Todas las herramientas que necesitas están aquí.",
+
+      step5_title: "Crear una Partida",
+      step5_desc: "¿Quieres decidir qué cenar con amigos? ¡Crea una sala y empezad a votar!",
+
+      step6_title: "Unirse",
+      step6_desc: "¿Tienes un código o QR? Entra rápidamente en la sala de un amigo.",
+      step7_title: "Comunidad de Recetas",
+      step7_desc: "Inspírate con lo que cocinan los demás. ¡Copia recetas y hazlas tuyas!",
+
+      step8_title: "El Ranking",
+      step8_desc: "¿Quién es el mejor chef? Compite por puntos y medallas.",
+
+      step9_title: "Tus Salas",
+      step9_desc: "Acceso rápido a las partidas en las que ya estás jugando o has jugado.",
+
+      step10_title: "Tu Despensa",
+      step10_desc: "Gestiona lo que tienes en la nevera para recibir recomendaciones precisas.",
+
+      step11_title: "Perfil y Configuración",
+      step11_desc: "Cambia tu avatar, nombre y preferencias globales aquí."
+
+    }
+
+
   }
+
 };

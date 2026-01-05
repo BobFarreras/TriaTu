@@ -746,5 +746,76 @@ export const en = {
         dessert: 'Dessert'
       }
     }
+  },
+  onboarding: {
+    buttons: {
+      next: "Next",
+      back: "Back",
+      finish: "Got it! 🚀",
+      skip: "Skip tour"
+    },
+    // Here we will place the editor-specific texts
+    editor: {
+      step1_title: "1. Name Your Creation",
+      step1_desc: "Everything starts with a good name. Write something that makes people hungry!",
+
+      step2_title: "2. Time Is Gold",
+      step2_desc: "How long will it take? Be realistic—we don't want to burn the rice.",
+
+      step3_title: "3. Tag It",
+      step3_desc: "Is it Vegan? Gluten-Free? Spicy? Help people filter it.",
+
+      step4_title: "4. Into the Basket!",
+      step4_desc: "Search for ingredients (e.g. 'Onion') and add quantities. Use your inventory!",
+
+      step5_title: "5. Ingredient Management",
+      step5_desc: "Here you'll see the list. If you make a mistake, click the icon to remove them.",
+
+      step6_title: "6. The Magic (Step by Step)",
+      step6_desc: "Explain how it's made. Be clear and concise.",
+
+      step7_title: "7. Superpower: Quick Insert",
+      step7_desc: "Click these ingredients to add them to the text with their icon. It looks super pro!",
+
+      step8_title: "8. Publish",
+      step8_desc: "Review everything and press the magic button to save."
+    },
+    dashboard: {
+      step1_title: "Welcome to the Kitchen! 🏠",
+      step1_desc: "This is your command center. From here you can manage everything.",
+
+      step2_title: "Preferences (Sidebar)",
+      step2_desc: "Here you can see what you like and dislike. Important for when the AI recommends recipes!",
+
+      step3_title: "Quick Actions",
+      step3_desc: "Direct access to recent rooms or actions suggested for you.",
+
+      step4_title: "Main Navigation",
+      step4_desc: "The main menu. All the tools you need are here.",
+
+      step5_title: "Create a Session",
+      step5_desc: "Want to decide what to have for dinner with friends? Create a room and start voting!",
+
+      step6_title: "Join",
+      step6_desc: "Got a code or QR? Quickly join a friend's room.",
+      step7_title: "Recipe Community",
+      step7_desc: "Get inspired by what others are cooking. Copy recipes and make them your own!",
+
+      step8_title: "The Ranking",
+      step8_desc: "Who is the best chef? Compete for points and medals.",
+
+      step9_title: "Your Rooms",
+      step9_desc: "Quick access to the sessions you're currently playing or have played.",
+
+      step10_title: "Your Pantry",
+      step10_desc: "Manage what you have in your fridge to get accurate recommendations.",
+
+      step11_title: "Profile & Settings",
+      step11_desc: "Change your avatar, name, and global preferences here."
+
+    }
+
+
   }
+
 };
