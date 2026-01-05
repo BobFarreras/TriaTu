@@ -779,7 +779,27 @@ export const en = {
 
       step8_title: "8. Publish",
       step8_desc: "Review everything and press the magic button to save."
+    },
+    dashboard: {
+      step1_title: "Welcome to the Kitchen! 🏠",
+      step1_desc: "This is your command center. From here you can manage everything.",
+
+      step2_title: "Preferences (Sidebar)",
+      step2_desc: "Here you can see what you like and dislike. Important for when the AI recommends recipes!",
+
+      step3_title: "Quick Actions",
+      step3_desc: "Direct access to recent rooms or actions suggested for you.",
+
+      step4_title: "Main Navigation",
+      step4_desc: "The main menu. All the tools you need are here.",
+
+      step5_title: "Create a Session",
+      step5_desc: "Want to decide what to have for dinner with friends? Create a room and start voting!",
+
+      step6_title: "Join",
+      step6_desc: "Got a code or QR? Quickly join a friend's room."
     }
+
 
   }
 

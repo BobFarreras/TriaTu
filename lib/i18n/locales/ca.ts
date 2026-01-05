@@ -793,6 +793,25 @@ export const ca = {
 
       step8_title: "8. Publicar",
       step8_desc: "Revisa-ho tot i prem el botó màgic per guardar."
+    },
+    dashboard: {
+      step1_title: "Benvingut a la Cuina! 🏠",
+      step1_desc: "Aquest és el teu centre de comandament. Des d'aquí pots gestionar-ho tot.",
+
+      step2_title: "Preferències (Sidebar)",
+      step2_desc: "Aquí veus què t'agrada i què no. Important per quan la IA et recomani receptes!",
+
+      step3_title: "Accions Ràpides",
+      step3_desc: "Accés directe a les sales recents o accions suggerides per a tu.",
+
+      step4_title: "Navegació Principal",
+      step4_desc: "El menú principal. Totes les eines que necessites estan aquí.",
+
+      step5_title: "Crea una Partida",
+      step5_desc: "Vols decidir què sopar amb amics? Crea una sala i comenceu a votar!",
+
+      step6_title: "Unir-se",
+      step6_desc: "Tens un codi o QR? Entra a la sala d'un amic ràpidament."
     }
   }
 };

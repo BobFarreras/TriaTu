@@ -778,7 +778,27 @@ export const es = {
 
       step8_title: "8. Publicar",
       step8_desc: "Revísalo todo y pulsa el botón mágico para guardar."
+    },
+    dashboard: {
+      step1_title: "¡Bienvenido a la Cocina! 🏠",
+      step1_desc: "Este es tu centro de mando. Desde aquí puedes gestionarlo todo.",
+
+      step2_title: "Preferencias (Barra Lateral)",
+      step2_desc: "Aquí ves lo que te gusta y lo que no. ¡Importante para cuando la IA te recomiende recetas!",
+
+      step3_title: "Acciones Rápidas",
+      step3_desc: "Acceso directo a las salas recientes o acciones sugeridas para ti.",
+
+      step4_title: "Navegación Principal",
+      step4_desc: "El menú principal. Todas las herramientas que necesitas están aquí.",
+
+      step5_title: "Crear una Partida",
+      step5_desc: "¿Quieres decidir qué cenar con amigos? ¡Crea una sala y empezad a votar!",
+
+      step6_title: "Unirse",
+      step6_desc: "¿Tienes un código o QR? Entra rápidamente en la sala de un amigo."
     }
+
 
   }
 

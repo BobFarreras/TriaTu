@@ -1,7 +1,6 @@
-// src/components/onboarding/OnboardingContext.tsx
 'use client'
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'; // ✅ Importem useCallback
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 export interface TourStep {
   targetId: string;
@@ -15,7 +14,8 @@ interface OnboardingContextType {
   isActive: boolean;
   currentStepIndex: number;
   steps: TourStep[];
-  startTour: (steps: TourStep[], options?: { force?: boolean }) => void;
+  // ✅ MODIFICACIÓ: Ara demanem un ID de tour
+  startTour: (tourId: string, steps: TourStep[], options?: { force?: boolean }) => void;
   nextStep: () => void;
   prevStep: () => void;
   skipTour: () => void;
@@ -24,19 +24,21 @@ interface OnboardingContextType {
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'triatu_recipe_editor_tour_seen';
-
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [steps, setSteps] = useState<TourStep[]>([]);
+  
+  // ✅ NOU ESTAT: Per saber quin tour estem fent actualment
+  const [currentTourId, setCurrentTourId] = useState<string>('');
 
-  // ✅ CORRECCIÓ CLAU: 'useCallback' evita que la funció es regeneri a cada render
-  // Això trenca el bucle infinit del useEffect al RecipeEditor
-  const startTour = useCallback((newSteps: TourStep[], options: { force?: boolean } = {}) => {
-    const hasSeen = localStorage.getItem(STORAGE_KEY);
+  const startTour = useCallback((tourId: string, newSteps: TourStep[], options: { force?: boolean } = {}) => {
+    // Generem una clau única per aquest tour
+    const storageKey = `triatu_tour_seen_${tourId}`;
+    const hasSeen = localStorage.getItem(storageKey);
     
     if (!hasSeen || options.force) {
+        setCurrentTourId(tourId); // Guardem quin tour és
         setSteps(newSteps);
         setCurrentStepIndex(0);
         setIsActive(true);
@@ -45,16 +47,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const finishTour = useCallback(() => {
     setIsActive(false);
-    localStorage.setItem(STORAGE_KEY, 'true');
-  }, []);
+    if (currentTourId) {
+        // ✅ Guardem només EL TOUR ACTUAL com a vist
+        localStorage.setItem(`triatu_tour_seen_${currentTourId}`, 'true');
+    }
+  }, [currentTourId]);
 
   const nextStep = useCallback(() => {
-    // Usem el callback de l'estat per tenir sempre el valor més recent
     setCurrentStepIndex(prev => {
         if (prev < steps.length - 1) {
             return prev + 1;
         } else {
-            finishTour(); // Si és l'últim, acabem
+            finishTour();
             return prev;
         }
     });

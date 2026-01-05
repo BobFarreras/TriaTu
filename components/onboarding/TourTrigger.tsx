@@ -5,11 +5,12 @@ import { useOnboarding, TourStep } from './OnboardingContext';
 import { motion } from 'framer-motion';
 
 interface Props {
+  tourId: string; // ✅ NOVA PROP OBLIGATÒRIA
   steps: TourStep[];
   className?: string;
 }
 
-export function TourTrigger({ steps, className }: Props) {
+export function TourTrigger({ steps, className, tourId }: Props) {
   const { startTour } = useOnboarding();
 
   return (
@@ -18,7 +19,7 @@ export function TourTrigger({ steps, className }: Props) {
       whileTap={{ scale: 0.9 }}
       onClick={() => {
         // ✅ { force: true } ignora el localStorage i l'activa igualment
-        startTour(steps, { force: true });
+        startTour(tourId, steps, { force: true }); // ✅ Passem l'ID
       }}
       className={`
         flex items-center justify-center w-10 h-10 rounded-full 

@@ -36,7 +36,11 @@ export function RecipeEditor({ userInventory }: Props) {
     { targetId: 'tour-save-btn', title: t.onboarding.editor.step8_title, description: t.onboarding.editor.step8_desc }
   ], [t]);
 
-  useEffect(() => { startTour(onboardingSteps); }, [startTour, onboardingSteps]);
+  // 3. INICI I GESTIÓ DEL TOUR
+  useEffect(() => {
+    // Passem l'ID 'recipe-editor'
+    startTour('recipe-editor', onboardingSteps);
+  }, [startTour, onboardingSteps]);
 
   // CANVI DE PESTANYA PEL TOUR
   useEffect(() => {
@@ -46,7 +50,7 @@ export function RecipeEditor({ userInventory }: Props) {
       const timer = setTimeout(() => setActiveTab(currentStep.requiredTab!), 100);
       return () => clearTimeout(timer);
     }
-  }, [currentStepIndex, isActive, activeSteps, activeTab]); 
+  }, [currentStepIndex, isActive, activeSteps, activeTab]);
 
   const safeStepsLabels: StepsLabels = {
     ...(t.create_recipe.steps as unknown as Record<string, string>),
@@ -60,7 +64,7 @@ export function RecipeEditor({ userInventory }: Props) {
       {/* ✅ CORRECTE: El botó està aquí, fora de les pestanyes i del header */}
       {/* top-4 right-4 el posiciona relatiu a tota la pantalla/contenidor */}
       <div className="absolute top-4 right-4 z-9990">
-        <TourTrigger steps={onboardingSteps} />
+        <TourTrigger tourId="recipe-editor" steps={onboardingSteps} />
       </div>
 
       <MetaControls data={data} update={setData} hasError={errors.name} />
