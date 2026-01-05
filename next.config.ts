@@ -1,5 +1,19 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+// ✅ CORRECCIÓ: Usem import estàndard en lloc de require
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === "development",
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+});
+
+const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '5mb',
@@ -10,40 +24,18 @@ const nextConfig = {
   async headers() {
     return [
       {
-        // Apliquem aquestes regles a TOTES les rutes
         source: '/:path*',
         headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload' // Força HTTPS durant 2 anys
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff' // Evita que el navegador "endevini" i executi fitxers maliciosos disfressats
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY' // Evita Clickjacking (ningú pot posar la teva web en un iframe)
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block' // Protecció extra per a navegadors antics
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin' // Privacitat: no enviem la URL completa a llocs externs
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' // Bloqueja accés a hardware no utilitzat
-          },
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          // ⚠️ ALERTA: He eliminat 'camera=()' del Permissions-Policy perquè si volem fer fotos de la nevera, la necessitarem!
+          { key: 'Permissions-Policy', value: 'geolocation=(), interest-cohort=()' }, 
           {
             key: 'Content-Security-Policy',
-            // Aquesta és la regla més complexa. Llegeix l'explicació a baix.
             value: `
               default-src 'self';
               script-src 'self' 'unsafe-eval' 'unsafe-inline';
@@ -51,7 +43,7 @@ const nextConfig = {
               img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in;
               font-src 'self' data:;
               connect-src 'self' https://*.supabase.co https://*.supabase.in;
-            `.replace(/\s{2,}/g, ' ').trim() // Netegem espais en blanc
+            `.replace(/\s{2,}/g, ' ').trim()
           }
         ],
       },
@@ -59,4 +51,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

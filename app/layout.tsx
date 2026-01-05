@@ -8,6 +8,16 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "TriaTu",
   description: "Decisions en grup fàcils i ràpides",
+  // ⚠️ AFEGEIX AIXÒ PER A IPHONE (iOS)
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent", // O 'default'. 'black-translucent' queda brutal amb el teu fons fosc.
+    title: "TriaTu",
+    startupImage: [], // Opcional, però evita errors en validacions
+  },
+  formatDetection: {
+    telephone: false, // Evita que els números es converteixin en enllaços blaus lletjos
+  },
 };
 
 export const viewport: Viewport = {
@@ -36,6 +46,7 @@ export default function RootLayout({
           {/* ✅ AFEGIM EL PROVIDER AQUÍ */}
           <DecisionProvider>
             {children}
+        
           </DecisionProvider>
         </LanguageProvider>
       </body>
