@@ -7,15 +7,16 @@ import { StepIngredients } from './StepIngredients';
 import { StepInstructions } from './StepInstructions';
 import { StepReview } from './StepReview';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
-import { createRecipeAction } from '@/app/actions/create-recipe'; // La teva action
+import { createRecipeAction } from '@/app/actions/create-recipe';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
+// ✅ CORRECCIÓ: 'steps' ha de coincidir amb el que espera la Server Action
 export interface WizardData {
   name: string;
   prepTimeMinutes: number;
   ingredients: { name: string; quantity: number; unit: string }[];
-  steps: string[];
+  steps: { id: string; content: string }[]; // <-- ABANS ERA string[]
   dietaryTags: string[];
 }
 
@@ -26,7 +27,7 @@ export function RecipeWizard({ userInventory }: { userInventory: InventoryItemPr
 
   const [data, setData] = useState<WizardData>({
     name: '',
-    prepTimeMinutes: 20, // Valor inicial lògic
+    prepTimeMinutes: 20,
     ingredients: [],
     steps: [],
     dietaryTags: []
@@ -37,6 +38,7 @@ export function RecipeWizard({ userInventory }: { userInventory: InventoryItemPr
 
   const handleFinish = async () => {
     setLoading(true);
+    // Ara 'data' ja té l'estructura correcta, TypeScript no es queixarà
     const result = await createRecipeAction(data);
     setLoading(false);
 
@@ -48,7 +50,6 @@ export function RecipeWizard({ userInventory }: { userInventory: InventoryItemPr
     }
   };
 
-  // Barra de Progrés
   const progress = (step / 4) * 100;
 
   return (
@@ -56,7 +57,7 @@ export function RecipeWizard({ userInventory }: { userInventory: InventoryItemPr
       {/* Progress Bar */}
       <div className="h-2 bg-slate-900 rounded-full mb-8 overflow-hidden border border-slate-800">
         <motion.div 
-            className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+            className="h-full bg-linear-to-r from-purple-500 to-pink-500"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ type: 'spring', stiffness: 50 }}
@@ -71,6 +72,7 @@ export function RecipeWizard({ userInventory }: { userInventory: InventoryItemPr
             <StepIngredients key="step2" data={data} update={setData} onNext={next} onBack={back} inventory={userInventory} />
         )}
         {step === 3 && (
+            // IMPORTANT: Dins de StepInstructions hauràs de crear l'objecte amb ID
             <StepInstructions key="step3" data={data} update={setData} onNext={next} onBack={back} />
         )}
         {step === 4 && (
