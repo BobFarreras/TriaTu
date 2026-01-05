@@ -797,7 +797,22 @@ export const en = {
       step5_desc: "Want to decide what to have for dinner with friends? Create a room and start voting!",
 
       step6_title: "Join",
-      step6_desc: "Got a code or QR? Quickly join a friend's room."
+      step6_desc: "Got a code or QR? Quickly join a friend's room.",
+      step7_title: "Recipe Community",
+      step7_desc: "Get inspired by what others are cooking. Copy recipes and make them your own!",
+
+      step8_title: "The Ranking",
+      step8_desc: "Who is the best chef? Compete for points and medals.",
+
+      step9_title: "Your Rooms",
+      step9_desc: "Quick access to the sessions you're currently playing or have played.",
+
+      step10_title: "Your Pantry",
+      step10_desc: "Manage what you have in your fridge to get accurate recommendations.",
+
+      step11_title: "Profile & Settings",
+      step11_desc: "Change your avatar, name, and global preferences here."
+
     }
 
 

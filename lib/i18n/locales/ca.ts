@@ -812,6 +812,7 @@ export const ca = {
 
       step6_title: "Unir-se",
       step6_desc: "Tens un codi o QR? Entra a la sala d'un amic ràpidament.",
+      
       step7_title: "Comunitat de Receptes",
       step7_desc: "Inspira't amb el que cuinen els altres. Copia receptes i fes-les teves!",
 

@@ -6,15 +6,16 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, Check } from 'lucide-react';
 
-// Definim el tipus per evitar errors
 interface CardStyle {
-  top: number | string;
-  left: number | string;
-  x: number | string;
-  y: number | string;
-  width: string;
-  maxWidth: string;
-  position: 'absolute' | 'fixed'; // Canvi important: a vegades volem fixed
+  top?: number | string;
+  bottom?: number | string;
+  left?: number | string;
+  right?: number | string;
+  x?: number | string;
+  y?: number | string;
+  width?: string;
+  maxWidth?: string;
+  position: 'absolute' | 'fixed';
 }
 
 export function OnboardingOverlay() {
@@ -31,19 +32,18 @@ export function OnboardingOverlay() {
     if (!isActive || !currentStep) return;
 
     const updatePosition = () => {
-      // Actualitzem mida finestra per càlculs
       setWindowSize({ w: window.innerWidth, h: window.innerHeight });
 
       const element = document.getElementById(currentStep.targetId);
       if (element) {
-        // Fem scroll suau fins l'element
+        // En mòbil preferim 'center' per tenir-lo a la vista, 
+        // la nostra nova lògica s'apartarà d'ell.
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Esperem una mica a que acabi l'scroll per agafar la posició final
         setTimeout(() => {
             const rect = element.getBoundingClientRect();
             setTargetRect(rect);
-        }, 100);
+        }, 150);
       } else {
         setTargetRect(null); 
       }
@@ -62,53 +62,92 @@ export function OnboardingOverlay() {
 
   if (!isActive || !currentStep) return null;
 
-  // --- LÒGICA DE POSICIONAMENT: "SEMPRE LLEGIBLE" 🧠 ---
+  // --- LÒGICA DE POSICIONAMENT INTEL·LIGENT (MOBILE & DESKTOP) 🧠 ---
 
   const isMobile = windowSize.w > 0 && windowSize.w < 768;
   
-  // ESTAT BASE: CENTRAT AL MIG DE LA PANTALLA (Garanteix lectura)
+  // 1. ESTAT BASE (Fallback segur: Fixat a baix)
   let cardStyles: CardStyle = {
-    position: 'fixed', // Fixed fa que no depengui de l'scroll, sempre al mig visual
-    top: '50%',
+    position: 'fixed',
+    top: 'auto',
+    bottom: 24, 
     left: '50%',
     x: '-50%',
-    y: '-50%',
+    y: 0,
     width: '90%',
     maxWidth: '400px'
   };
 
-  // NOMÉS en Desktop i si tenim lloc, intentem ser elegants i posar-ho al costat.
-  // En mòbil, mantenim el "Fixed Center" perquè és el més segur.
-  if (!isMobile && targetRect && windowSize.h > 0) {
-     const spaceAbove = targetRect.top;
-     const spaceBelow = windowSize.h - targetRect.bottom;
-     const CARD_HEIGHT = 220; 
+  if (targetRect && windowSize.h > 0) {
+     
+     // --- LÒGICA MÒBIL: HEMISFERI OPOSAT ---
+     if (isMobile) {
+        const elementCenterY = targetRect.top + (targetRect.height / 2);
+        const screenCenterY = windowSize.h / 2;
 
-     // Si tenim espai a SOTA, ho posem a sota (relatiu a l'element)
-     if (spaceBelow > CARD_HEIGHT) {
-        cardStyles = {
-            position: 'absolute', // Absolute per seguir l'element si es mou
-            top: targetRect.bottom + 20,
-            left: Math.max(20, Math.min(targetRect.left, windowSize.w - 380)),
-            x: 0,
-            y: 0,
-            width: '380px',
-            maxWidth: '380px'
-        };
+        // Si l'element està a la meitat INFERIOR de la pantalla (> centre)
+        if (elementCenterY > screenCenterY) {
+            // Posem la targeta a DALT
+            cardStyles = {
+                position: 'fixed',
+                top: 24,      // Marge superior
+                bottom: 'auto',
+                left: '50%',
+                x: '-50%',
+                y: 0,
+                width: '90%',
+                maxWidth: '400px'
+            };
+        } else {
+            // Si l'element està a la meitat SUPERIOR (< centre)
+            // Posem la targeta a BAIX (lògica per defecte, però explicita aquí)
+            cardStyles = {
+                position: 'fixed',
+                top: 'auto',
+                bottom: 24,   // Marge inferior
+                left: '50%',
+                x: '-50%',
+                y: 0,
+                width: '90%',
+                maxWidth: '400px'
+            };
+        }
      } 
-     // Si tenim espai a SOBRE, ho posem a sobre
-     else if (spaceAbove > CARD_HEIGHT) {
-        cardStyles = {
-            position: 'absolute',
-            top: targetRect.top - 20,
-            left: Math.max(20, Math.min(targetRect.left, windowSize.w - 380)),
-            x: 0,
-            y: '-100%',
-            width: '380px',
-            maxWidth: '380px'
-        };
+     
+     // --- LÒGICA DESKTOP: SPOTLIGHT ADAPTATIU ---
+     else {
+        const spaceAbove = targetRect.top;
+        const spaceBelow = windowSize.h - targetRect.bottom;
+        const CARD_HEIGHT = 220; 
+
+        // Si tenim espai a SOTA -> Absolute a sota
+        if (spaceBelow > CARD_HEIGHT) {
+            cardStyles = {
+                position: 'absolute',
+                top: targetRect.bottom + 20,
+                bottom: 'auto',
+                left: Math.max(20, Math.min(targetRect.left, windowSize.w - 380)),
+                x: 0,
+                y: 0,
+                width: '380px',
+                maxWidth: '380px'
+            };
+        } 
+        // Si tenim espai a SOBRE -> Absolute a sobre
+        else if (spaceAbove > CARD_HEIGHT) {
+            cardStyles = {
+                position: 'absolute',
+                top: targetRect.top - 20,
+                bottom: 'auto',
+                left: Math.max(20, Math.min(targetRect.left, windowSize.w - 380)),
+                x: 0,
+                y: '-100%',
+                width: '380px',
+                maxWidth: '380px'
+            };
+        }
+        // Si no hi cap enlloc (rar en desktop) -> Es queda fixed center o bottom (fallback)
      }
-     // Si no hi ha espai ni a sobre ni a sota... es queda amb el valor per defecte (CENTRAT)
   }
 
   return (
@@ -132,20 +171,26 @@ export function OnboardingOverlay() {
       <AnimatePresence mode='wait'>
         <motion.div
             key={currentStepIndex}
-            className="pointer-events-auto z-10000" // Z-index extra alt
+            className="pointer-events-auto z-[10000]"
             
-            // Apliquem l'estil (fixed o absolute segons el cas)
             style={{ 
-                position: cardStyles.position as any, 
+                position: cardStyles.position, 
                 width: cardStyles.width, 
-                maxWidth: cardStyles.maxWidth 
+                maxWidth: cardStyles.maxWidth,
+                // Apliquem top/bottom dinàmicament
+                top: cardStyles.top,
+                bottom: cardStyles.bottom,
+                left: cardStyles.left,
+                right: cardStyles.right
             }}
 
             initial={{ opacity: 0, scale: 0.9, x: cardStyles.x, y: cardStyles.y }}
             animate={{ 
                 opacity: 1,
                 scale: 1,
+                // Necessitem passar explícitament top/bottom a l'animate per suavitzar canvis
                 top: cardStyles.top,
+                bottom: cardStyles.bottom,
                 left: cardStyles.left,
                 x: cardStyles.x,
                 y: cardStyles.y
