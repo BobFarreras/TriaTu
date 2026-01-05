@@ -811,7 +811,21 @@ export const ca = {
       step5_desc: "Vols decidir què sopar amb amics? Crea una sala i comenceu a votar!",
 
       step6_title: "Unir-se",
-      step6_desc: "Tens un codi o QR? Entra a la sala d'un amic ràpidament."
+      step6_desc: "Tens un codi o QR? Entra a la sala d'un amic ràpidament.",
+      step7_title: "Comunitat de Receptes",
+      step7_desc: "Inspira't amb el que cuinen els altres. Copia receptes i fes-les teves!",
+
+      step8_title: "El Rànquing",
+      step8_desc: "Qui és el millor xef? Competeix per punts i medalles.",
+
+      step9_title: "Les Teves Sales",
+      step9_desc: "Accés ràpid a les partides on ja estàs jugant o has jugat.",
+
+      step10_title: "El Teu Rebost",
+      step10_desc: "Gestiona què tens a la nevera per rebre recomanacions precises.",
+
+      step11_title: "Perfil i Configuració",
+      step11_desc: "Canvia el teu avatar, nom i preferències globals aquí."
     }
   }
 };
