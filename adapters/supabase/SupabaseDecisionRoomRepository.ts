@@ -1,30 +1,40 @@
+// =================== FILE: adapters/supabase/SupabaseDecisionRoomRepository.ts ===================
+
 import { DecisionRoomRepository } from '@/core/ports/DecisionRoomRepository';
 import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 import { createClient } from '@/adapters/supabase/server';
 
-// ✅ TIPUS DTO
-type DbParticipant = {
+// --- TIPUS ESTRUCTURALS DE BASE DE DADES (Sense 'any') ---
+
+interface DbParticipant {
   user_id: string;
   joined_at: string;
-};
+}
 
-
-
-type DbDecision = {
+interface DbDecision {
   choice: string;
   reason: string;
   created_at: string;
-};
+}
 
-// 🆕 Nuevo tipo para la Sala (snake_case como en DB)
-type DbRoom = {
+interface DbRoom {
   id: string;
   host_user_id: string;
   name: string;
   voting_mode: string;
   created_at: string;
-};
+  status?: string;
+}
+
+// Tipus compost per a la resposta del JOIN de Supabase
+interface DbRoomJoinResponse extends DbRoom {
+  participants: DbParticipant[];
+  decisions: DbDecision[];
+}
+
+// -----------------------------------------------------------
+
 export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
 
   // 1. GUARDAR SALA + PARTICIPANTS
@@ -58,10 +68,16 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     if (partError) throw new Error(`Error saving participants: ${partError.message}`);
   }
 
-  // 2. RECUPERAR SALA
+  // 2. RECUPERAR SALA (AMB SEGURETAT BLINDADA)
   async findById(id: string): Promise<DecisionRoom | null> {
     const supabase = await createClient();
 
+    // A. Obtenim l'usuari actual per validar permisos al codi
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) return null;
+
+    // B. Consulta a Supabase
+    // Usem .returns<DbRoomJoinResponse>() si volem forçar el tipus, o fem casting manual segur.
     const { data, error } = await supabase
       .from('decision_rooms')
       .select(`
@@ -74,30 +90,46 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
 
     if (error || !data) return null;
 
-    const participantsList: { userId: string; joinedAt: Date }[] = data.participants.map((p: DbParticipant) => ({
+    // Casting segur del resultat del JOIN
+    const roomData = data as unknown as DbRoomJoinResponse;
+
+    // C. 🛡️ TALLAFOCS DE SEGURETAT (APP LAYER CHECK)
+    // Verifiquem manualment que l'usuari té dret a veure això.
+    // Això ens protegeix si l'RLS estigués mal configurat.
+    
+    const isHost = roomData.host_user_id === user.id;
+    const isParticipant = roomData.participants.some((p) => p.user_id === user.id);
+
+    if (!isHost && !isParticipant) {
+        // Retornem null silenciosament. Per al UseCase, la sala no existeix.
+        return null;
+    }
+
+    // D. Mapeig a Entitat de Domini
+    const participantsList = roomData.participants.map((p) => ({
       userId: p.user_id,
       joinedAt: new Date(p.joined_at)
     }));
 
-    const hostId = data.host_user_id;
-
-    if (!participantsList.some((p) => p.userId === hostId)) {
-      participantsList.push({ userId: hostId, joinedAt: new Date(data.created_at) });
+    // Assegurar que el host és a la llista (per coherència)
+    if (!participantsList.some((p) => p.userId === roomData.host_user_id)) {
+      participantsList.push({ 
+        userId: roomData.host_user_id, 
+        joinedAt: new Date(roomData.created_at) 
+      });
     }
 
-    const decisionsRaw = data.decisions as DbDecision[] | null;
-
-    const historyList = (decisionsRaw || []).map((d: DbDecision) => ({
+    const historyList = (roomData.decisions || []).map((d) => ({
       choice: d.choice,
       reason: d.reason,
       generatedAt: new Date(d.created_at)
     }));
 
     return new DecisionRoom({
-      id: data.id,
-      hostUserId: hostId,
-      name: data.name,
-      votingMode: (data.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
+      id: roomData.id,
+      hostUserId: roomData.host_user_id,
+      name: roomData.name,
+      votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
       participants: participantsList,
       history: historyList
     });
@@ -136,6 +168,8 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     const { error } = await supabase
       .from('room_participants')
       .insert({ room_id: roomId, user_id: userId });
+    
+    // Ignorem l'error de duplicat (23505)
     if (error && error.code !== '23505') throw new Error(error.message);
   }
 
@@ -152,7 +186,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     if (error) throw new Error(error.message);
   }
 
-// ✅ 4. CERCA DE SALES PER USUARI (CORREGIT & TIPAT)
+  // 4. CERCA DE SALES PER USUARI (TIPAT CORRECTAMENT)
   async findByParticipantId(userId: string): Promise<DecisionRoom[]> {
     const supabase = await createClient();
 
@@ -174,22 +208,22 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     
     if (participations) {
         for (const p of participations) {
-            // 🛡️ CORRECCIÓ: En lloc de 'any', usem una unió de tipus.
-            // Diem: "Això és una DbRoom O BÉ un array de DbRoom".
-            const rawRoom = p.room as DbRoom | DbRoom[]; 
+            // Unió de tipus per gestionar si Supabase retorna objecte o array
+            const rawRoom = p.room as unknown as (DbRoom | DbRoom[] | null);
             
-            // TypeScript ara sap que rawRoom pot ser un array, així que Array.isArray funciona.
-            // Si és array, agafem el primer element. Si és objecte, l'agafem directament.
+            if (!rawRoom) continue;
+
             const roomData = Array.isArray(rawRoom) ? rawRoom[0] : rawRoom;
             
-            if (!roomData) continue; 
+            // Protecció addicional per si roomData fos null
+            if (!roomData) continue;
             
             rooms.push(new DecisionRoom({
                 id: roomData.id,
                 hostUserId: roomData.host_user_id,
                 name: roomData.name,
                 votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
-                participants: [], 
+                participants: [], // A la llista resum no carreguem tots els participants
                 history: []       
             }));
         }

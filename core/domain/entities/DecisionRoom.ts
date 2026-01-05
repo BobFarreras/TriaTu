@@ -14,8 +14,8 @@ export class DecisionRoom {
   public readonly id: string;
   public readonly hostUserId: string;
   public readonly name: string;
-  public readonly votingMode: 'BLIND' | 'PUBLIC'; 
-  
+  public readonly votingMode: 'BLIND' | 'PUBLIC';
+
   private _participants: RoomParticipant[];
   private _history: DecisionOutcome[] = [];
 
@@ -23,28 +23,28 @@ export class DecisionRoom {
     this.id = props.id;
     this.hostUserId = props.hostUserId;
     this.name = props.name;
-    this.votingMode = props.votingMode; 
-    
+    this.votingMode = props.votingMode;
+
     // Si participants ve buit o undefined, assegurem array
     this._participants = props.participants || [new RoomParticipant(props.hostUserId)];
-    
+
     // Si history ve informat, el carreguem
     if (props.history) {
-        this._history = props.history;
+      this._history = props.history;
     }
   }
 
   get participants(): RoomParticipant[] {
     return [...this._participants];
   }
-  
+
   get history(): DecisionOutcome[] {
     // Retornem ordenat per data (més recent primer)
     return [...this._history].sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime());
   }
 
   public addParticipant(userId: string): void {
-    if (this._participants.some(p => p.userId === userId)) return; 
+    if (this._participants.some(p => p.userId === userId)) return;
     this._participants.push(new RoomParticipant(userId));
   }
 
@@ -58,8 +58,16 @@ export class DecisionRoom {
   public addDecision(outcome: DecisionOutcome): void {
     this._history.push(outcome);
   }
-  
+
   public loadHistory(outcomes: DecisionOutcome[]): void {
-      this._history = outcomes;
+    this._history = outcomes;
+  }
+  // AFEGIR AQUEST MÈTODE
+  public canAccess(userId: string): boolean {
+    const isHost = this.hostUserId === userId;
+    // Comprovem si l'ID de l'usuari està dins l'array de participants
+    const isParticipant = this.participants.some(p => p.userId === userId);
+
+    return isHost || isParticipant;
   }
 }
