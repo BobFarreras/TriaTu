@@ -12,6 +12,7 @@ import { useEffect, useRef, CSSProperties } from 'react';
 interface Props {
     data: EditorData;
     update: (d: EditorData) => void;
+    hasError?: boolean; // ✅ NOVA PROP OPCIONAL
 }
 
 function getTitleEmoji(name: string): string {
@@ -30,7 +31,7 @@ function getTitleEmoji(name: string): string {
     return '🥘'; 
 }
 
-export function MetaControls({ data, update }: Props) {
+export function MetaControls({ data, update , hasError}: Props) {
   const { t } = useLanguage();
   const labels = t.create_recipe.meta;
   const tagsDict = labels.tags;
@@ -105,7 +106,7 @@ export function MetaControls({ data, update }: Props) {
                     rows={1}
                     value={data.name}
                     onChange={(e) => update({ ...data, name: e.target.value })}
-                    placeholder={labels.placeholder_name}
+                    placeholder={hasError ? "⚠️ FALTA EL TÍTOL!" : labels.placeholder_name}
                     className="flex-1 bg-transparent text-2xl sm:text-3xl font-black text-white placeholder:text-slate-700 outline-none resize-none overflow-hidden min-h-11 leading-tight"
                     // ✅ CORRECCIÓ: Usem un cast segur a CSSProperties en lloc de 'any'
                     style={{ fieldSizing: 'content' } as unknown as CSSProperties} 
