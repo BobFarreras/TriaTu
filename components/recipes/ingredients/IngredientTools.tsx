@@ -1,36 +1,37 @@
-// src/components/recipes/ingredients/IngredientTools.tsx
 import { Search, X } from 'lucide-react';
 import { PRESET_CATEGORIES, FoodCategory, FOOD_PRESETS } from "@/lib/food-presets";
-import { InventoryItemUI, IngredientsLabels } from '../types'; // 👈 Ruta relativa corregida
+import { InventoryItemUI, IngredientsLabels, Ingredient } from '../editor/types'; 
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Truc de TypeScript per obtenir el tipus d'un element de la llista constant
 type PresetItem = typeof FOOD_PRESETS[number];
 
-// --- SEARCH BAR & CATEGORIES ---
+// --- HEADER (Sense canvis importants, només estètics) ---
 interface SearchHeaderProps {
   query: string;
   setQuery: (q: string) => void;
   selectedCategory: FoodCategory | 'ALL';
   setSelectedCategory: (c: FoodCategory | 'ALL') => void;
-  labels: IngredientsLabels; // 👈 Tipat estricte
+  labels: IngredientsLabels;
 }
 
 export function SearchHeader({ query, setQuery, selectedCategory, setSelectedCategory, labels }: SearchHeaderProps) {
   return (
-    <div className="space-y-3 mb-4 shrink-0 relative z-10">
-      <div className="flex gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800 focus-within:border-purple-500 transition-colors">
-        <Search className="text-slate-500 ml-2 mt-2.5" size={18} />
+    <div className="flex flex-col gap-3 p-3 z-20 shrink-0">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <Search className="text-slate-500" size={16} />
+        </div>
         <input 
           value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder={labels.search_placeholder}
-          className="flex-1 bg-transparent text-white outline-none p-2 placeholder:text-slate-600"
+          className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl py-2 pl-9 pr-9 text-sm text-white outline-none focus:border-purple-500 focus:bg-slate-900 transition-all placeholder:text-slate-600"
         />
         {query && (
-          <button onClick={() => setQuery('')} className="p-2 text-slate-500 hover:text-white"><X size={16} /></button>
+          <button onClick={() => setQuery('')} className="absolute inset-y-0 right-2 flex items-center p-1 text-slate-500 hover:text-white"><X size={14} /></button>
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mask-linear-fade">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar mask-linear-fade-right pb-1">
         <CategoryPill active={selectedCategory === 'ALL'} onClick={() => setSelectedCategory('ALL')} label={labels.category_all} />
         {PRESET_CATEGORIES.map(cat => (
           <CategoryPill key={cat} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} label={cat} />
@@ -44,41 +45,82 @@ function CategoryPill({ active, onClick, label }: { active: boolean, onClick: ()
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${active ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-600'}`}
+      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide whitespace-nowrap transition-all border ${active ? 'bg-white text-black border-white shadow-lg' : 'bg-slate-800/50 text-slate-400 border-slate-700/30 hover:bg-slate-700'}`}
     >
       {label}
     </button>
   );
 }
 
-// --- GRID DE PRESETS ---
-interface PresetsGridProps {
-  presets: PresetItem[]; // 👈 Tipat estricte en lloc de any[]
+// --- GRID CALCULADORA (Aquí arreglem el SCROLL) ---
+interface CalculatorGridProps {
+  presets: PresetItem[];
   inventory: InventoryItemUI[];
-  onSelect: (preset: PresetItem) => void;
+  currentIngredients: Ingredient[];
+  onQuickAdd: (preset: PresetItem) => void;
   emptyLabel: string;
 }
 
-export function PresetsGrid({ presets, inventory, onSelect, emptyLabel }: PresetsGridProps) {
+export function CalculatorGrid({ presets, inventory, currentIngredients, onQuickAdd, emptyLabel }: CalculatorGridProps) {
   return (
-    <div className="flex-1 overflow-y-auto pr-1 space-y-6 custom-scrollbar relative z-0">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-20">
+    // ✅ CLAU: h-full + overflow-y-auto fa que aquest div ocupi tot l'espai i faci scroll internament
+    <div className="h-full overflow-y-auto p-2 sm:p-4 custom-scrollbar relative">
+      
+      {/* Grid dens */}
+      {/* ✅ CLAU: pb-32 afegeix espai al final perquè el Dock flotant no tapi els últims emojis */}
+      <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-2 pb-32">
         {presets.map(preset => {
           const inPantry = inventory.some(i => i.name.toLowerCase().includes(preset.name.toLowerCase()));
+          const selectedItem = currentIngredients.find(i => i.name === preset.name);
+          const count = selectedItem ? selectedItem.quantity : 0;
+          const unitDisplay = selectedItem ? selectedItem.unit : preset.defaultUnit;
+
           return (
-            <button
-              key={preset.id} onClick={() => onSelect(preset)}
-              className={`relative flex flex-col items-center justify-center gap-1 p-3 rounded-xl border transition-all text-center group ${inPantry ? 'bg-emerald-900/10 border-emerald-500/30 hover:bg-emerald-900/20' : 'bg-slate-950/50 border-slate-800 hover:bg-slate-800 hover:border-purple-500/50'}`}
+            <motion.button
+              key={preset.id}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onQuickAdd(preset)}
+              className={`
+                relative flex flex-col items-center justify-center gap-1 p-1 h-20 sm:h-24 rounded-xl border transition-all text-center group overflow-hidden
+                ${count > 0 
+                  ? 'bg-purple-900/20 border-purple-500/50 shadow-[inset_0_0_15px_rgba(168,85,247,0.1)]' 
+                  : 'bg-slate-800/30 border-slate-700/30 hover:border-slate-600 hover:bg-slate-800/50'
+                }
+              `}
             >
-              <span className="text-2xl group-hover:scale-110 transition-transform">{preset.emoji}</span>
-              <span className="text-[10px] font-bold text-slate-300 leading-tight line-clamp-2 min-h-[2.5ex]">{preset.name}</span>
-              {inPantry && <div className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
-            </button>
+              {inPantry && (
+                <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_6px_rgba(16,185,129,0.8)] z-10" />
+              )}
+
+              {/* Emoji */}
+              <span className="text-3xl drop-shadow-md filter select-none">{preset.emoji}</span>
+              
+              <span className={`text-[9px] font-bold leading-tight line-clamp-1 w-full px-1 ${count > 0 ? 'text-purple-200' : 'text-slate-400'}`}>
+                {preset.name}
+              </span>
+
+              <AnimatePresence>
+                {count > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute top-1 left-1 bg-white text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg min-w-[18px]"
+                  >
+                    {count < 10 && count % 1 === 0 ? count : Math.round(count)}
+                    <span className="text-[7px] opacity-60 ml-0.5">{unitDisplay}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
           )
         })}
       </div>
+      
       {presets.length === 0 && (
-        <div className="text-center py-10 opacity-50"><p>{emptyLabel}</p></div>
+        <div className="flex flex-col items-center justify-center h-40 opacity-50">
+          <span className="text-3xl mb-2">🤷‍♂️</span>
+          <p className="text-xs font-medium text-slate-500">{emptyLabel}</p>
+        </div>
       )}
     </div>
   );

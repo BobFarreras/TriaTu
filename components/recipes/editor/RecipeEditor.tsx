@@ -1,35 +1,30 @@
+// src/components/recipes/editor/RecipeEditor.tsx
 'use client'
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { IngredientsManager } from './IngredientsManager';
 import { StepsBuilder } from './StepsBuilder';
 import { MetaControls } from './MetaControls';
 import { createRecipeAction } from '@/app/actions/create-recipe';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
-import { EditorData, InventoryItemUI } from './types';
-
-// ✅ IMPORTEM EL TEU HOOK
+import { Sparkles, ChefHat, ListChecks } from 'lucide-react';
+// ✅ Importem StepsLabels per tipar correctament
+import { EditorData, InventoryItemUI, StepsLabels } from './types'; 
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { motion } from 'framer-motion';
 
 interface Props {
   userInventory: InventoryItemUI[];
-  // ❌ ESBORREM 'labels' d'aquí. Ja no ve del pare.
 }
 
 export function RecipeEditor({ userInventory }: Props) {
   const router = useRouter();
-  
-  // ✅ HOOK MÀGIC: Accedim a les traduccions directament
   const { t } = useLanguage();
-  
-  // Creem una drecera per no escriure t.create_recipe tot el rato
   const labels = t.create_recipe;
-
   const [loading, setLoading] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState<'ingredients' | 'steps'>('ingredients');
+
   const [data, setData] = useState<EditorData>({
     name: '',
     prepTimeMinutes: 30,
@@ -39,7 +34,6 @@ export function RecipeEditor({ userInventory }: Props) {
   });
 
   const handleSave = async () => {
-    // Ara labels ve del context, funciona igual!
     if (!data.name) return toast.error(labels.toasts.missing_name);
     if (data.ingredients.length === 0) return toast.error(labels.toasts.missing_ingredients);
     if (data.steps.length === 0) return toast.error(labels.toasts.missing_steps);
@@ -56,66 +50,85 @@ export function RecipeEditor({ userInventory }: Props) {
     }
   };
 
-  return (
-    <div className="relative flex flex-col gap-6 pb-24"> 
-      
-      <div className="fixed top-20 left-10 w-72 h-72 bg-blue-600/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
-      <div className="fixed bottom-20 right-10 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
+  // ✅ SOLUCIÓ PROFESSIONAL (Sense 'any'):
+  // 1. Tractem 'labels.steps' com un diccionari genèric de strings.
+  //    Usem 'unknown' com a pas intermedi segur.
+  const rawStepsLabels = labels.steps as unknown as Record<string, string>;
 
+  // 2. Construïm l'objecte 'safeStepsLabels' assegurant que totes les propietats
+  //    requerides per la interfície 'StepsLabels' tenen un valor (del JSON o per defecte).
+  const safeStepsLabels: StepsLabels = {
+    // Escampem totes les claus existents
+    ...rawStepsLabels,
+    // Assegurem les claus obligatòries amb valors per defecte (fallback)
+    title: rawStepsLabels.title || "Passos",
+    placeholder: rawStepsLabels.placeholder || "Ex: Tallar la ceba...",
+    empty_state: rawStepsLabels.empty_state || "Afegeix el primer pas...",
+    new_step_title: rawStepsLabels.new_step_title || "Nou Pas",
+    new_step_desc: rawStepsLabels.new_step_desc || "Escriu i prem Enter",
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-slate-950 relative"> 
+      
+      {/* 1. HEADER */}
       <MetaControls data={data} update={setData} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-5 space-y-6"
-        >
-           {/* Passem només la part del diccionari que necessita el fill */}
-           <IngredientsManager 
-              data={data} 
-              update={setData} 
-              inventory={userInventory} 
-              labels={labels.ingredients} 
-           />
-        </motion.div>
-
-        <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-7 space-y-6"
-        >
-           {/* Passem només la part del diccionari que necessita el fill */}
-           <StepsBuilder 
-              data={data} 
-              update={setData} 
-              labels={labels.steps} 
-           />
-        </motion.div>
+      {/* 2. TABS */}
+      <div className="shrink-0 px-4 py-2 bg-slate-950 border-b border-slate-900 z-40">
+          <div className="flex bg-slate-900/50 p-1 rounded-xl border border-slate-800/50 relative max-w-md mx-auto">
+             <motion.div 
+                layoutId="activeTab"
+                className={`absolute inset-y-1 rounded-lg bg-slate-800 shadow-sm ${activeTab === 'ingredients' ? 'left-1 w-[calc(50%-4px)]' : 'left-[calc(50%+4px)] w-[calc(50%-8px)]'}`}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+             />
+             <button 
+                onClick={() => setActiveTab('ingredients')}
+                className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'ingredients' ? 'text-white' : 'text-slate-500'}`}
+             >
+                <ChefHat size={14} /> Ingredients 
+                {data.ingredients.length > 0 && <span className="bg-purple-600 text-white text-[9px] px-1.5 rounded-full">{data.ingredients.length}</span>}
+             </button>
+             <button 
+                onClick={() => setActiveTab('steps')}
+                className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'steps' ? 'text-white' : 'text-slate-500'}`}
+             >
+                <ListChecks size={14} /> Passos
+                {data.steps.length > 0 && <span className="bg-purple-600 text-white text-[9px] px-1.5 rounded-full">{data.steps.length}</span>}
+             </button>
+          </div>
       </div>
 
-      <motion.div 
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 p-6 flex justify-center z-50 bg-linear-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none"
+      {/* 3. ZONA DE CONTINGUT */}
+      <div className="flex-1 overflow-hidden relative w-full p-2 sm:p-4 md:p-6">
+        <div className="h-full w-full bg-slate-900/30 border border-slate-800/50 rounded-3xl overflow-hidden relative backdrop-blur-sm">
+            {activeTab === 'ingredients' ? (
+               <IngredientsManager 
+                  data={data} 
+                  update={setData} 
+                  inventory={userInventory} 
+                  labels={labels.ingredients} 
+               />
+            ) : (
+               <StepsBuilder 
+                  data={data} 
+                  update={setData} 
+                  labels={safeStepsLabels} // ✅ Ara té el tipat perfecte
+               />
+            )}
+        </div>
+      </div>
+
+      {/* 4. FAB 
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={handleSave}
+        disabled={loading}
+        className="absolute bottom-6 right-6 z-50 w-16 h-16 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl flex items-center justify-center ring-4 ring-slate-950/50 disabled:opacity-50 disabled:grayscale"
       >
-        <motion.button
-          onClick={handleSave}
-          disabled={loading}
-          whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -10px rgba(168, 85, 247, 0.4)" }}
-          whileTap={{ scale: 0.95 }}
-          className="pointer-events-auto bg-linear-to-r from-purple-600 to-pink-600 text-white pl-8 pr-10 py-4 rounded-full font-black text-lg shadow-2xl flex items-center gap-3 transition-all disabled:opacity-70 disabled:grayscale ring-4 ring-slate-950"
-        >
-           {loading ? (
-             <span className="animate-spin text-2xl">⏳</span>
-           ) : (
-             <Sparkles className="fill-white w-6 h-6 animate-pulse" />
-           )}
-           {loading ? labels.editor.btn_cooking : labels.editor.btn_publish}
-        </motion.button>
-      </motion.div>
+         {loading ? <span className="animate-spin text-2xl">⏳</span> : <Sparkles className="w-7 h-7 fill-white animate-pulse" />}
+      </motion.button>*/}
     </div>
   );
 }
