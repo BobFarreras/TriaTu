@@ -1,139 +1,229 @@
 'use server'
 
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
-// 1. DEFINIM EL TIPUS D'ESTAT (Adéu 'any')
+// ✅ Imports correctes dels Adapters
+import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
+import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
+import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger'; 
+
+import {
+  CreateRoomSchema,
+  ParticipantActionSchema,
+  MakeDecisionSchema,
+  ClearHistorySchema,
+  AddCandidateSchema
+} from '@/core/application/schemas/inputSchemas';
+
+// Tipus de retorn
 export type ActionState = {
   success?: boolean;
   error?: string;
-  roomId?: string;     // Opcional: només per createRoom
-  outcome?: {          // Opcional: només per makeDecision
+  roomId?: string;
+  outcome?: {
     choice: string;
     reason: string;
   };
 };
 
-// Helper per extreure missatges d'error
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
-}
-
-// Definim un tipus de retorn serialitzable (DTO) per a la UI
 type CreateRoomResult = {
   success: boolean;
   roomId?: string;
   error?: string;
 };
 
+// Helper per errors de Zod (unknown per passar linter)
+function getZodError(error: z.ZodError<unknown>): string {
+  return error.issues[0]?.message || "Dades invàlides";
+}
 
+// ---------------------------------------------------------
+// 1. CREATE ROOM
+// ---------------------------------------------------------
 export async function createRoomAction(userId: string, roomName: string): Promise<CreateRoomResult> {
-  if (!userId || !roomName.trim()) {
-    return { success: false, error: "Dades invàlides." };
+  const validation = CreateRoomSchema.safeParse({ hostUserId: userId, name: roomName });
+
+  if (!validation.success) {
+    return { success: false, error: getZodError(validation.error) };
   }
+
+  const { hostUserId, name } = validation.data;
 
   try {
     const createRoomUseCase = container.getCreateDecisionRoom();
+    const newRoomId = await createRoomUseCase.execute({ hostUserId, name });
 
-    // EL CANVI ÉS AQUÍ:
-    // Com que 'execute' retorna un string (l'ID), l'assignem directament a 'roomId'.
-    const newRoomId = await createRoomUseCase.execute({
-      hostUserId: userId,
-      name: roomName
-    });
-
-    // Passem 'newRoomId' directament, sense fer .id
     return { success: true, roomId: newRoomId };
-
   } catch (error) {
     console.error("Error creating room:", error);
     return { success: false, error: "No s'ha pogut crear la sala." };
   }
 }
+
 // ---------------------------------------------------------
-// JOIN ROOM (Usat normalment sense useActionState, però el mantenim simple)
+// 2. JOIN ROOM
 // ---------------------------------------------------------
 export async function joinRoomAction(roomId: string, userId: string): Promise<ActionState> {
+  const validation = ParticipantActionSchema.safeParse({ roomId, userId });
+
+  if (!validation.success) {
+    return { success: false, error: getZodError(validation.error) };
+  }
+
   try {
     const useCase = container.getJoinDecisionRoom();
-    await useCase.execute({ roomId, userId });
+    await useCase.execute(validation.data);
 
     return { success: true };
   } catch (error: unknown) {
-    return { success: false, error: getErrorMessage(error) };
-  }
-}
-
-// ---------------------------------------------------------
-// MAKE DECISION (Cridat manualment amb startTransition)
-// Nota: Aquí NO posem prevState perquè no s'usa amb useActionState a DecisionControls
-// ---------------------------------------------------------
-export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'manual') {
-  console.log(`🚀 [ACTION] Iniciant makeGroupDecisionAction...`);
-  console.log(`📥 [PARAMS] Room: ${roomId}, Mode: ${mode}`);
-
-  try {
-    const supabase = await createClient();
-    
-    // 1. Verifiquem sessió
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { success: false, error: "Unauthorized: No s'ha trobat la sessió." };
-    }
-
-    // 2. Executem Use Case
-    const useCase = container.getMakeGroupDecision();
-    
-    // ❌ ELIMINAT: const domainMode = mode === 'manual' ? 'list' : 'magic'; 
-    // ✅ CORRECCIÓ: Passem el mode directament, ja que el Use Case ara entén 'manual'
-    
-    const outcome = await useCase.execute({
-        roomId,
-        requesterUserId: user.id,
-        mode: mode // <--- Passem 'magic' o 'manual' directament
-    });
-
-    console.log(`✅ [SUCCESS] Decisió presa:`, outcome.choice);
-
-    revalidatePath(`/rooms/${roomId}`);
-    return { success: true };
-
-  } catch (error) {
-    console.error("💥 [CRASH] Error a l'acció:", error);
-    const msg = error instanceof Error ? error.message : "Error desconegut";
+    const msg = error instanceof Error ? error.message : String(error);
     return { success: false, error: msg };
   }
 }
-// Acció per fer fora gent
+
+// ---------------------------------------------------------
+// 3. AFEGIR CANDIDAT (AMB SEGURETAT COMPLETA)
+// ---------------------------------------------------------
+export async function addCandidateAction(roomId: string, content: string): Promise<ActionState> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  // A. VALIDACIÓ INPUT (Zod)
+  const validation = AddCandidateSchema.safeParse({
+    roomId,
+    userId: user.id,
+    content
+  });
+
+  if (!validation.success) {
+    return { success: false, error: getZodError(validation.error) };
+  }
+
+  // B. RATE LIMITING (Anti-Spam)
+  const limiter = new SupabaseRateLimiter();
+  
+  // Clau única: usuari + acció + sala (perquè pugui escriure a altres sales si vol)
+  const canProceed = await limiter.check(
+    `add_cand:${user.id}:${roomId}`,
+    10, // Max 10 candidats
+    60  // En 60 segons
+  );
+
+  // C. LOGGING DE SEGURETAT (Si supera el límit)
+  if (!canProceed) {
+    const logger = new SupabaseSecurityLogger();
+    
+    // Registrem l'intent de spam
+    await logger.log('WARN', 'RATE_LIMIT_BREACH', user.id, {
+        action: 'add_candidate',
+        roomId: roomId,
+        limit: 10
+    });
+
+    return { success: false, error: "Estàs enviant opcions massa ràpid. Relaxa't un moment." };
+  }
+
+  try {
+    const repo = new SupabaseCandidateRepository();
+    await repo.add(validation.data.roomId, validation.data.userId, validation.data.content);
+
+    revalidatePath(`/rooms/${roomId}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Error afegint opció" };
+  }
+}
+
+// ---------------------------------------------------------
+// 4. MAKE DECISION
+// ---------------------------------------------------------
+export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'manual') {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const validation = MakeDecisionSchema.safeParse({
+    roomId,
+    requesterUserId: user.id,
+    mode
+  });
+
+  if (!validation.success) {
+    return { success: false, error: getZodError(validation.error) };
+  }
+
+  try {
+    const useCase = container.getMakeGroupDecision();
+
+    const outcome = await useCase.execute({
+      roomId: validation.data.roomId,
+      requesterUserId: validation.data.requesterUserId,
+      mode: validation.data.mode
+    });
+
+    revalidatePath(`/rooms/${roomId}`);
+
+    return {
+      success: true,
+      outcome: {
+        choice: outcome.choice,
+        reason: outcome.reason
+      }
+    };
+
+  } catch (error) {
+    console.error("💥 [CRASH] Error a l'acció:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Error desconegut" };
+  }
+}
+
+// ---------------------------------------------------------
+// 5. KICK PARTICIPANT
+// ---------------------------------------------------------
 export async function kickParticipantAction(roomId: string, participantId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const KickSchema = z.object({
+    roomId: z.string().uuid(),
+    participantId: z.string().uuid(),
+    hostId: z.string().uuid()
+  });
+
+  const validation = KickSchema.safeParse({ roomId, participantId, hostId: user.id });
+
+  if (!validation.success) {
+    return { success: false, error: getZodError(validation.error) };
+  }
+
   try {
     const useCase = container.getRemoveParticipant();
     await useCase.execute(user.id, roomId, participantId);
-    
+
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
-  } catch (error) { 
-    // ✅ CORRECCIÓ: No posem ': any'. TypeScript tracta això com 'unknown'.
-    // Fem servir un 'Type Guard' per assegurar que és un objecte Error.
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : "S'ha produït un error desconegut";
-      
-    return { success: false, error: errorMessage };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Error desconegut" };
   }
 }
 
-// Acció per netejar historial
+// ---------------------------------------------------------
+// 6. CLEAR HISTORY
+// ---------------------------------------------------------
 export async function clearHistoryAction(roomId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
+
+  const validation = ClearHistorySchema.safeParse({ roomId, userId: user.id });
+
+  if (!validation.success) return { success: false, error: getZodError(validation.error) };
 
   try {
     const useCase = container.getClearRoomHistory();
@@ -142,11 +232,6 @@ export async function clearHistoryAction(roomId: string) {
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    // ✅ CORRECCIÓ: Mateixa lògica segura aquí
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : "S'ha produït un error desconegut";
-
-    return { success: false, error: errorMessage };
+    return { success: false, error: error instanceof Error ? error.message : "Error desconegut" };
   }
 }

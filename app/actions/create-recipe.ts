@@ -3,8 +3,8 @@
 import { createClient } from '@/adapters/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-// 1. DEFINIM EL TIPUS D'ENTRADA (DTO)
-// Això assegura que sabem exactament què ens envia el component React
+// 1. DTO (Data Transfer Object)
+// Ha de coincidir amb el que envia el 'RecipeEditor' (UI)
 interface CreateRecipeInput {
   name: string;
   prepTimeMinutes: number;
@@ -13,12 +13,11 @@ interface CreateRecipeInput {
     quantity: number;
     unit: string;
   }[];
-  steps: string[];
+  // ✅ CORRECCIÓ: Acceptem l'estructura rica de la UI
+  steps: { id: string; content: string }[]; 
   dietaryTags: string[];
 }
 
-// 2. DEFINIM EL TIPUS DE RETORN
-// Això ajuda al component client a saber què esperar (success o error)
 type CreateRecipeResult = 
   | { success: true; recipeId: string }
   | { success: false; error: string };
@@ -30,34 +29,42 @@ export async function createRecipeAction(input: CreateRecipeInput): Promise<Crea
   if (!user) return { success: false, error: "Has d'iniciar sessió." };
 
   try {
-    // Construïm l'objecte per a la BD
-    // TypeScript ara ens validarà que 'input' té les propietats correctes
+    // 2. MAPPING (Domain -> Infrastructure)
+    // La UI necessita IDs, però la DB (probablement) guarda un array de textos simple.
+    // Si la teva columna 'steps' a Supabase és 'text[]', fem això:
+    const stepsForDb = input.steps.map(step => step.content);
+
     const newRecipe = {
-      id: crypto.randomUUID(),
+      // id: crypto.randomUUID(), // Supabase sol generar-ho, però si ho vols manual està bé
       user_id: user.id,
       name: input.name,
-      // Assegurem que sigui número (per si ve com a string des de l'input HTML)
       prep_time_minutes: Number(input.prepTimeMinutes),
       ingredients: input.ingredients,
-      steps: input.steps,
-      tags: [], // Tags generals buits inicialment
+      steps: stepsForDb, // ✅ Guardem només el contingut net
+      tags: [],
       dietary_tags: input.dietaryTags,
+      // created_at normalment ho gestiona la DB (default now()), però si ho passes explícitament:
       created_at: new Date().toISOString(),
       is_public: true,
       likes_count: 0
     };
 
-    const { error } = await supabase.from('saved_recipes').insert(newRecipe);
+    const { data: insertedData, error } = await supabase
+        .from('saved_recipes')
+        .insert(newRecipe)
+        .select('id') // Important: retornar l'ID generat
+        .single();
 
     if (error) throw new Error(error.message);
 
     revalidatePath('/community');
-    return { success: true, recipeId: newRecipe.id };
+    
+    // Assegurem que retornem l'ID correcte (o el que hem generat nosaltres)
+    return { success: true, recipeId: insertedData?.id || 'new' };
 
-  } catch (error: unknown) { // ✅ Usem 'unknown' en lloc de 'any'
+  } catch (error: unknown) {
     console.error("Error creating recipe:", error);
     
-    // ✅ TYPE NARROWING: Comprovem si és un error estàndard
     let errorMessage = "Error desconegut creant la recepta.";
     if (error instanceof Error) {
         errorMessage = error.message;

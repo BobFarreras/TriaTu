@@ -1,48 +1,69 @@
+// =================== FILE: src/app/actions/inventory-actions.ts ===================
 'use server';
 
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
+import { 
+  InventoryItemSchema, 
+  ConsumeItemSchema, 
+
+} from '@/core/application/schemas/inputSchemas'; // ✅ Importem Schemas
+
+// Helper segur per errors de Zod
+function getZodError(error: z.ZodError<unknown>): string {
+    return error.issues[0]?.message || "Dades invàlides";
+}
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return String(error);
 }
 
-async function getAuthenticatedUser() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error('Unauthorized');
-  return user;
-}
-
+// ------------------------------------------------------------------
+// 1. ADD ITEM
+// ------------------------------------------------------------------
 export async function addItemAction(formData: FormData) {
   try {
-    const user = await getAuthenticatedUser();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Unauthorized');
 
-    const name = formData.get('name') as string;
-    const quantity = Number(formData.get('quantity'));
-    const unit = formData.get('unit') as string;
-    const location = formData.get('location') as StorageLocation;
-    const expiryDateRaw = formData.get('expiryDate') as string;
-    const emoji = formData.get('emoji') as string;
+    // 1. Validació Zod
+    const rawData = {
+        userId: user.id,
+        name: formData.get('name'),
+        quantity: Number(formData.get('quantity')),
+        unit: formData.get('unit'),
+        location: formData.get('location'),
+        expiryDate: formData.get('expiryDate'), // Pot ser null/buit
+        emoji: formData.get('emoji')
+    };
 
-    if (!name || quantity <= 0) {
-      throw new Error('Dades invàlides: El nom és obligatori.');
+    // Zod s'encarrega de convertir strings a dates si el schema és .datetime() i rep string ISO,
+    // però si ve del formulari HTML date, a vegades cal un petit preprocessament.
+    // Per simplificar, deixem que Zod validi l'estructura.
+    const validation = InventoryItemSchema.safeParse(rawData);
+
+    if (!validation.success) {
+        return { success: false, error: getZodError(validation.error) };
     }
 
-    // ✅ CORRECCIÓ: Fem servir 'getAddItem' que és com es diu al teu container.ts
+    const data = validation.data;
+
+    // 2. Execució
     const addItemUseCase = container.getAddItem();
 
     await addItemUseCase.execute({
       userId: user.id,
-      name,
-      quantity,
-      unit,
-      location,
-      expiryDate: expiryDateRaw ? new Date(expiryDateRaw) : undefined,
-      emoji: emoji || '📦',
+      name: data.name,
+      quantity: data.quantity,
+      unit: data.unit,
+      location: data.location as StorageLocation, // Casting segur després de validació
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
+      emoji: data.emoji || '📦',
       addedAt: new Date()
     });
 
@@ -55,13 +76,19 @@ export async function addItemAction(formData: FormData) {
   }
 }
 
-// ... (consumeItemAction es queda igual)
+// ------------------------------------------------------------------
+// 2. CONSUME ITEM
+// ------------------------------------------------------------------
 export async function consumeItemAction(itemId: string, amount: number) {
   try {
-    await getAuthenticatedUser();
-    // ✅ També revisa que aquest es digui així al container
+    const validation = ConsumeItemSchema.safeParse({ itemId, amount });
+    
+    if (!validation.success) {
+        return { success: false, error: getZodError(validation.error) };
+    }
+
     const consumeItemUseCase = container.getConsumeItem();
-    await consumeItemUseCase.execute(itemId, amount);
+    await consumeItemUseCase.execute(validation.data.itemId, validation.data.amount);
 
     revalidatePath('/inventory');
     return { success: true };
@@ -69,44 +96,50 @@ export async function consumeItemAction(itemId: string, amount: number) {
     return { success: false, error: getErrorMessage(error) };
   }
 }
-// ✅ ACCIÓ PER ACTUALITZAR UN PRODUCTE
+
+// ------------------------------------------------------------------
+// 3. UPDATE ITEM
+// ------------------------------------------------------------------
 export async function updateItemAction(formData: FormData) {
   try {
-    const user = await getAuthenticatedUser();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Unauthorized');
 
-    const id = formData.get('id') as string;
-    const name = formData.get('name') as string;
-    const emoji = formData.get('emoji') as string;
-    const quantity = Number(formData.get('quantity'));
-    const unit = formData.get('unit') as string;
-    const location = formData.get('location') as StorageLocation;
-    const expiryDateRaw = formData.get('expiryDate') as string;
+    const rawData = {
+        id: formData.get('id'), // Important validar que és UUID
+        userId: user.id,
+        name: formData.get('name'),
+        quantity: Number(formData.get('quantity')),
+        unit: formData.get('unit'),
+        location: formData.get('location'),
+        expiryDate: formData.get('expiryDate'),
+        emoji: formData.get('emoji')
+    };
 
-    if (!id || !name || quantity < 0) {
-      throw new Error('Dades invàlides per actualitzar.');
+    // Reutilitzem el mateix schema però assegurant que ID existeix
+    const validation = InventoryItemSchema.extend({ id: z.string().uuid() }).safeParse(rawData);
+
+    if (!validation.success) {
+        return { success: false, error: getZodError(validation.error) };
     }
-
-    // Fem servir el mateix UseCase d'afegir o un de nou Update
-    // Si tens un 'getUpdateItem' al container, fes-lo servir. 
-    // Si no, podem reutilitzar lògica similar a Add però forçant l'ID existent.
-    // Per fer-ho net, assumirem que tens un UseCase 'updateItem'.
-    // Si no el tens, avisa'm i en creem un de ràpid.
     
-    // OPCIÓ RÀPIDA (Reutilitzant AddToInventory si el teu repo fa 'upsert'):
-    // Però el més correcte en DDD és tenir un cas d'ús específic.
-    // Anem a suposar que crearem el cas d'ús UpdateItem ara mateix.
+    const data = validation.data;
+
+    // Assumim que tens un cas d'ús UpdateItem o un mètode update al repo
+    // Si no el tens, avisa'm. De moment poso getUpdateItem com placeholder.
     const updateUseCase = container.getUpdateItem(); 
 
     await updateUseCase.execute({
-      id,
+      id: data.id,
       userId: user.id,
-      name,
-      emoji: emoji || '📦',
-      quantity,
-      unit,
-      location,
-      expiryDate: expiryDateRaw ? new Date(expiryDateRaw) : undefined,
-      addedAt: new Date() // Això no s'hauria de tocar, però el DTO ho demana
+      name: data.name,
+      emoji: data.emoji || '📦',
+      quantity: data.quantity,
+      unit: data.unit,
+      location: data.location as StorageLocation,
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
+      addedAt: new Date() 
     });
 
     revalidatePath('/inventory');
@@ -116,10 +149,15 @@ export async function updateItemAction(formData: FormData) {
   }
 }
 
-// ✅ ACCIÓ PER ELIMINAR
+// ------------------------------------------------------------------
+// 4. DELETE ITEM
+// ------------------------------------------------------------------
 export async function deleteItemAction(itemId: string) {
   try {
-    await getAuthenticatedUser();
+    // Validem només que sigui un UUID vàlid
+    const validation = z.string().uuid().safeParse(itemId);
+    if (!validation.success) return { success: false, error: "ID invàlid" };
+
     const deleteUseCase = container.getDeleteItem();
     await deleteUseCase.execute(itemId);
     
@@ -129,3 +167,4 @@ export async function deleteItemAction(itemId: string) {
     return { success: false, error: getErrorMessage(error) };
   }
 }
+

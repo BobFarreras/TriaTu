@@ -1,7 +1,7 @@
-// core/usecases/rooms/GetDecisionRoom.ts
-
 import { DecisionRoomRepository } from "../../ports/DecisionRoomRepository";
 import { DecisionRoom } from "../../domain/entities/DecisionRoom";
+// ✅ IMPORTAR ELS ERRORS (Importantíssim!)
+import { ResourceNotFoundError, UnauthorizedAccessError } from "../../domain/errors/DomainErrors";
 
 export class GetDecisionRoom {
   constructor(private readonly roomRepo: DecisionRoomRepository) {}
@@ -10,17 +10,19 @@ export class GetDecisionRoom {
     const room = await this.roomRepo.findById(roomId);
 
     if (!room) {
-      throw new Error("Sala no trobada");
+      // ❌ ABANS: throw new Error("Sala no trobada");
+      // ✅ ARA: Usem la classe que espera el test
+      throw new ResourceNotFoundError("DecisionRoom", roomId);
     }
 
     // ✅ VALIDACIÓ D'INVARIANTS DE DOMINI
-    // Si l'usuari no és el host ni està a la llista de participants -> FORA
     const isHost = room.hostUserId === currentUserId;
     const isParticipant = room.participants.some(p => p.userId === currentUserId);
 
     if (!isHost && !isParticipant) {
-      // Llancem error de domini, no d'infraestructura
-      throw new Error("Accés denegat: No ets membre d'aquesta sala.");
+      // ❌ ABANS: throw new Error("Accés denegat...");
+      // ✅ ARA: Usem la classe que espera el test
+      throw new UnauthorizedAccessError("DecisionRoom", currentUserId);
     }
 
     return room;
