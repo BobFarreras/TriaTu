@@ -745,5 +745,41 @@ export const es = {
         dessert: 'Postre'
       }
     }
+  },
+  onboarding: {
+    buttons: {
+      next: "Siguiente",
+      back: "Atrás",
+      finish: "¡Entendido! 🚀",
+      skip: "Saltar tour"
+    },
+    // Aquí pondremos los textos específicos del editor
+    editor: {
+      step1_title: "1. Bautiza tu creación",
+      step1_desc: "Todo empieza con un buen nombre. ¡Escribe algo que abra el apetito!",
+
+      step2_title: "2. El Tiempo es Oro",
+      step2_desc: "¿Cuánto tardaremos? Sé realista, no queremos que se nos queme el arroz.",
+
+      step3_title: "3. Etiquétalo",
+      step3_desc: "¿Es Vegano? ¿Sin Gluten? ¿Picante? Ayuda a la gente a filtrar.",
+
+      step4_title: "4. ¡A la Cesta!",
+      step4_desc: "Busca ingredientes (ej: 'Cebolla') y añade cantidades. ¡Usa tu inventario!",
+
+      step5_title: "5. Gestión de Ingredientes",
+      step5_desc: "Aquí verás la lista. Si te equivocas, haz clic en el icono para eliminarlos.",
+
+      step6_title: "6. La Magia (Paso a Paso)",
+      step6_desc: "Explica cómo se hace. Sé claro y conciso.",
+
+      step7_title: "7. Superpoder: Inserción Rápida",
+      step7_desc: "Haz clic en estos ingredientes para añadirlos al texto con su icono. ¡Queda súper pro!",
+
+      step8_title: "8. Publicar",
+      step8_desc: "Revísalo todo y pulsa el botón mágico para guardar."
+    }
+
   }
+
 };
