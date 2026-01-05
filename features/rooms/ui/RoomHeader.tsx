@@ -23,7 +23,7 @@ export function RoomHeader({ roomName, roomId, hostUserId, participants, current
         
         {/* BOTÓ SORTIR (Fosc) */}
         <Link 
-            href="/" 
+            href="/rooms" 
             className="group flex items-center justify-center w-14 h-14 bg-zinc-800 rounded-3xl border-2 border-transparent hover:border-red-900/50 hover:bg-red-900/10 transition-all shrink-0"
             title="Sortir al Dashboard"
         >
