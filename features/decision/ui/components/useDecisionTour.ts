@@ -1,43 +1,61 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useOnboarding, TourStep } from '@/components/onboarding/OnboardingContext';
 import { RecipeProps } from '@/core/domain/entities/Recipe';
 
-// Dades Fictícies
+// ✅ DADES REALS DE LA TEVA BD (Copiat del teu JSON)
 const DUMMY_RECIPES: RecipeProps[] = [
-    { 
-        id: 'demo-1', name: "Pizza Casolana del Xef (Demo)", prepTimeMinutes: 25, 
-        ingredients: [{ name: 'Farina', quantity: 300, unit: 'g' }, { name: 'Mozzarella', quantity: 1, unit: 'un' }],
-        steps: [], authorId: 'demo', dietaryTags: [], tags: [], createdAt: new Date(), updatedAt: new Date(), privacy: 'PUBLIC', servings: 2
+    {
+        id: "1090b513-97e9-4ea5-93ab-b8de7bb43c32", // ID REAL
+        name: "Arròs Fregit \"Wok de l'Aprofitament\"",
+        prepTimeMinutes: 25,
+        ingredients: [
+            { name: "Arròs cuit", unit: "g", quantity: 200 },
+            { name: "Ous", unit: "ut", quantity: 2 },
+            { name: "Ceba", unit: "ut", quantity: 0.5 },
+            { name: "Salsa de soja", unit: "cullerades", quantity: 2 }
+        ],
+        // Posem un resum dels passos per no omplir massa codi, però ja val
+        steps: ["Pica verdures.", "Salta al wok.", "Afegeix arròs i ou.", "Serveix."],
+        tags: ["ràpid", "asiàtic", "aprofitament"],
+        dietaryTags: ["vegetarian"],
+        authorId: 'demo-user',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        privacy: 'PUBLIC',
+        servings: 2,
+        likesCount: 0
     } as unknown as RecipeProps,
-    { 
-        id: 'demo-2', name: "Amanida Cèsar Ràpida (Demo)", prepTimeMinutes: 10, 
-        ingredients: [{ name: 'Enciam', quantity: 1, unit: 'un' }, { name: 'Pollastre', quantity: 200, unit: 'g' }],
-        steps: [], authorId: 'demo', dietaryTags: [], tags: [], createdAt: new Date(), updatedAt: new Date(), privacy: 'PUBLIC', servings: 1
-    } as unknown as RecipeProps,
+    
+    {
+        id: "f5d2abe7-95b3-42fd-96fc-7db1d33bbd63", // ID REAL
+        name: "Truita de Patata i Pebrot",
+        prepTimeMinutes: 30,
+        ingredients: [
+            { name: "Patata", unit: "ut", quantity: 2 },
+            { name: "Ous", unit: "ut", quantity: 4 },
+            { name: "Pebrot vermell", unit: "ut", quantity: 0.5 }
+        ],
+        steps: ["Fregir patates.", "Batre ous.", "Quallar truita."],
+        tags: ["clàssic", "ràpid", "vegetarià"],
+        dietaryTags: ["vegetarià"],
+        authorId: 'demo-user',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        privacy: 'PUBLIC',
+        servings: 2,
+        likesCount: 0
+    } as unknown as RecipeProps
 ];
 
 export function useDecisionTour(
-    currentMode: 'FATE' | 'CHEF',
     setMode: (mode: 'FATE' | 'CHEF') => void,
-    isMobileExpanded: boolean,
     expandMobile: (expanded: boolean) => void
 ) {
     const { t } = useLanguage();
-    const { startTour, isActive, nextStep, currentStepIndex } = useOnboarding();
-    
-    const [demoMode, setDemoMode] = useState(false);
-    const [isSimulatingLoading, setIsSimulatingLoading] = useState(false);
-
-    // ✅ TRUC MESTRE: Guardem l'estat en un REF per accedir-hi sempre fresc
-    const isActiveRef = useRef(isActive);
-    
-    // Mantenim el ref sincronitzat amb l'estat real
-    useEffect(() => {
-        isActiveRef.current = isActive;
-    }, [isActive]);
+    const { startTour, isActive, currentStepIndex, nextStep } = useOnboarding();
 
     const steps: TourStep[] = useMemo(() => [
         { targetId: 'tour-dec-header', title: t.onboarding.decision.step1_title, description: t.onboarding.decision.step1_desc },
@@ -47,64 +65,25 @@ export function useDecisionTour(
         { targetId: 'tour-dec-results', title: t.onboarding.decision.step5_title, description: t.onboarding.decision.step5_desc }
     ], [t]);
 
-    // 1. Iniciar Tour (Amb force: true per testejar sense problemes de cache)
+    // 1. Iniciar
     useEffect(() => {
-        startTour('decision-maker', steps, { force: true });
-        console.log("🏁 [TOUR] Inicialitzat FORÇAT");
+        startTour('decision-maker', steps);
     }, [startTour, steps]);
 
-    // 2. Control de Pas
+    // 2. Control UI
     useEffect(() => {
         if (!isActive) return;
-
-        if (currentStepIndex === 2) {
-            if (currentMode !== 'CHEF') {
-                setMode('CHEF');
-            }
-            if (!isMobileExpanded) {
-                expandMobile(true);
-            }
+        if (currentStepIndex >= 2 && currentStepIndex <= 3) {
+            setMode('CHEF');
+            expandMobile(true);
         }
-    }, [isActive, currentStepIndex, currentMode, setMode, isMobileExpanded, expandMobile]);
-
-    // 3. INTERCEPTOR (Ara usa el Ref)
-    const interceptExecution = (originalAction: () => void) => {
-        // ✅ ARA MIREM EL VALOR REAL, NO EL CACHEJAT
-        const isReallyActive = isActiveRef.current;
-        
-        console.log("🖱️ [TOUR CHECK] isActiveRef diu:", isReallyActive);
-
-        if (isReallyActive) {
-            console.log("🛑 [TOUR] INTERCEPTANT! Iniciant simulació...");
-            
-            setIsSimulatingLoading(true);
-
-            setTimeout(() => {
-                console.log("✅ [TOUR] Fi del temps d'espera");
-                setIsSimulatingLoading(false);
-                setDemoMode(true);
-
-                setTimeout(() => {
-                    nextStep();
-                }, 200);
-
-            }, 2000); 
-
-        } else {
-            console.log("🚀 [REAL] Executant acció real");
-            originalAction();
-        }
-    };
-
-    const closeDemo = () => setDemoMode(false);
+    }, [isActive, currentStepIndex, setMode, expandMobile]);
 
     return {
         steps,
         isActive,
-        demoMode,
-        isSimulatingLoading,
-        dummyRecipes: DUMMY_RECIPES,
-        interceptExecution,
-        closeDemo
+        currentStepIndex,
+        nextStep,
+        dummyRecipes: DUMMY_RECIPES
     };
 }

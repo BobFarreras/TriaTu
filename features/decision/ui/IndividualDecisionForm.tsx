@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useDecision } from '@/context/DecisionContext';
 import { FateView } from './views/FateView';
@@ -10,6 +10,7 @@ import { LoadingOverlay } from '@/components/decision/LoadingOverlay';
 import { DecisionHeader } from './components/DecisionHeader';
 import { DecisionResults } from './components/DecisionResults';
 import { useDecisionTour } from './components/useDecisionTour';
+import { useOnboarding } from '@/components/onboarding/OnboardingContext';
 
 export function IndividualDecisionForm({ userId }: { userId: string }) {
     const { t } = useLanguage();
@@ -17,102 +18,128 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
     const isFate = logic.mode === 'FATE';
     const [isMobileExpanded, setIsMobileExpanded] = useState(true);
 
-    const tour = useDecisionTour(
-        logic.mode,
-        logic.setMode,
-        isMobileExpanded,
-        setIsMobileExpanded
-    );
+    // 1. DADES DEL TOUR
+    const { isActive: isTourActive, currentStepIndex, nextStep } = useOnboarding();
+    const tourData = useDecisionTour(logic.setMode, setIsMobileExpanded);
 
-    const isLoading = logic.isPending || tour.isSimulatingLoading;
+    // 2. ESTATS LOCALS
+    const [simLoading, setSimLoading] = useState(false);
+    const [showFakeResults, setShowFakeResults] = useState(false);
 
-    // ✅ LOG 1: VERIFICAR SI ARRIBA EL CLIC
+    const isLoading = logic.isPending || simLoading;
+
+    // LOG DE DEBUG (Opcional)
+    useEffect(() => {
+        // console.log("🔄 [RENDER] Estat:", { isTourActive, currentStepIndex });
+    }, [isTourActive, currentStepIndex]);
+
+    // 🚑 AUTO-SIMULACIÓ (CORREGIDA PER EVITAR ERROR DE REACT)
+    useEffect(() => {
+        // Si estem al tour + Pas Resultats (4) + No tenim resultats
+        if (isTourActive && currentStepIndex === 4 && !showFakeResults && !logic.hasActiveResult) {
+            console.log("🚑 [AUTO-FIX] Forçant simulació...");
+            
+            // ✅ FIX: Usem un setTimeout per evitar "setState synchronously within an effect"
+            const timer = setTimeout(() => {
+                setSimLoading(true);
+                
+                // Esperem 1.5s i mostrem resultats
+                setTimeout(() => {
+                    setSimLoading(false);
+                    setShowFakeResults(true);
+                }, 1500);
+            }, 0); // El 0 és suficient per trencar el cicle síncron
+
+            return () => clearTimeout(timer);
+        }
+    }, [isTourActive, currentStepIndex, showFakeResults, logic.hasActiveResult]);
+
+
+    // 3. HANDLE EXECUTE (PER SI CLICA EL BOTÓ REAL)
     const handleExecute = (dishNameOverride?: string) => {
-        console.log("👆 [FORM] BOTÓ CLICAT! Iniciant lògica...");
+        console.log("🔥 [CLICK] Botó apretat!");
 
-        const realExecution = () => {
-            console.log("🚀 [FORM] Execució REAL (sense tour)");
-            let dishName = dishNameOverride || '';
-            if (isFate && !dishName) dishName = "Recepta Sorpresa del Xef";
+        // Si estem al pas del botó (3), simulem
+        if (isTourActive && currentStepIndex === 3) {
+            console.log("🤡 [LOGIC] Simulació per click...");
+            setSimLoading(true);
+            setTimeout(() => {
+                setSimLoading(false);
+                setShowFakeResults(true);
+                // Avancem manualment al següent pas
+                setTimeout(() => nextStep(), 200);
+            }, 2000);
+            return; 
+        }
 
-            if (!isFate && !dishName) {
-                const energyLevel = logic.energy > 80 ? "Alta" : logic.energy < 30 ? "Baixa" : "Mitjana";
-                dishName = `Recepta adequada per nivell d'energia ${energyLevel} i temps disponible ${logic.time} minuts`;
-            }
-            if (dishName) logic.generateMenu(userId, dishName);
-        };
-
-        // Passem el control al Hook del Tour
-        tour.interceptExecution(realExecution);
+        // LÒGICA REAL
+        console.log("🚀 [LOGIC] Lògica REAL.");
+        let dishName = dishNameOverride || '';
+        if (isFate && !dishName) dishName = "Recepta Sorpresa del Xef";
+        
+        if (!isFate && !dishName) {
+            const energyLevel = logic.energy > 80 ? "Alta" : logic.energy < 30 ? "Baixa" : "Mitjana";
+            dishName = `Recepta adequada per nivell d'energia ${energyLevel} i temps disponible ${logic.time} minuts`;
+        }
+        if (dishName) logic.generateMenu(userId, dishName);
     };
 
-    // VISTA RESULTATS
-    if (logic.hasActiveResult || tour.demoMode) {
+    const closeDemo = () => setShowFakeResults(false);
+
+    // --- RENDERITZAT ---
+
+    if (logic.hasActiveResult || showFakeResults) {
         return (
             <DecisionResults
-                title={tour.demoMode ? "RESULTATS DE PROVA 🧪" : (isFate ? t.decision.results.fate : t.decision.results.chef)}
-                recipes={tour.demoMode ? tour.dummyRecipes : logic.recipes}
+                title={showFakeResults ? "RESULTATS DE PROVA 🧪" : (isFate ? t.decision.results.fate : t.decision.results.chef)}
+                recipes={showFakeResults ? tourData.dummyRecipes : logic.recipes}
                 userId={userId}
-                onBack={tour.demoMode ? tour.closeDemo : logic.reset}
-                tourSteps={tour.steps}
+                onBack={showFakeResults ? closeDemo : logic.reset}
+                tourSteps={tourData.steps}
             />
         );
     }
 
-    // VISTA FORMULARI
     return (
         <div className={`
             w-full flex flex-col bg-zinc-900/80 backdrop-blur-xl rounded-4xl border-2 border-zinc-800 shadow-2xl overflow-hidden relative transition-all duration-500 ease-in-out
             ${isMobileExpanded ? 'h-145' : 'h-14'} 
             lg:h-full lg:transition-none
         `}>
-
-            {/* ✅ IMPORTANT: Això és el que fa que es vegi el loading */}
+            
             <LoadingOverlay isVisible={isLoading} mode={logic.mode} />
 
-            {/* Fons Glow */}
             <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] blur-[80px] rounded-full pointer-events-none transition-colors duration-500
                 ${logic.error ? 'bg-red-500/20 opacity-40' : (isFate ? 'bg-emerald-500/20' : 'bg-purple-500/20')} 
                 opacity-20`}
             />
 
-            <DecisionHeader
+            <DecisionHeader 
                 mode={logic.mode}
                 setMode={logic.setMode}
                 error={logic.error}
                 isMobileExpanded={isMobileExpanded}
                 setIsMobileExpanded={setIsMobileExpanded}
-                tourSteps={tour.steps}
+                tourSteps={tourData.steps}
             />
 
             <div className={`flex-1 flex flex-col p-4 md:p-6 z-10 min-h-0 transition-opacity duration-300 ${!isMobileExpanded ? 'opacity-0 lg:opacity-100' : 'opacity-100'}`}>
-
+                
                 <div className="flex-1 flex flex-col items-center justify-center min-h-0 text-center">
-                    
-                    {logic.error ? (
-                        <div className="animate-in zoom-in duration-300 flex flex-col items-center">
-                            <div className="text-6xl md:text-7xl mb-3 filter drop-shadow-2xl animate-shake select-none">🚫</div>
-                            <h3 className="text-lg font-black text-red-400 leading-tight mb-2">{t.decision.states.error_title}</h3>
-                            <div className="bg-red-950/50 border border-red-500/20 p-3 rounded-xl max-w-65">
-                                <p className="text-xs text-red-200 font-medium leading-relaxed">{logic.error}</p>
-                            </div>
+                     <div className="animate-in zoom-in duration-300 flex flex-col items-center">
+                        <div className="text-6xl md:text-7xl mb-3 filter drop-shadow-2xl key={logic.mode} select-none">
+                            {isFate ? <span className="animate-bounce inline-block">🎲</span> : <span className="animate-pulse inline-block">👨‍🍳</span>}
                         </div>
-                    ) : (
-                        <div className="animate-in zoom-in duration-300 flex flex-col items-center">
-                            <div className="text-6xl md:text-7xl mb-3 filter drop-shadow-2xl key={logic.mode} select-none">
-                                {isFate ? <span className="animate-bounce inline-block">🎲</span> : <span className="animate-pulse inline-block">👨‍🍳</span>}
-                            </div>
-                            <h3 className="text-lg font-black text-white leading-tight mb-1">
-                                {isFate ? t.decision.states.fate_title : t.decision.states.chef_title}
-                            </h3>
-                            <p className="text-[11px] text-slate-400 max-w-55 leading-tight">
-                                {isFate ? t.decision.states.fate_desc : t.decision.states.chef_desc}
-                            </p>
-                        </div>
-                    )}
+                        <h3 className="text-lg font-black text-white leading-tight mb-1">
+                            {isFate ? t.decision.states.fate_title : t.decision.states.chef_title}
+                        </h3>
+                        <p className="text-[11px] text-slate-400 max-w-55 leading-tight">
+                            {isFate ? t.decision.states.fate_desc : t.decision.states.chef_desc}
+                        </p>
+                    </div>
                 </div>
 
-                <div className="shrink-0 w-full mt-2">
+                <div className="shrink-0 w-full mt-2 relative z-40">
                     {isFate ? (
                         <FateView onDecide={() => handleExecute()} isPending={isLoading} />
                     ) : (
