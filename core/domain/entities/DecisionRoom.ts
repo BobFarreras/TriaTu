@@ -5,6 +5,7 @@ export interface DecisionRoomProps {
   id: string;
   hostUserId: string;
   name: string;
+  inviteCode: string; // ✅ NOU: Afegim el camp aquí
   votingMode: 'BLIND' | 'PUBLIC';
   participants: RoomParticipant[];
   history: DecisionOutcome[];
@@ -14,6 +15,7 @@ export class DecisionRoom {
   public readonly id: string;
   public readonly hostUserId: string;
   public readonly name: string;
+  public readonly inviteCode: string; // ✅ NOU: Propietat pública
   public readonly votingMode: 'BLIND' | 'PUBLIC';
 
   private _participants: RoomParticipant[];
@@ -23,6 +25,7 @@ export class DecisionRoom {
     this.id = props.id;
     this.hostUserId = props.hostUserId;
     this.name = props.name;
+    this.inviteCode = props.inviteCode; // ✅ NOU: Assignació
     this.votingMode = props.votingMode;
 
     // Si participants ve buit o undefined, assegurem array
@@ -48,13 +51,10 @@ export class DecisionRoom {
     this._participants.push(new RoomParticipant(userId));
   }
 
-  // ✅ AQUEST ÉS EL MÈTODE QUE FALTAVA I DONAVA ERROR
   public resolve(outcome: DecisionOutcome): void {
-    // Afegim el resultat a l'historial intern de la sala
     this._history.push(outcome);
   }
 
-  // Mètode auxiliar per si vols afegir manualment (pot ser redundant amb resolve, però el mantenim si l'uses)
   public addDecision(outcome: DecisionOutcome): void {
     this._history.push(outcome);
   }
@@ -62,12 +62,10 @@ export class DecisionRoom {
   public loadHistory(outcomes: DecisionOutcome[]): void {
     this._history = outcomes;
   }
-  // AFEGIR AQUEST MÈTODE
+
   public canAccess(userId: string): boolean {
     const isHost = this.hostUserId === userId;
-    // Comprovem si l'ID de l'usuari està dins l'array de participants
     const isParticipant = this.participants.some(p => p.userId === userId);
-
     return isHost || isParticipant;
   }
 }

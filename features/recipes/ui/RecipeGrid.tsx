@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 
 import { saveAndViewRecipeAction } from '@/app/actions/recipe-persistence';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,11 @@ interface Props {
   userId: string; // Encara el rebem per si el necessites per UI, però no s'envia a l'acció
   onCancel: () => void;
 }
-
+// LLISTA D'IDS DE DEMO QUE NO S'HAN DE TORNAR A GUARDAR
+const DEMO_IDS = [
+  "1090b513-97e9-4ea5-93ab-b8de7bb43c32",
+  "f5d2abe7-95b3-42fd-96fc-7db1d33bbd63"
+];
 function getDishEmoji(name: string): string {
   if (!name) return '🍽️';
 
@@ -60,16 +64,25 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
   const router = useRouter();
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  // ✅ TIPATGE SEGUR: Acceptem tant la Classe com les Props
   const handleSelect = async (recipe: Recipe | RecipeProps) => {
     if (savingId) return;
-    setSavingId(recipe.id);
-
-    // 🔍 DESEMPAQUETAT SEGUR:
-    // L'operador 'in' comprova si la propietat "props" existeix dins l'objecte.
-    // Si existeix, sabem que és la Classe i n'extraiem les dades.
-    // Si no, assumim que ja és l'objecte pla.
+    
+    // Obtenim l'ID i les dades
+    const recipeId = recipe.id;
     const plainData = 'props' in recipe ? recipe.props : recipe;
+
+    setSavingId(recipeId);
+
+    // --- 🛑 CHECK DE SEGURETAT PER DEMO ---
+    // Si és una recepta de mostra existent, NO la guardem de nou.
+    // Simplement redirigim.
+    if (recipeId && DEMO_IDS.includes(recipeId)) {
+        console.log("⏩ [RecipeGrid] Recepta DEMO detectada. Saltant guardat...");
+        toast.success("Obrint recepta de mostra...");
+        router.push(`/recipes/${recipeId}`);
+        return;
+    }
+    // --------------------------------------
 
     console.log("📤 Enviant al servidor:", plainData.name);
 
@@ -83,10 +96,6 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
       setSavingId(null);
     }
   };
-
-  useEffect(() => {
-    console.log("🖼️ [RecipeGrid] Muntat amb receptes:", recipes.length);
-  }, [recipes]);
 
   if (!recipes || recipes.length === 0) {
     return <div className="text-white p-4">⚠️ No hi ha receptes per mostrar.</div>;
@@ -118,7 +127,7 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
 
           return (
             <div
-              key={recipe.id || idx} // Preferible usar ID
+              key={recipe.id || idx}
               onClick={() => handleSelect(recipe)}
               className={`
                 group relative flex flex-col justify-between
@@ -127,14 +136,12 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
                 ${isSaving ? 'opacity-50 pointer-events-none' : 'hover:shadow-xl hover:-translate-y-1'}
               `}
             >
-              {/* Loader Overlay */}
               {isSaving && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-20">
                   <span className="text-2xl animate-spin">⏳</span>
                 </div>
               )}
 
-              {/* CONTINGUT CARD - (El teu codi visual estava perfecte) */}
               <div className="flex justify-between items-start mb-3">
                 <div className="text-3xl bg-slate-800 w-12 h-12 flex items-center justify-center rounded-2xl">
                   {emoji}

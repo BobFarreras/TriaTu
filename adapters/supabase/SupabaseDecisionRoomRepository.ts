@@ -21,6 +21,7 @@ interface DbDecision {
 interface DbRoom {
   id: string;
   host_user_id: string;
+  invite_code: string; // ✅ NOU: Afegim el camp aquí
   name: string;
   voting_mode: string;
   created_at: string;
@@ -47,6 +48,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
       .upsert({
         id: room.id,
         host_user_id: room.hostUserId,
+        invite_code: room.inviteCode, // 👈 ASSEGURA'T QUE TENS AQUESTA LÍNIA
         name: room.name,
         voting_mode: room.votingMode,
         status: 'OPEN'
@@ -69,15 +71,13 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
   }
 
   // 2. RECUPERAR SALA (AMB SEGURETAT BLINDADA)
+  // 2. RECUPERAR SALA
   async findById(id: string): Promise<DecisionRoom | null> {
     const supabase = await createClient();
 
-    // A. Obtenim l'usuari actual per validar permisos al codi
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) return null;
 
-    // B. Consulta a Supabase
-    // Usem .returns<DbRoomJoinResponse>() si volem forçar el tipus, o fem casting manual segur.
     const { data, error } = await supabase
       .from('decision_rooms')
       .select(`
@@ -90,32 +90,26 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
 
     if (error || !data) return null;
 
-    // Casting segur del resultat del JOIN
     const roomData = data as unknown as DbRoomJoinResponse;
 
-    // C. 🛡️ TALLAFOCS DE SEGURETAT (APP LAYER CHECK)
-    // Verifiquem manualment que l'usuari té dret a veure això.
-    // Això ens protegeix si l'RLS estigués mal configurat.
-    
+    // 🛡️ TALLAFOCS (Comprovem si ets host o participant)
     const isHost = roomData.host_user_id === user.id;
     const isParticipant = roomData.participants.some((p) => p.user_id === user.id);
 
     if (!isHost && !isParticipant) {
-        // Retornem null silenciosament. Per al UseCase, la sala no existeix.
-        return null;
+      return null;
     }
 
-    // D. Mapeig a Entitat de Domini
+    // Mapeig
     const participantsList = roomData.participants.map((p) => ({
       userId: p.user_id,
       joinedAt: new Date(p.joined_at)
     }));
 
-    // Assegurar que el host és a la llista (per coherència)
     if (!participantsList.some((p) => p.userId === roomData.host_user_id)) {
-      participantsList.push({ 
-        userId: roomData.host_user_id, 
-        joinedAt: new Date(roomData.created_at) 
+      participantsList.push({
+        userId: roomData.host_user_id,
+        joinedAt: new Date(roomData.created_at)
       });
     }
 
@@ -128,6 +122,10 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     return new DecisionRoom({
       id: roomData.id,
       hostUserId: roomData.host_user_id,
+
+      // ✅ CORRECCIÓ: Usem roomData per coherència
+      inviteCode: roomData.invite_code,
+
       name: roomData.name,
       votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
       participants: participantsList,
@@ -168,7 +166,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     const { error } = await supabase
       .from('room_participants')
       .insert({ room_id: roomId, user_id: userId });
-    
+
     // Ignorem l'error de duplicat (23505)
     if (error && error.code !== '23505') throw new Error(error.message);
   }
@@ -200,33 +198,34 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
       .order('joined_at', { ascending: false });
 
     if (error) {
-       console.error("Error fetching user rooms:", error);
-       return [];
+      console.error("Error fetching user rooms:", error);
+      return [];
     }
-    
-    const rooms: DecisionRoom[] = [];
-    
-    if (participations) {
-        for (const p of participations) {
-            // Unió de tipus per gestionar si Supabase retorna objecte o array
-            const rawRoom = p.room as unknown as (DbRoom | DbRoom[] | null);
-            
-            if (!rawRoom) continue;
 
-            const roomData = Array.isArray(rawRoom) ? rawRoom[0] : rawRoom;
-            
-            // Protecció addicional per si roomData fos null
-            if (!roomData) continue;
-            
-            rooms.push(new DecisionRoom({
-                id: roomData.id,
-                hostUserId: roomData.host_user_id,
-                name: roomData.name,
-                votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
-                participants: [], // A la llista resum no carreguem tots els participants
-                history: []       
-            }));
-        }
+    const rooms: DecisionRoom[] = [];
+
+    if (participations) {
+      for (const p of participations) {
+        // Unió de tipus per gestionar si Supabase retorna objecte o array
+        const rawRoom = p.room as unknown as (DbRoom | DbRoom[] | null);
+
+        if (!rawRoom) continue;
+
+        const roomData = Array.isArray(rawRoom) ? rawRoom[0] : rawRoom;
+
+        // Protecció addicional per si roomData fos null
+        if (!roomData) continue;
+
+        rooms.push(new DecisionRoom({
+          id: roomData.id,
+          hostUserId: roomData.host_user_id,
+          inviteCode: roomData.invite_code, // ✅ AFEGIR AQUESTA LÍNIA AL MAPPER
+          name: roomData.name,
+          votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
+          participants: [], // A la llista resum no carreguem tots els participants
+          history: []
+        }));
+      }
     }
 
     return rooms;
