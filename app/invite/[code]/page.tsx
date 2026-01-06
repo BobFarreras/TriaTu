@@ -31,66 +31,74 @@ interface PageProps {
 }
 export default async function InvitePage({ params }: PageProps) {
   const supabase = await createClient();
-  // 2. AWAIT: Hem d'esperar a que es resolguin els paràmetres
   const { code } = await params;
 
-  // 1. Auth Check
+  console.log("🔍 [DEBUG] Buscant sala amb codi:", code); // <--- LOG 1
+
   const { data: { user } } = await supabase.auth.getUser();
 
-  // ⚠️ FLUX PROFESSIONAL: Redirecció intel·ligent
   if (!user) {
-    // Si no està loguejat, l'enviem al login, però li diem
-    // "next=/invite/CODI" perquè torni automàticament després de loguejar-se.
+    console.log("👤 [DEBUG] Usuari no loguejat, redirigint...");
     redirect(`/login?next=/invite/${code}`);
   }
 
-  // 2. Busquem informació de la sala (només per mostrar el nom)
-  const { data: room } = await supabase
+  // Busquem la sala
+  const { data: room, error } = await supabase
     .from('decision_rooms')
-    .select('name, description') // Pots afegir 'description' si en tens
+    .select('id, name, invite_code') // Demana camps explícits
     .eq('invite_code', code)
     .single();
 
-  // Gestió d'errors (Codi malament)
-  if (!room) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#131f24] text-white p-4 text-center">
-        <h1 className="text-4xl mb-4">🚫</h1>
-        <h2 className="text-2xl font-bold mb-2">Invitació Invàlida</h2>
-        <p className="text-gray-400 mb-6">Aquest codi no existeix o la sala s'ha esborrat.</p>
-        <Link href="/dashboard" className="text-emerald-400 hover:underline">
-          Tornar a l'Inici
-        </Link>
-      </div>
-    );
+  // <--- LOGS XIVATOS START --->
+  if (error) {
+    console.error("❌ [DEBUG] Error Supabase:", error);
+  } else if (!room) {
+    console.error("❌ [DEBUG] Supabase no retorna error, però la sala és NULL (Segurament RLS)");
+  } else {
+    console.log("✅ [DEBUG] Sala trobada:", room);
   }
 
+
+// Gestió d'errors (Codi malament)
+if (!room) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#131f24] text-white p-4 relative">
-      <div className="absolute inset-0 bg-gamified-pattern opacity-10 pointer-events-none" />
-
-      <div className="z-10 bg-[#1f2e35] border border-gray-700 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
-        <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-          T'han convidat a
-        </span>
-
-        <h1 className="text-3xl font-black text-white mt-2 mb-6 leading-tight">
-          {room.name}
-        </h1>
-
-        <div className="bg-black/20 p-4 rounded-lg mb-8">
-          <p className="text-sm text-gray-300">
-            Entraràs com a: <br />
-            <span className="text-emerald-400 font-semibold">{user.email}</span>
-          </p>
-        </div>
-
-        <JoinButton code={code} />
-
-        <p className="mt-4 text-xs text-gray-500">
-          En acceptar, t'uniràs a la llista de participants.
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#131f24] text-white p-4 text-center">
+      <h1 className="text-4xl mb-4">🚫</h1>
+      <h2 className="text-2xl font-bold mb-2">Invitació Invàlida</h2>
+      <p className="text-gray-400 mb-6">Aquest codi no existeix o la sala s'ha esborrat.</p>
+      <Link href="/dashboard" className="text-emerald-400 hover:underline">
+        Tornar a l'Inici
+      </Link>
     </div>
   );
+}
+
+return (
+  <div className="min-h-screen flex flex-col items-center justify-center bg-[#131f24] text-white p-4 relative">
+    <div className="absolute inset-0 bg-gamified-pattern opacity-10 pointer-events-none" />
+
+    <div className="z-10 bg-[#1f2e35] border border-gray-700 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+      <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+        T'han convidat a
+      </span>
+
+      <h1 className="text-3xl font-black text-white mt-2 mb-6 leading-tight">
+        {room.name}
+      </h1>
+
+      <div className="bg-black/20 p-4 rounded-lg mb-8">
+        <p className="text-sm text-gray-300">
+          Entraràs com a: <br />
+          <span className="text-emerald-400 font-semibold">{user.email}</span>
+        </p>
+      </div>
+
+      <JoinButton code={code} />
+
+      <p className="mt-4 text-xs text-gray-500">
+        En acceptar, t'uniràs a la llista de participants.
+      </p>
+    </div>
+  </div>
+);
 }

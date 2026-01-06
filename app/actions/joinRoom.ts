@@ -5,26 +5,33 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 export async function joinRoomByCode(inviteCode: string) {
-  const supabase = await createClient();
+  console.log("🚀 [ACTION] Intentant unir-se amb codi:", inviteCode); // <--- LOG 1
 
-  // 1. Obtenim l'usuari actual
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (!user) {
-    // Si no està loguejat, retornem error o redirigim al login
-    // (Això normalment es gestiona abans, a la pàgina)
-    return { error: 'unauthenticated' };
-  }
+  if (!user) return { error: 'unauthenticated' };
 
-  // 2. Busquem la sala a 'decision_rooms' fent servir el codi
+  // Busquem la sala
   const { data: room, error: roomError } = await supabase
-    .from('decision_rooms') // ✅ El teu nom de taula correcte
-    .select('id, name')
+    .from('decision_rooms')
+    .select('id, name, invite_code')
     .eq('invite_code', inviteCode)
     .single();
 
+  // <--- LOGS PER VEURE QUÈ PASSA A PRODUCCIÓ --->
+  if (roomError) {
+      console.error("❌ [ACTION] Error DB:", roomError.message);
+      console.error("❌ [ACTION] Codi error:", roomError.code);
+  } else if (!room) {
+      console.error("❌ [ACTION] No s'ha trobat la sala (Possible RLS blocking)");
+  } else {
+      console.log("✅ [ACTION] Sala trobada:", room.name);
+  }
+  // -----------------------------------------------
+
   if (roomError || !room) {
-    return { error: 'invalid_code', message: 'Codi invàlid o sala no trobada' };
+    return { error: 'invalid_code', message: 'Codi invàlid' };
   }
 
   // 3. Comprovem si l'usuari JA està a 'room_participants'
