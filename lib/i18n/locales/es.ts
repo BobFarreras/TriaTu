@@ -130,7 +130,7 @@ export const es = {
     err_general: 'Error desconocido',
     invite_cta: "Invitar amigos", // Texto del botón
     invite_sent: "¡Enlace enviado!", // Opcional, feedback
-    
+
     link_copied: "¡Enlace copiado!",
     copy_error: "Error al copiar el enlace",
     share_title: "Únete a '{name}'",
@@ -855,7 +855,24 @@ export const es = {
 
       step5_title: "Los Resultados 🍽️",
       step5_desc: "Aquí tienes las propuestas. Haz clic en una receta para guardarla y cocinarla, o vuelve atrás para probar otra vez."
+    },
+    profile: {
+      step1_title: "Tu Identidad de Chef 👨‍🍳",
+      step1_desc: "Elige tu avatar y ponte un nombre épico. ¡Así te verán en el ranking!",
+
+      step2_title: "¿Qué te gusta comer? 😋",
+      step2_desc: "Selecciona tus ingredientes y platos favoritos para afinar las recomendaciones.",
+
+      step3_title: "Exclusiones y Alergias 🚫",
+      step3_desc: "¡Muy importante! Marca lo que no puedes (o no quieres) comer.",
+
+      step4_title: "Nivel de Tolerancia ⚖️",
+      step4_desc: "¿Eres rígido con las normas o flexible? Esto afecta a cómo la IA sugiere recetas.",
+
+      step5_title: "Guardar Cambios 💾",
+      step5_desc: "¡No te olvides de guardar cuando termines!"
     }
+
 
 
 

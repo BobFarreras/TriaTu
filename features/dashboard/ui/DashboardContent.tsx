@@ -93,7 +93,7 @@ export function DashboardContent({ userName, userId, profileData }: Props) {
         </div>
 
         {/* MÒBIL: Preferències Horitzontals */}
-        <div className="block lg:hidden mb-6 animate-in slide-in-from-top-4 fade-in duration-500">
+        <div id="tour-dash-prefs"  className="block lg:hidden mb-6 animate-in slide-in-from-top-4 fade-in duration-500">
           <MobileUserPreferences
             foodPreferences={profileData.foodPreferences}
             exclusions={profileData.exclusions}

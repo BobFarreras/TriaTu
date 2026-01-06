@@ -856,7 +856,24 @@ export const en = {
 
       step5_title: "The Results 🍽️",
       step5_desc: "Here are your suggestions. Click a recipe to save it and cook it, or go back and try again."
+    },
+    profile: {
+      step1_title: "Your Chef Identity 👨‍🍳",
+      step1_desc: "Choose your avatar and give yourself an epic name. That’s how you’ll appear in the ranking!",
+
+      step2_title: "What do you like to eat? 😋",
+      step2_desc: "Select your favorite ingredients and dishes to fine-tune the recommendations.",
+
+      step3_title: "Exclusions & Allergies 🚫",
+      step3_desc: "Very important! Mark what you can’t (or don’t want to) eat.",
+
+      step4_title: "Tolerance Level ⚖️",
+      step4_desc: "Are you strict or flexible? This affects how the AI suggests recipes.",
+
+      step5_title: "Save Changes 💾",
+      step5_desc: "Don’t forget to save when you’re done!"
     }
+
 
 
 

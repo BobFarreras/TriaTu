@@ -868,6 +868,22 @@ export const ca = {
 
       step5_title: "Els Resultats 🍽️",
       step5_desc: "Aquí tens les propostes. Clica una recepta per guardar-la i cuinar-la, o torna enrere per provar de nou."
+    },
+    profile: {
+      step1_title: "La teva Identitat de Xef 👨‍🍳",
+      step1_desc: "Tria el teu avatar i posa't un nom èpic. Així et veuran al rànquing!",
+
+      step2_title: "Què t'agrada menjar? 😋",
+      step2_desc: "Selecciona els teus ingredients i plats preferits per afinar les recomanacions.",
+
+      step3_title: "Exclusions i Al·lèrgies 🚫",
+      step3_desc: "Molt important! Marca el que no pots (o no vols) menjar.",
+
+      step4_title: "Nivell de Tolerància ⚖️",
+      step4_desc: "Ets rígid amb les normes o flexible? Això afecta com la IA suggereix receptes.",
+
+      step5_title: "Guardar Canvis 💾",
+      step5_desc: "No t'oblidis de guardar quan acabis!"
     }
-  }
+  },
 };
