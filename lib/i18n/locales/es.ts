@@ -127,7 +127,10 @@ export const es = {
     err_kick: 'Error expulsando usuario',
     err_clean: 'Error limpiando historial',
     err_add: 'Error añadiendo opción',
-    err_general: 'Error desconocido'
+    err_general: 'Error desconocido',
+    invite_cta: "Invitar amigos", // Texto del botón
+    invite_sent: "¡Enlace enviado!" // Opcional, feedback
+
   },
   landing: {
     phrases: [

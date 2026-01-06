@@ -125,7 +125,10 @@ export const en = {
     err_kick: 'Error kicking user',
     err_clean: 'Error clearing history',
     err_add: 'Error adding option',
-    err_general: 'Unknown error'
+    err_general: 'Unknown error',
+    invite_cta: "Invite Friends", // Button text
+    invite_sent: "Link sent!" // Optional feedback
+
   },
   landing: {
     phrases: [

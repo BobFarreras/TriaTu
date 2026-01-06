@@ -131,7 +131,9 @@ export const ca = {
     err_kick: 'Error expulsant usuari',
     err_clean: 'Error netejant historial',
     err_add: 'Error afegint opció',
-    err_general: 'Error desconegut'
+    err_general: 'Error desconegut',
+    invite_cta: "Invitar Amics", // Text del botó
+    invite_sent: "Enllaç enviat!", // Opcional, feedback
   },
   landing: {
     // ... (Mantén el teu contingut de landing)
