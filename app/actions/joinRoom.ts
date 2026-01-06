@@ -9,7 +9,7 @@ export async function joinRoomByCode(inviteCode: string) {
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) return { error: 'unauthenticated' };
 
   // Busquem la sala
@@ -19,15 +19,12 @@ export async function joinRoomByCode(inviteCode: string) {
     .eq('invite_code', inviteCode)
     .single();
 
-  // <--- LOGS PER VEURE QUÈ PASSA A PRODUCCIÓ --->
-  if (roomError) {
-      console.error("❌ [ACTION] Error DB:", roomError.message);
-      console.error("❌ [ACTION] Codi error:", roomError.code);
-  } else if (!room) {
-      console.error("❌ [ACTION] No s'ha trobat la sala (Possible RLS blocking)");
-  } else {
-      console.log("✅ [ACTION] Sala trobada:", room.name);
-  }
+  // 🗑️ ESBORRA tot el bloc de logs d'error i èxit
+  /*
+  if (roomError) { console.error(...) } 
+  else if (!room) { ... } 
+  else { console.log(...) }
+  */
   // -----------------------------------------------
 
   if (roomError || !room) {
