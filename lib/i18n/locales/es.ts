@@ -831,7 +831,24 @@ export const es = {
 
       step6_title: "La Lista",
       step6_desc: "Aquí aparecerán los productos. Puedes editarlos o eliminarlos haciendo clic sobre ellos."
+    },
+    decision: {
+      step1_title: "¿Qué comemos hoy? 🤔",
+      step1_desc: "Esta es la herramienta de decisión rápida. Te ayudamos a elegir plato en segundos.",
+
+      step2_title: "Elige tu Modo",
+      step2_desc: "🎲 'Destino' si quieres pura suerte. 👨‍🍳 'Chef' si quieres afinar según tiempo y energía.",
+
+      step3_title: "Configura los parámetros",
+      step3_desc: "Mueve los controles según cómo te sientas hoy. ¿Poco tiempo? ¿Poca energía? ¡Díselo al Chef!",
+
+      step4_title: "Haz la Magia ✨",
+      step4_desc: "¡Pulsa el botón! (Tranquilo, es una simulación, no gastarás nada).",
+
+      step5_title: "Los Resultados 🍽️",
+      step5_desc: "Aquí tienes las propuestas. Haz clic en una receta para guardarla y cocinarla, o vuelve atrás para probar otra vez."
     }
+
 
 
 

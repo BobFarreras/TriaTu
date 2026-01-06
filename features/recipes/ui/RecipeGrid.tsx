@@ -93,7 +93,7 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
   }
 
   return (
-    <div className="space-y-6 w-full min-h-75">
+    <div id="tour-dec-results" className="space-y-6 w-full min-h-75">
 
       <div className="flex justify-between items-center">
         <div className="flex flex-col">

@@ -846,6 +846,22 @@ export const ca = {
 
       step6_title: "La Llista",
       step6_desc: "Aquí apareixeran els productes. Pots editar-los o esborrar-los clicant a sobre."
+    },
+    decision: {
+      step1_title: "Què mengem avui? 🤔",
+      step1_desc: "Aquesta és l'eina de decisió ràpida. T'ajudem a triar plat en segons.",
+
+      step2_title: "Tria el teu Mode",
+      step2_desc: "🎲 'Destí' si vols sort pura. 👨‍🍳 'Xef' si vols afinar per temps i energia.",
+
+      step3_title: "Configura els paràmetres",
+      step3_desc: "Mou els controls segons com et sentis avui. Poc temps? Poca energia? Digues-li al Xef!",
+
+      step4_title: "Fes la Màgia ✨",
+      step4_desc: "Prem el botó! (Tranquil, això és una simulació, no gastaràs res).",
+
+      step5_title: "Els Resultats 🍽️",
+      step5_desc: "Aquí tens les propostes. Clica una recepta per guardar-la i cuinar-la, o torna enrere per provar de nou."
     }
   }
 };
