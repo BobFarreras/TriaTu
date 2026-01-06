@@ -813,7 +813,44 @@ export const en = {
       step11_title: "Profile & Settings",
       step11_desc: "Change your avatar, name, and global preferences here."
 
+    },
+    inventory: {
+      step1_title: "Your Digital Pantry 📦",
+      step1_desc: "Here you’ll find everything you’ve bought. Keep track of what you have and where it is.",
+
+      step2_title: "Quick Filters",
+      step2_desc: "Tap these cards to see only what’s in the Fridge, Freezer or Pantry.",
+
+      step3_title: "Expiration Alert ⚠️",
+      step3_desc: "Very important! If a number appears here, some products are about to expire. Prioritize them!",
+
+      step4_title: "Magic Scanner 📷",
+      step4_desc: "No typing! Take a photo of the receipt or the products and the AI will add them automatically.",
+
+      step5_title: "Add Manually",
+      step5_desc: "If you prefer the old-school way, tap here to fill out the form.",
+
+      step6_title: "The List",
+      step6_desc: "Your products will appear here. You can edit or delete them by clicking on them."
+    },
+    decision: {
+      step1_title: "What are we eating today? 🤔",
+      step1_desc: "This is the quick decision tool. We help you choose a dish in seconds.",
+
+      step2_title: "Choose Your Mode",
+      step2_desc: "🎲 'Fate' if you want pure luck. 👨‍🍳 'Chef' if you want to fine-tune by time and energy.",
+
+      step3_title: "Set the Parameters",
+      step3_desc: "Adjust the controls based on how you feel today. Short on time? Low energy? Tell the Chef!",
+
+      step4_title: "Work the Magic ✨",
+      step4_desc: "Press the button! (Relax, it’s just a simulation — nothing will be used up).",
+
+      step5_title: "The Results 🍽️",
+      step5_desc: "Here are your suggestions. Click a recipe to save it and cook it, or go back and try again."
     }
+
+
 
 
   }

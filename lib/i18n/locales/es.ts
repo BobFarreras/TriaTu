@@ -812,7 +812,44 @@ export const es = {
       step11_title: "Perfil y Configuración",
       step11_desc: "Cambia tu avatar, nombre y preferencias globales aquí."
 
+    },
+    inventory: {
+      step1_title: "Tu Despensa Digital 📦",
+      step1_desc: "Aquí tienes todo lo que has comprado. Controla qué tienes y dónde lo tienes.",
+
+      step2_title: "Filtros Rápidos",
+      step2_desc: "Pulsa estas tarjetas para ver solo lo que hay en la Nevera, Congelador o Despensa.",
+
+      step3_title: "Alerta de Caducidad ⚠️",
+      step3_desc: "¡Importantísimo! Si aparece un número aquí, tienes productos a punto de estropearse. ¡Priorízalos!",
+
+      step4_title: "Escáner Mágico 📷",
+      step4_desc: "¡No escribas! Haz una foto al ticket o a los productos y la IA los añadirá sola.",
+
+      step5_title: "Añadir Manualmente",
+      step5_desc: "Si prefieres hacerlo a la antigua, pulsa aquí para rellenar el formulario.",
+
+      step6_title: "La Lista",
+      step6_desc: "Aquí aparecerán los productos. Puedes editarlos o eliminarlos haciendo clic sobre ellos."
+    },
+    decision: {
+      step1_title: "¿Qué comemos hoy? 🤔",
+      step1_desc: "Esta es la herramienta de decisión rápida. Te ayudamos a elegir plato en segundos.",
+
+      step2_title: "Elige tu Modo",
+      step2_desc: "🎲 'Destino' si quieres pura suerte. 👨‍🍳 'Chef' si quieres afinar según tiempo y energía.",
+
+      step3_title: "Configura los parámetros",
+      step3_desc: "Mueve los controles según cómo te sientas hoy. ¿Poco tiempo? ¿Poca energía? ¡Díselo al Chef!",
+
+      step4_title: "Haz la Magia ✨",
+      step4_desc: "¡Pulsa el botón! (Tranquilo, es una simulación, no gastarás nada).",
+
+      step5_title: "Los Resultados 🍽️",
+      step5_desc: "Aquí tienes las propuestas. Haz clic en una receta para guardarla y cocinarla, o vuelve atrás para probar otra vez."
     }
+
+
 
 
   }
