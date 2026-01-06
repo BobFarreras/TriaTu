@@ -26,6 +26,6 @@ export const config = {
      * Intercepta-ho tot EXCEPTE fitxers estàtics, imatges i assets.
      * Inclou /api per si de cas, però sobretot protegeix les pàgines normals.
      */
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|login|register|auth|invite|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
