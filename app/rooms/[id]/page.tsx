@@ -16,7 +16,7 @@ interface PageProps {
 
 export default async function RoomPage({ params }: PageProps) {
   const { id } = await params;
-  
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -39,7 +39,7 @@ export default async function RoomPage({ params }: PageProps) {
     // Tant si és "No trobat", "Sense permís" o "Error DB", mostrem 404.
     // Així no donem pistes de si la sala existeix o no.
     console.error(`Error loading room ${id}:`, error);
-    notFound(); 
+    notFound();
   }
 
   // 4. Carregar Candidats (Només si hem passat el filtre de la sala)
@@ -47,16 +47,19 @@ export default async function RoomPage({ params }: PageProps) {
   const candidates = await candidateRepo.getAllForRoom(id);
 
   // 5. Mapeig a DTOs per a la UI
+  // 5. Mapeig a DTOs per a la UI
   const roomDTO: RoomDTO = {
     id: room.id,
     name: room.name,
     hostUserId: room.hostUserId,
-    votingMode: room.votingMode, 
+    votingMode: room.votingMode,
+    // ✅ AFEGIM AIXÒ: Assegura't que el teu Repo retorna aquest camp de la DB!
+    inviteCode: room.inviteCode,
     participants: room.participants.map(p => ({ userId: p.userId })),
     history: room.history.map(h => ({
-        choice: h.choice,
-        reason: h.reason,
-        date: h.generatedAt.toISOString()
+      choice: h.choice,
+      reason: h.reason,
+      date: h.generatedAt.toISOString()
     }))
   };
 
@@ -67,10 +70,10 @@ export default async function RoomPage({ params }: PageProps) {
   }));
 
   return (
-    <RoomDetail 
-      room={roomDTO} 
-      initialCandidates={candidatesDTO} 
-      currentUserId={user.id} 
+    <RoomDetail
+      room={roomDTO}
+      initialCandidates={candidatesDTO}
+      currentUserId={user.id}
     />
   );
 }

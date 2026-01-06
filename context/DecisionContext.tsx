@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react'; // ✅ Importem useCallback
 import { Recipe, RecipeProps } from '@/core/domain/entities/Recipe';
 import { generateRecipeFromDecisionAction } from '@/app/actions/decision-cooking'; 
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -24,7 +24,7 @@ interface DecisionContextType extends DecisionState {
     hasActiveResult: boolean;
 }
 
-// ✅ 1. Definim la forma del rating per evitar 'any'
+// Interfícies per evitar 'any'
 interface RawRatingSummary {
     average?: number;
     count?: number;
@@ -37,19 +37,18 @@ interface RawIngredient {
     unit?: string;
 }
 
-// ✅ 2. Actualitzem RawRecipeInput sense 'any'
 interface RawRecipeInput {
     id?: string;
     authorId?: string;
     name?: string;
     ingredients?: RawIngredient[];
-    steps?: unknown; // 'unknown' és més segur que 'object' o 'any' quan no sabem segur si és array o string
+    steps?: unknown;
     tags?: unknown;
     prepTimeMinutes?: number;
     likesCount?: number;
     isPublic?: boolean;
     createdAt?: string | Date;
-    ratingSummary?: RawRatingSummary; // ✅ TIPAT CORRECTAMENT
+    ratingSummary?: RawRatingSummary;
     dietaryTags?: string[];
 }
 
@@ -67,11 +66,24 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
         time: 30
     });
 
-    const setEnergy = (v: number) => setState(prev => ({ ...prev, energy: v }));
-    const setTime = (v: number) => setState(prev => ({ ...prev, time: v }));
-    const setMode = (mode: 'FATE' | 'CHEF') => setState(prev => ({ ...prev, mode }));
+    // ✅ CORRECCIÓ 1: useCallback per a funcions que actualitzen l'estat
+    const setEnergy = useCallback((v: number) => {
+        setState(prev => ({ ...prev, energy: v }));
+    }, []);
 
-    // ✅ 3. Funció de neteja ajustada amb tipus segurs
+    const setTime = useCallback((v: number) => {
+        setState(prev => ({ ...prev, time: v }));
+    }, []);
+
+    // ✅ CORRECCIÓ 2: setMode protegit per evitar re-renders innecessaris
+    const setMode = useCallback((mode: 'FATE' | 'CHEF') => {
+        setState(prev => {
+            if (prev.mode === mode) return prev; // Si ja és el mateix, no fem res
+            return { ...prev, mode };
+        });
+    }, []);
+
+    // Funció auxiliar (no cal exportar-la, així que no cal useCallback si només s'usa dins de generateMenu)
     const sanitizeRecipeProps = (input: unknown): RecipeProps => {
         const props = input as RawRecipeInput;
 
@@ -86,7 +98,6 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
             
             createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
             
-            // ✅ Gestió segura del Rating
             ratingSummary: { 
                 average: props.ratingSummary?.average || 0, 
                 count: props.ratingSummary?.count || 0, 
@@ -101,13 +112,13 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
                 quantity: (!ing.quantity || ing.quantity <= 0) ? 1 : ing.quantity
             })),
 
-            // Comprovacions de tipus per steps i tags
             steps: Array.isArray(props.steps) ? props.steps as string[] : [],
             tags: Array.isArray(props.tags) ? props.tags as string[] : [],
         };
     };
 
-    const generateMenu = async (userId: string, dishName: string = '') => {
+    // ✅ CORRECCIÓ 3: useCallback per a generateMenu
+    const generateMenu = useCallback(async (userId: string, dishName: string = '') => {
         setState(prev => ({ ...prev, isPending: true, error: null, recipes: [] }));
 
         try {
@@ -143,9 +154,12 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
             setState(prev => ({ ...prev, isPending: false, error: "No s'ha pogut generar el menú." }));
             toast.error("Error al forn.");
         }
-    };
+    }, [locale]); // Dependència: locale (si l'idioma canvia, la funció canvia)
 
-    const reset = () => setState(prev => ({ ...prev, recipes: [], error: null, isPending: false }));
+    // ✅ CORRECCIÓ 4: useCallback per a reset
+    const reset = useCallback(() => {
+        setState(prev => ({ ...prev, recipes: [], error: null, isPending: false }));
+    }, []);
 
     return (
         <DecisionContext.Provider value={{

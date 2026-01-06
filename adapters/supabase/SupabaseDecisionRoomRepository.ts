@@ -21,6 +21,7 @@ interface DbDecision {
 interface DbRoom {
   id: string;
   host_user_id: string;
+  invite_code: string; // ✅ NOU: Afegim el camp aquí
   name: string;
   voting_mode: string;
   created_at: string;
@@ -47,6 +48,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
       .upsert({
         id: room.id,
         host_user_id: room.hostUserId,
+        invite_code: room.inviteCode, // 👈 ASSEGURA'T QUE TENS AQUESTA LÍNIA
         name: room.name,
         voting_mode: room.votingMode,
         status: 'OPEN'
@@ -128,6 +130,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     return new DecisionRoom({
       id: roomData.id,
       hostUserId: roomData.host_user_id,
+      inviteCode: data.invite_code, // ✅ AFEGIR AQUESTA LÍNIA AL MAPPER
       name: roomData.name,
       votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
       participants: participantsList,
@@ -221,6 +224,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
             rooms.push(new DecisionRoom({
                 id: roomData.id,
                 hostUserId: roomData.host_user_id,
+                inviteCode: roomData.invite_code, // ✅ AFEGIR AQUESTA LÍNIA AL MAPPER
                 name: roomData.name,
                 votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
                 participants: [], // A la llista resum no carreguem tots els participants

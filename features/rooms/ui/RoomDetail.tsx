@@ -12,6 +12,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 export type RoomDTO = {
   id: string;
   name: string;
+  inviteCode: string; // ✅ Assegura't que això ve del servidor
   hostUserId: string;
   participants: { userId: string }[];
   history: { choice: string; reason: string; date: string }[];
@@ -51,9 +52,36 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
     });
   };
 
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(room.id);
-    alert(t.room.code_copied);
+  // ✅ NOVA FUNCIÓ: Obre WhatsApp / Menú Natiu
+  const handleShare = async () => {
+    // 1. Construïm l'enllaç màgic
+    const shareUrl = `${window.location.origin}/invite/${room.inviteCode}`;
+    
+    // 2. Dades per compartir
+    const shareData = {
+      title: `Uneix-te a "${room.name}"`,
+      text: `Ei! Ajuda'm a decidir a Triatu. Entra aquí:`,
+      url: shareUrl,
+    };
+
+    // 3. Intentem obrir el menú del mòbil (WhatsApp, Telegram, etc.)
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        console.log('L\'usuari ha cancel·lat o error:', err);
+      }
+    }
+
+    // 4. Fallback per a PC: Copiem al porta-retalls
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('✅ Enllaç d\'invitació copiat!');
+    } catch (err) {
+      console.log('Error al copiar:', err);
+      alert('Error copiant: ' + shareUrl);
+    }
   };
 
   return (
@@ -62,21 +90,22 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
       {/* 1. HEADER I DOCK */}
       <RoomHeader 
         roomName={room.name}
-        roomId={room.id}
+        roomId={room.id} // Encara passem l'ID per si el vols mostrar petit
         hostUserId={room.hostUserId}
         participants={room.participants}
         currentUserId={currentUserId}
         onKick={handleKick}
-        onCopyCode={handleCopyCode}
+        // ✅ AQUÍ CONNECTEM LA NOVA FUNCIÓ
+        onCopyCode={handleShare} 
       />
 
       {/* 2. LAYOUT PRINCIPAL */}
       <div className="flex flex-col lg:flex-row gap-6 flex-1 items-start">
         
-        {/* ZONA CENTRAL: Targeta Fosca */}
+        {/* ZONA CENTRAL */}
         <div className="flex-1 w-full bg-zinc-900/90 backdrop-blur-xl rounded-[2.5rem] border-[6px] border-zinc-800 shadow-2xl overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-500 z-10">
             
-            {/* SWITCHER FLOTANT (Mode Auto vs Manual) */}
+            {/* SWITCHER FLOTANT */}
             <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-black/60 backdrop-blur-md rounded-full p-1.5 flex shadow-inner border border-zinc-700">
               <button
                 onClick={() => setMode('magic')}
