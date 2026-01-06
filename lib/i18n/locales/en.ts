@@ -872,7 +872,34 @@ export const en = {
 
       step5_title: "Save Changes 💾",
       step5_desc: "Don’t forget to save when you’re done!"
+    },
+    room: {
+      step1_title: "Welcome to the Room! 👋",
+      step1_desc: "Here you can see who’s connected and invite friends to join the room.",
+
+      step2_title: "Magic or Manual Mode? ✨",
+      step2_desc: "Choose 'Magic' to let the AI decide or 'Manual' to vote democratically.",
+
+      step3_title: "Take Control 🎮",
+      step3_desc: "Add options, vote, or press the red button to generate a final decision.",
+
+      step4_title: "Decision History 📜",
+      step4_desc: "All decisions made will be saved here. You can review them or clear the list.",
+
+      step_mode_title: "Blind or Public Voting? 👁️",
+      step_mode_desc: "Hide other people’s options to avoid influence, or make everything visible.",
+
+      step_candidates_title: "The Options 📝",
+      step_candidates_desc: "All group proposals will appear here. If you’re the Host, you can remove the ones you don’t like.",
+
+      step_input_title: "Suggest Something! 💡",
+      step_input_desc: "Write your idea (e.g. “Pizza”, “Sushi”) and press the + button to add it to the list.",
+
+      step_action_title: "The Button of Truth 🔴",
+      step_action_desc: "Once everyone has added their options, press this button and the AI will choose the winner!"
     }
+
+
 
 
 

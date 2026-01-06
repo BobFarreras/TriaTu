@@ -20,15 +20,33 @@ interface Props {
   mode: 'magic' | 'manual';
   candidates: CandidateDTO[];
   votingMode: 'BLIND' | 'PUBLIC';
+  
+  // Props de simulació
+  simulatedInputValue?: string;
+  isSimulatingLoading?: boolean;
+  onSimulatedAdd?: () => void;
 }
 
-export function DecisionControls({ roomId, userId, isHost, mode, candidates, votingMode }: Props) {
+export function DecisionControls({ 
+    roomId, userId, isHost, mode, candidates, votingMode,
+    simulatedInputValue = '', isSimulatingLoading = false, onSimulatedAdd
+}: Props) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // ❌ HE ELIMINAT EL USEEFFECT QUE DONAVA ERROR
+  // No cal sincronitzar l'estat. Simplement usarem 'displayValue' a baix.
+
   const handleAddCandidate = async () => {
+    // Si estem en mode simulació, deleguem al pare
+    if (onSimulatedAdd && simulatedInputValue) {
+        onSimulatedAdd();
+        // No netegem l'estat local perquè estem usant la prop simulada
+        return;
+    }
+
     if (!inputValue.trim()) return;
     const content = inputValue;
     setInputValue('');
@@ -64,14 +82,19 @@ export function DecisionControls({ roomId, userId, isHost, mode, candidates, vot
     });
   };
 
+  // ✅ SOLUCIÓ: Calculem el valor a mostrar "al vol"
+  // Si hi ha simulació, manen les dades del tour. Si no, l'estat local.
+  const displayInputValue = simulatedInputValue || inputValue;
+  const showLoading = isPending || isSimulatingLoading;
+
   return (
     <div className="space-y-8 h-full flex flex-col">
 
       {mode === 'manual' ? (
         <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-6 flex-1">
           
-          {/* SWITCH DE VISIBILITAT (Fosc) */}
-          <div className="bg-black/30 p-4 rounded-3xl border-2 border-zinc-700 flex items-center justify-between">
+          {/* SWITCH DE VISIBILITAT */}
+          <div id="tour-room-mode-switch" className="bg-black/30 p-4 rounded-3xl border-2 border-zinc-700 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-2xl ${votingMode === 'BLIND' ? 'bg-purple-900/50 text-purple-400' : 'bg-blue-900/50 text-blue-400'}`}>
                   {votingMode === 'BLIND' ? <EyeOff size={24} /> : <Eye size={24} />}
@@ -89,7 +112,7 @@ export function DecisionControls({ roomId, userId, isHost, mode, candidates, vot
               {isHost && (
                 <button 
                   onClick={handleToggleMode}
-                  disabled={isPending}
+                  disabled={showLoading}
                   className="px-4 py-2 bg-zinc-800 border-2 border-zinc-600 rounded-xl font-bold text-xs hover:bg-zinc-700 text-white transition-colors"
                 >
                   {t.room.btn_change}
@@ -98,7 +121,7 @@ export function DecisionControls({ roomId, userId, isHost, mode, candidates, vot
           </div>
 
           {/* LLISTA DE CANDIDATS */}
-          <div className="min-h-50 content-start flex flex-wrap gap-3">
+          <div id="tour-room-candidates" className="min-h-50 content-start flex flex-wrap gap-3">
             {candidates.map((c, idx) => {
               const isMine = c.userId === userId;
               const isHidden = votingMode === 'BLIND' && !isMine && !isHost;
@@ -120,7 +143,8 @@ export function DecisionControls({ roomId, userId, isHost, mode, candidates, vot
                 >
                   {isHidden ? t.room.hidden_candidate : c.content}
                   
-                  {(isMine || isHost) && (
+                  {/* Botó esborrar (desactivat si és fake) */}
+                  {(isMine || isHost) && !c.id.startsWith('fake-') && (
                     <button 
                       onClick={() => handleDeleteCandidate(c.id)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-black/20 hover:bg-red-500 hover:text-white transition-colors text-gray-400"
@@ -141,17 +165,20 @@ export function DecisionControls({ roomId, userId, isHost, mode, candidates, vot
           </div>
 
           {/* INPUT BARRA INFERIOR */}
-          <div className="flex gap-2 relative">
+          <div id="tour-room-input" className="flex gap-2 relative">
               <input 
-                value={inputValue}
+                // ✅ AQUÍ ÉS LA CLAU: Usem la variable calculada
+                value={displayInputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={t.room.input_placeholder}
+                // Desactivem l'input real si estem simulant per evitar conflictes visuals
+                readOnly={!!simulatedInputValue}
                 className="w-full pl-6 pr-4 py-4 bg-zinc-800 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-bold text-lg text-white placeholder:text-zinc-600 transition-all"
               />
               <button 
                 onClick={handleAddCandidate}
-                disabled={!inputValue.trim()}
+                disabled={!displayInputValue.trim()}
                 className="aspect-square h-full bg-blue-600 hover:bg-blue-500 text-white rounded-2xl flex items-center justify-center border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 disabled:opacity-50 disabled:border-b-0 disabled:translate-y-0 transition-all"
               >
                 <Plus size={28} strokeWidth={3} />
@@ -159,15 +186,11 @@ export function DecisionControls({ roomId, userId, isHost, mode, candidates, vot
           </div>
         </div>
       ) : (
-        /* MODE MÀGIC (Fosc) */
+        /* MODE MÀGIC */
         <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-left-4 duration-300 p-8 border-4 border-dashed border-purple-900/30 rounded-[3rem] bg-purple-900/10">
            <div className="text-8xl mb-6 animate-pulse grayscale brightness-150">🔮</div>
-           <h3 className="text-2xl font-black text-purple-300 mb-2">
-             {t.room.magic_title}
-           </h3>
-           <p className="text-gray-400 font-medium max-w-sm">
-             {t.room.magic_desc}
-           </p>
+           <h3 className="text-2xl font-black text-purple-300 mb-2">{t.room.magic_title}</h3>
+           <p className="text-gray-400 font-medium max-w-sm">{t.room.magic_desc}</p>
         </div>
       )}
 
@@ -178,11 +201,11 @@ export function DecisionControls({ roomId, userId, isHost, mode, candidates, vot
       )}
 
       {/* BIG FAT ACTION BUTTON */}
-      <div className="pt-4 border-t border-zinc-800">
+      <div id="tour-room-action" className="pt-4 border-t border-zinc-800">
         {isHost ? (
           <Button 
             onClick={handleDecide}
-            isLoading={isPending}
+            isLoading={showLoading}
             disabled={mode === 'manual' && candidates.length === 0}
             className={`w-full text-xl py-6 rounded-2xl shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98] ${
                 mode === 'magic' 

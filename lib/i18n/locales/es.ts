@@ -871,7 +871,35 @@ export const es = {
 
       step5_title: "Guardar Cambios 💾",
       step5_desc: "¡No te olvides de guardar cuando termines!"
+    },
+    room: {
+      step1_title: "¡Bienvenido a la Sala! 👋",
+      step1_desc: "Aquí puedes ver quién está conectado e invitar amigos a unirse a la sala.",
+
+      step2_title: "¿Modo Mágico o Manual? ✨",
+      step2_desc: "Elige 'Mágico' para dejar que la IA decida o 'Manual' para votar de forma democrática.",
+
+      step3_title: "Toma el Control 🎮",
+      step3_desc: "Añade opciones, vota o pulsa el botón rojo para generar una decisión final.",
+
+      step4_title: "Historial de Decisiones 📜",
+      step4_desc: "Aquí se guardarán todas las decisiones tomadas. Puedes consultarlas o limpiar la lista.",
+
+      step_mode_title: "¿Votación Ciega o Pública? 👁️",
+      step_mode_desc: "Puedes ocultar las opciones de los demás para evitar influencias o hacerlo todo visible.",
+
+      step_candidates_title: "Las Opciones 📝",
+      step_candidates_desc: "Aquí aparecerán todas las propuestas del grupo. Si eres el Host, puedes eliminar las que no te gusten.",
+
+      step_input_title: "¡Propón Algo! 💡",
+      step_input_desc: "Escribe tu idea (ej: «Pizza», «Sushi») y pulsa el botón + para añadirla a la lista.",
+
+      step_action_title: "El Botón de la Verdad 🔴",
+      step_action_desc: "Cuando todos hayan añadido sus opciones, pulsa este botón y la IA decidirá al ganador."
     }
+
+
+
 
 
 

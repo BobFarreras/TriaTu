@@ -6,7 +6,8 @@ import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandida
 import { GetDecisionRoom } from '@/core/usecases/rooms/GetDecisionRoom';
 import { RoomDetail, RoomDTO } from '@/features/rooms/ui/RoomDetail';
 import { CandidateDTO } from '@/features/rooms/ui/DecisionControls';
-
+import { OnboardingProvider } from '@/components/onboarding/OnboardingContext'; // ✅
+import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay'; // ✅
 // Forcem que la pàgina es generi al servidor en cada petició (necessari per validar auth)
 export const dynamic = 'force-dynamic';
 
@@ -70,10 +71,15 @@ export default async function RoomPage({ params }: PageProps) {
   }));
 
   return (
-    <RoomDetail
-      room={roomDTO}
-      initialCandidates={candidatesDTO}
-      currentUserId={user.id}
-    />
+    // ✅ ENVOLTEM AMB EL PROVIDER
+    <OnboardingProvider>
+      <OnboardingOverlay />
+
+      <RoomDetail
+        room={roomDTO}
+        initialCandidates={candidatesDTO}
+        currentUserId={user.id}
+      />
+    </OnboardingProvider>
   );
 }

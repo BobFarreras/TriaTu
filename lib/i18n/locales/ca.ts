@@ -884,6 +884,32 @@ export const ca = {
 
       step5_title: "Guardar Canvis 💾",
       step5_desc: "No t'oblidis de guardar quan acabis!"
+    },
+    room: {
+      step1_title: "Benvingut a la Sala! 👋",
+      step1_desc: "Mira qui està connectat i invitar amics a la sala",
+
+      step2_title: "Mode Màgic o Manual? ✨",
+      step2_desc: "Tria 'Màgic' per deixar que la IA decideixi o 'Manual' per votar democràticament.",
+
+      step3_title: "Pren el Control 🎮",
+      step3_desc: "Afegeix opcions, vota o prem el botó vermell per generar una decisió final.",
+
+      step4_title: "Historial de Decisions 📜",
+      step4_desc: "Aquí es guardaran totes les decisions preses. Pots consultar-les o netejar la llista.",
+      
+      step_mode_title: "Votació Cega o Pública? 👁️",
+      step_mode_desc: "Pots amagar les opcions dels altres per evitar que es copiïn, o fer-ho tot visible.",
+
+      step_candidates_title: "Les Opcions 📝",
+      step_candidates_desc: "Aquí apareixeran totes les propostes del grup. Si ets el Host, pots esborrar les que no t'agradin.",
+
+      step_input_title: "Proposa Alguna Cosa! 💡",
+      step_input_desc: "Escriu la teva idea (ex: 'Pizza', 'Sushi') i prem el botó + per afegir-la a la llista.",
+
+      step_action_title: "El Botó de la Veritat 🔴",
+      step_action_desc: "Quan tothom hagi posat les seves opcions, prem aquest botó i la IA decidirà el guanyador!"
+
     }
   },
 };
