@@ -1,18 +1,19 @@
 'use client'
 
-import { useTransition, useState } from 'react';
+import { useTransition, useState, Suspense } from 'react'; // ✅ Importem Suspense
 import { login } from '@/app/actions/auth-actions';
 import { Button } from '@/components/ui/Button';
 import { AuthInput } from '@/components/ui/AuthInput';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { useSearchParams } from 'next/navigation'; // ✅ 1. Importar
-export default function LoginPage() {
+import { useSearchParams } from 'next/navigation';
+
+// 1️⃣ Component intern amb tota la teva lògica
+function LoginForm() {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ 2. Capturar el paràmetre 'next' de la URL
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/dashboard';
 
@@ -29,7 +30,7 @@ export default function LoginPage() {
   return (
     <div className="h-dvh w-full flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-green-500 selection:text-white">
 
-      {/* Elements decoratius (Colors foscos fixos) */}
+      {/* Elements decoratius */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-[80px] pointer-events-none"></div>
 
       <Link href="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-xs md:text-sm font-black text-gray-400 hover:text-white transition-colors z-20 flex items-center gap-1 p-2">
@@ -43,7 +44,6 @@ export default function LoginPage() {
           <div className="text-6xl md:text-8xl mb-2 inline-block animate-wave filter drop-shadow-lg">
             👋
           </div>
-          {/* Text blanc forçat */}
           <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight leading-tight">
             {t.auth.login_title}
           </h1>
@@ -52,11 +52,10 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* TARGETA (Fons fosc translucent) */}
+        {/* TARGETA */}
         <div className="bg-zinc-900/70 backdrop-blur-xl rounded-4xl px-6 py-6 md:p-8 border-4 border-zinc-800 shadow-xl relative overflow-hidden">
 
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-6 relative z-10">
-            {/* ✅ 3. INPUT OCULT: Passem el 'next' al servidor */}
             <input type="hidden" name="next" value={next} />
 
             <AuthInput
@@ -100,7 +99,6 @@ export default function LoginPage() {
           <div className="mt-4 md:mt-8 text-center pt-4 border-t border-zinc-800">
             <p className="text-xs md:text-sm font-bold text-gray-400">
               {t.auth.no_account}{' '}
-              {/* ✅ 4. Si va al registre, hem de mantenir el 'next' */}
               <Link
                 href={`/register?next=${encodeURIComponent(next)}`}
                 className="text-blue-400 hover:text-blue-300 hover:underline decoration-2 underline-offset-4 decoration-wavy ml-1"
@@ -112,5 +110,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// 2️⃣ Component principal exportat amb el Suspense
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-white">Thinking...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
