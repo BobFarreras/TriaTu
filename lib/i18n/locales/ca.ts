@@ -132,8 +132,12 @@ export const ca = {
     err_clean: 'Error netejant historial',
     err_add: 'Error afegint opció',
     err_general: 'Error desconegut',
-    invite_cta: "Invitar Amics", // Text del botó
-    invite_sent: "Enllaç enviat!", // Opcional, feedback
+    invite_cta: "Invitar Amics",
+    link_copied: "Enllaç copiat!",
+    copy_error: "Error al copiar l'enllaç",
+    // Textos per compartir per WhatsApp:
+    share_title: "Uneix-te a '{name}'",
+    share_text: "Ei! Ajuda'm a decidir què fem a la sala '{name}'. Entra aquí:",
   },
   landing: {
     // ... (Mantén el teu contingut de landing)

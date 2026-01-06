@@ -24,11 +24,11 @@ export function RoomHeader({ roomName, roomId, hostUserId, participants, current
       {/* SECCIÓ ESQUERRA: SORTIDA + INFO */}
       <div className="flex items-center gap-3 w-full md:w-auto overflow-hidden">
 
-        {/* BOTÓ SORTIR */}
+        {/* BOTÓ SORTIR (Fosc) */}
         <Link
           href="/rooms"
           className="group flex items-center justify-center w-14 h-14 bg-zinc-800 rounded-3xl border-2 border-transparent hover:border-red-900/50 hover:bg-red-900/10 transition-all shrink-0"
-          title={t.common?.back || "Sortir"}
+          title="Sortir al Dashboard"
         >
           <LogOut size={20} className="text-gray-500 group-hover:text-red-500 transition-colors transform group-hover:-translate-x-1" />
         </Link>
@@ -85,16 +85,16 @@ export function RoomHeader({ roomName, roomId, hostUserId, participants, current
           En mòbil això és la segona fila.
       */}
       <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-        
+
         {/* 🟢 BOTÓ D'INVITAR (VERSIÓ MÒBIL - NOMÉS ICONA)
             Fixa't en 'md:hidden': Es veu en mòbil, s'amaga en desktop.
             Està a l'esquerra dels participants (justify-between ho separa).
         */}
         <button
-            onClick={onCopyCode}
-            className="md:hidden flex items-center justify-center w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 active:scale-95 active:bg-emerald-500/30 transition-all"
+          onClick={onCopyCode}
+          className="md:hidden flex items-center justify-center w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 active:scale-95 active:bg-emerald-500/30 transition-all"
         >
-            <Share2 size={20} />
+          <Share2 size={20} />
         </button>
 
         {/* ELS PARTICIPANTS */}

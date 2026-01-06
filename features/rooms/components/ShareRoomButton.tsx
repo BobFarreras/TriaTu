@@ -6,43 +6,47 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 interface Props {
   inviteCode: string;
   roomName: string;
-  className?: string; // Per poder estilitzar-lo des de fora
+  className?: string; 
 }
 
 export function ShareRoomButton({ inviteCode, roomName, className }: Props) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
-  // Construïm la URL completa dinàmicament
-  // window.location.origin ens dona "https://triatu.app" o "http://localhost:3000"
   const getShareUrl = () => `${window.location.origin}/invite/${inviteCode}`;
 
   const handleShare = async () => {
     const url = getShareUrl();
+    
+    // ✅ TRADUCCIÓ DINÀMICA:
+    // Substituïm el marcador '{name}' pel nom real de la sala
+    const shareTitle = t.room.share_title.replace('{name}', roomName);
+    const shareText = t.room.share_text.replace('{name}', roomName);
+
     const shareData = {
-      title: `Uneix-te a "${roomName}"`,
-      text: `Ei! Ajuda'm a decidir què fem a la sala "${roomName}". Entra aquí:`,
+      title: shareTitle,
+      text: shareText,
       url: url,
     };
 
-    // 1. INTENTAR OBRIR MENÚ NATIU (Mòbil: WhatsApp, Telegram, etc.)
+    // 1. INTENTAR OBRIR MENÚ NATIU (Mòbil)
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-        return; // Si funciona, acabem aquí
+        return; 
       } catch (err) {
-        console.log('User cancelled sharing or error:', err);
+        console.log('Sharing cancelled or failed', err);
       }
     }
 
-    // 2. FALLBACK: Si som a l'ordinador, copiem al porta-retalls
+    // 2. FALLBACK: Copiar al porta-retalls (PC)
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Reset del missatge després de 2s
+      setTimeout(() => setCopied(false), 2000); 
     } catch (err) {
-        console.log('Error al copiar:', err);
-      alert('Error copiant: ' + url);
+      console.log('Error copying:', err);
+      alert(`${t.room.copy_error}: ${url}`); // ✅ Traducció error
     }
   };
 
@@ -58,12 +62,12 @@ export function ShareRoomButton({ inviteCode, roomName, className }: Props) {
       {copied ? (
         <>
           <span>✅</span>
-          <span className="text-sm">Link Copiat!</span>
+          <span className="text-sm">{t.room.link_copied}</span> {/* ✅ Traducció */}
         </>
       ) : (
         <>
           <span className="text-lg group-hover:rotate-12 transition-transform">🔗</span>
-          <span className="text-sm">Invitar Amics</span>
+          <span className="text-sm">{t.room.invite_cta}</span> {/* ✅ Traducció */}
         </>
       )}
     </button>

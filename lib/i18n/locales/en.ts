@@ -127,7 +127,12 @@ export const en = {
     err_add: 'Error adding option',
     err_general: 'Unknown error',
     invite_cta: "Invite Friends", // Button text
-    invite_sent: "Link sent!" // Optional feedback
+    invite_sent: "Link sent!", // Optional feedback
+
+    link_copied: "Link copied!",
+    copy_error: "Error copying link",
+    share_title: "Join '{name}'",
+    share_text: "Hey! Help me decide in room '{name}'. Join here:",
 
   },
   landing: {

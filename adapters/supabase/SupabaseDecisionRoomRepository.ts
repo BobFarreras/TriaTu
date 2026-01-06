@@ -48,6 +48,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
       .upsert({
         id: room.id,
         host_user_id: room.hostUserId,
+        invite_code: room.inviteCode, // 👈 ASSEGURA'T QUE TENS AQUESTA LÍNIA
         name: room.name,
         voting_mode: room.votingMode,
         status: 'OPEN'

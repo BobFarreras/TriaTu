@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 // ✅ CORRECCIÓ: Wrapper per satisfer TypeScript
 function JoinButton({ code }: { code: string }) {
-  
+
   // Creem una Server Action "inline" que fa de pont.
   // Aquesta funció crida la lògica, però no retorna l'objecte d'error al form directament.
   const handleJoin = async () => {
@@ -16,7 +16,7 @@ function JoinButton({ code }: { code: string }) {
 
   return (
     <form action={handleJoin} className="w-full">
-      <button 
+      <button
         type="submit"
         className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
       >
@@ -25,10 +25,14 @@ function JoinButton({ code }: { code: string }) {
     </form>
   );
 }
-
-export default async function InvitePage({ params }: { params: { code: string } }) {
+// 1. CANVI DE TIPUS: params ara és una Promise
+interface PageProps {
+  params: Promise<{ code: string }>;
+}
+export default async function InvitePage({ params }: PageProps) {
   const supabase = await createClient();
-  const { code } = params;
+  // 2. AWAIT: Hem d'esperar a que es resolguin els paràmetres
+  const { code } = await params;
 
   // 1. Auth Check
   const { data: { user } } = await supabase.auth.getUser();
@@ -69,20 +73,20 @@ export default async function InvitePage({ params }: { params: { code: string } 
         <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">
           T'han convidat a
         </span>
-        
+
         <h1 className="text-3xl font-black text-white mt-2 mb-6 leading-tight">
           {room.name}
         </h1>
 
         <div className="bg-black/20 p-4 rounded-lg mb-8">
           <p className="text-sm text-gray-300">
-            Entraràs com a: <br/>
+            Entraràs com a: <br />
             <span className="text-emerald-400 font-semibold">{user.email}</span>
           </p>
         </div>
 
         <JoinButton code={code} />
-        
+
         <p className="mt-4 text-xs text-gray-500">
           En acceptar, t'uniràs a la llista de participants.
         </p>
