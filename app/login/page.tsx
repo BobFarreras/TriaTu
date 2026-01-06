@@ -6,11 +6,15 @@ import { Button } from '@/components/ui/Button';
 import { AuthInput } from '@/components/ui/AuthInput';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-
+import { useSearchParams } from 'next/navigation'; // ✅ 1. Importar
 export default function LoginPage() {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ 2. Capturar el paràmetre 'next' de la URL
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') || '/dashboard';
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,6 +56,9 @@ export default function LoginPage() {
         <div className="bg-zinc-900/70 backdrop-blur-xl rounded-4xl px-6 py-6 md:p-8 border-4 border-zinc-800 shadow-xl relative overflow-hidden">
 
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-6 relative z-10">
+            {/* ✅ 3. INPUT OCULT: Passem el 'next' al servidor */}
+            <input type="hidden" name="next" value={next} />
+
             <AuthInput
               name="email"
               type="email"
@@ -93,7 +100,11 @@ export default function LoginPage() {
           <div className="mt-4 md:mt-8 text-center pt-4 border-t border-zinc-800">
             <p className="text-xs md:text-sm font-bold text-gray-400">
               {t.auth.no_account}{' '}
-              <Link href="/register" className="text-blue-400 hover:text-blue-300 hover:underline decoration-2 underline-offset-4 decoration-wavy ml-1">
+              {/* ✅ 4. Si va al registre, hem de mantenir el 'next' */}
+              <Link
+                href={`/register?next=${encodeURIComponent(next)}`}
+                className="text-blue-400 hover:text-blue-300 hover:underline decoration-2 underline-offset-4 decoration-wavy ml-1"
+              >
                 {t.auth.register_link}
               </Link>
             </p>

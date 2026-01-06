@@ -9,6 +9,8 @@ export async function login(formData: FormData) {
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  // ✅ 1. Llegim el camp 'next' (o per defecte al dashboard)
+  const next = (formData.get('next') as string) || '/dashboard';
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -19,8 +21,12 @@ export async function login(formData: FormData) {
     return { error: error.message };
   }
 
+  // Comprovem seguretat (que no ens treguin de la web)
+  const finalRedirect = next.startsWith('/') ? next : '/dashboard';
+
   revalidatePath('/', 'layout');
-  redirect('/');
+  // ✅ 2. Redirigim a la invitació!
+  redirect(finalRedirect);
 }
 
 export async function signup(formData: FormData) {
@@ -28,6 +34,8 @@ export async function signup(formData: FormData) {
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  // ✅ 1. Llegim el camp 'next'
+  const next = (formData.get('next') as string) || '/dashboard';
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -38,17 +46,16 @@ export async function signup(formData: FormData) {
     return { error: error.message };
   }
 
-  // Com que hem desactivat la validació d'email, l'usuari ja està loguejat.
+  const finalRedirect = next.startsWith('/') ? next : '/dashboard';
+
   revalidatePath('/', 'layout');
-  redirect('/');
+  // ✅ 2. Redirigim a la invitació!
+  redirect(finalRedirect);
 }
 
+// signOutAction es queda igual
 export async function signOutAction() {
   const supabase = await createClient();
-  
-  // 1. Tancar sessió a Supabase (esborra cookies)
   await supabase.auth.signOut();
-
-  // 2. Redirigir a la landing page (que ara ja et deixarà entrar perquè no hi ha usuari)
   redirect('/');
 }
