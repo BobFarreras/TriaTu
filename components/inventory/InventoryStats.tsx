@@ -1,10 +1,11 @@
-'use client'; // ✅ Necessari per al context
+// src/components/inventory/InventoryStats.tsx
+'use client'; 
 
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { isItemExpiringSoon } from '@/lib/inventoryUtils';
 import { DashboardFilter } from './InventoryManager'; 
-import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Importem el Hook
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface InventoryStatsProps {
   items: InventoryItemProps[];
@@ -13,7 +14,7 @@ interface InventoryStatsProps {
 }
 
 export function InventoryStats({ items, activeFilter, onFilterChange }: InventoryStatsProps) {
-  const { t } = useLanguage(); // ✅ Obtenim les traduccions
+  const { t } = useLanguage();
 
   const stats = {
     [StorageLocation.FRIDGE]: items.filter(i => i.location === StorageLocation.FRIDGE).length,
@@ -34,12 +35,12 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
   const isExpiringActive = activeFilter === 'EXPIRING';
 
   return (
-    // GRID MÉS COMPACTE (4 columnes en desktop, 2 en mòbil)
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
+    // ✅ ID PER AL GRUP DE FILTRES (Pas 2 del tour)
+    <div id="tour-inv-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
       
       <MiniStatCard 
         icon="❄️" 
-        label={t.inventory.form.location.fridge} // ✅ Traduït
+        label={t.inventory.form.location.fridge} 
         count={stats.FRIDGE} 
         color="bg-cyan-500/10 border-cyan-500/20 text-cyan-200"
         activeColor="bg-cyan-500/20 border-cyan-500 ring-1 ring-cyan-400/50"
@@ -49,7 +50,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
 
       <MiniStatCard 
         icon="🚪" 
-        label={t.inventory.form.location.pantry} // ✅ Traduït
+        label={t.inventory.form.location.pantry} 
         count={stats.PANTRY} 
         color="bg-orange-500/10 border-orange-500/20 text-orange-200"
         activeColor="bg-orange-500/20 border-orange-500 ring-1 ring-orange-400/50"
@@ -59,7 +60,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
 
       <MiniStatCard 
         icon="🧊" 
-        label={t.inventory.form.location.freezer} // ✅ Traduït
+        label={t.inventory.form.location.freezer}
         count={stats.FREEZER} 
         color="bg-indigo-500/10 border-indigo-500/20 text-indigo-200"
         activeColor="bg-indigo-500/20 border-indigo-500 ring-1 ring-indigo-400/50"
@@ -67,8 +68,9 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
         onClick={() => handleCardClick(StorageLocation.FREEZER)}
       />
 
-      {/* ALERT CARD MINI */}
+      {/* ✅ ID ESPECÍFIC PER A L'ALERTA DE CADUCITAT (Pas 3 del tour) */}
       <button 
+        id="tour-inv-expiring"
         onClick={() => handleCardClick('EXPIRING')}
         className={`
           relative overflow-hidden rounded-xl border flex flex-row items-center justify-between px-4 py-2 transition-all select-none
@@ -81,7 +83,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
         <div className="flex items-center gap-2">
             <span className="text-xl">⚠️</span>
             <span className={`text-[10px] font-bold uppercase tracking-widest ${isExpiringActive ? 'text-red-200' : 'text-slate-400'}`}>
-               {t.inventory.list.status.expiring} {/* ✅ Traduït */}
+               {t.inventory.list.status.expiring}
             </span>
         </div>
         <span className={`text-xl font-black ${expiringCount > 0 ? 'text-red-400' : 'text-slate-600'}`}>
@@ -92,6 +94,7 @@ export function InventoryStats({ items, activeFilter, onFilterChange }: Inventor
     </div>
   );
 }
+
 
 interface MiniStatCardProps {
   icon: string;

@@ -812,7 +812,7 @@ export const ca = {
 
       step6_title: "Unir-se",
       step6_desc: "Tens un codi o QR? Entra a la sala d'un amic ràpidament.",
-      
+
       step7_title: "Comunitat de Receptes",
       step7_desc: "Inspira't amb el que cuinen els altres. Copia receptes i fes-les teves!",
 
@@ -827,6 +827,25 @@ export const ca = {
 
       step11_title: "Perfil i Configuració",
       step11_desc: "Canvia el teu avatar, nom i preferències globals aquí."
+    },
+    inventory: {
+      step1_title: "El Teu Rebost Digital 📦",
+      step1_desc: "Aquí tens tot el que has comprat. Controla què tens i on ho tens.",
+
+      step2_title: "Filtres Ràpids",
+      step2_desc: "Prem aquestes targetes per veure només el que hi ha a la Nevera, Congelador o Rebost.",
+
+      step3_title: "Alerta de Caducitat ⚠️",
+      step3_desc: "Importantíssim! Si surt un número aquí, tens productes a punt de fer-se malbé. Prioritza'ls!",
+
+      step4_title: "Escàner Màgic 📷",
+      step4_desc: "No escriguis! Fes una foto al tiquet o als productes i la IA els afegirà sola.",
+
+      step5_title: "Afegir Manualment",
+      step5_desc: "Si prefereixes fer-ho a l'antiga, prem aquí per omplir el formulari.",
+
+      step6_title: "La Llista",
+      step6_desc: "Aquí apareixeran els productes. Pots editar-los o esborrar-los clicant a sobre."
     }
   }
 };

@@ -1,7 +1,8 @@
+// src/components/inventory/InventoryManager.tsx
 'use client';
 
-import { useState } from 'react';
-import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Hook
+import { useState, useEffect, useMemo } from 'react'; // ✅ useMemo & useEffect
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
@@ -16,6 +17,10 @@ import { ScannedListEditor } from '../scanner/ScannedListEditor';
 import { AROverlay } from '../scanner/AROverlay';
 import { InventoryHeader } from './InventoryHeader';
 
+// ✅ ONBOARDING IMPORTS
+import { useOnboarding, TourStep } from '@/components/onboarding/OnboardingContext';
+import { TourTrigger } from '@/components/onboarding/TourTrigger';
+
 export type DashboardFilter = StorageLocation | 'EXPIRING' | null;
 
 interface InventoryManagerProps {
@@ -23,7 +28,7 @@ interface InventoryManagerProps {
 }
 
 export function InventoryManager({ items }: InventoryManagerProps) {
-   const { t } = useLanguage(); // ✅ Hook
+   const { t } = useLanguage();
    const [filter, setFilter] = useState<DashboardFilter>(null);
    const [showAddForm, setShowAddForm] = useState(false);
 
@@ -33,6 +38,48 @@ export function InventoryManager({ items }: InventoryManagerProps) {
    const [capturedImage, setCapturedImage] = useState<string | null>(null);
    const [showImage, setShowImage] = useState(true);
 
+   // ✅ CONFIGURACIÓ DEL TOUR
+   const { startTour } = useOnboarding();
+
+   const onboardingSteps: TourStep[] = useMemo(() => [
+      {
+         targetId: 'tour-inv-header',
+         title: t.onboarding.inventory.step1_title,
+         description: t.onboarding.inventory.step1_desc
+      },
+      {
+         targetId: 'tour-inv-stats',
+         title: t.onboarding.inventory.step2_title,
+         description: t.onboarding.inventory.step2_desc
+      },
+      {
+         targetId: 'tour-inv-expiring',
+         title: t.onboarding.inventory.step3_title,
+         description: t.onboarding.inventory.step3_desc
+      },
+      {
+         targetId: 'tour-inv-scan',
+         title: t.onboarding.inventory.step4_title,
+         description: t.onboarding.inventory.step4_desc
+      },
+      {
+         targetId: 'tour-inv-add',
+         title: t.onboarding.inventory.step5_title,
+         description: t.onboarding.inventory.step5_desc
+      },
+      {
+         targetId: 'tour-inv-list',
+         title: t.onboarding.inventory.step6_title,
+         description: t.onboarding.inventory.step6_desc
+      }
+   ], [t]);
+
+   // Iniciar tour automàticament (amb ID 'inventory')
+   useEffect(() => {
+      startTour('inventory', onboardingSteps);
+   }, [startTour, onboardingSteps]);
+
+
    // Lògica Filtres
    const filteredItems = items.filter((item) => {
       if (filter === null) return true;
@@ -40,17 +87,12 @@ export function InventoryManager({ items }: InventoryManagerProps) {
       return item.location === filter;
    });
 
-   // ✅ TÍTOL DINÀMIC TRADUÏT
+   // TÍTOL DINÀMIC
    let title = t.inventory.dashboard.title_all;
-
    if (filter === 'EXPIRING') {
       title = t.inventory.dashboard.title_expiring;
    } else if (filter) {
-      // SOLUCIÓN TS7053:
-      // 1. Convertimos el objeto de traducciones a un Record<string, string>
-      // Esto le dice a TS: "Confía en mí, puedo acceder a esto con cualquier string"
       const locationsDict = t.inventory.form.location as Record<string, string>;
-
       const locName = locationsDict[filter.toLowerCase()] || filter;
       title = `${t.inventory.dashboard.filter_prefix} ${locName}`;
    }
@@ -59,10 +101,8 @@ export function InventoryManager({ items }: InventoryManagerProps) {
    if (scannedItems && capturedImage) {
       return (
          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] transition-all duration-500 ease-in-out">
-            <div className={`
-                  relative rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-2xl transition-all duration-500
-                  ${showImage ? 'flex-[0_0_40%] min-h-64 opacity-100' : 'flex-[0_0_0%] min-h-0 border-0 opacity-0 overflow-hidden'}
-              `}>
+            {/* ... Contingut editor (igual) ... */}
+            <div className={`relative rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-2xl transition-all duration-500 ${showImage ? 'flex-[0_0_40%] min-h-64 opacity-100' : 'flex-[0_0_0%] min-h-0 border-0 opacity-0 overflow-hidden'}`}>
                <div className="absolute inset-0 w-full h-full">
                   <AROverlay
                      imageSrc={capturedImage}
@@ -71,23 +111,14 @@ export function InventoryManager({ items }: InventoryManagerProps) {
                   />
                </div>
             </div>
-
             <div className="flex-1 min-w-0 h-full relative">
                <ScannedListEditor
                   initialItems={scannedItems}
                   showImageToggle={true}
                   isImageVisible={showImage}
                   onToggleImage={() => setShowImage(!showImage)}
-                  onCancel={() => {
-                     setScannedItems(null);
-                     setCapturedImage(null);
-                     setShowImage(true);
-                  }}
-                  onFinish={() => {
-                     setScannedItems(null);
-                     setCapturedImage(null);
-                     window.location.reload();
-                  }}
+                  onCancel={() => { setScannedItems(null); setCapturedImage(null); setShowImage(true); }}
+                  onFinish={() => { setScannedItems(null); setCapturedImage(null); window.location.reload(); }}
                />
             </div>
          </div>
@@ -98,11 +129,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
    if (showCamera) {
       return (
          <CameraScanner
-            onItemsFound={(items, img) => {
-               setShowCamera(false);
-               setScannedItems(items);
-               setCapturedImage(img);
-            }}
+            onItemsFound={(items, img) => { setShowCamera(false); setScannedItems(items); setCapturedImage(img); }}
             onCancel={() => setShowCamera(false)}
          />
       );
@@ -110,10 +137,19 @@ export function InventoryManager({ items }: InventoryManagerProps) {
 
    // --- VISTA 3: DASHBOARD PRINCIPAL ---
    return (
-      <div className="space-y-6">
+      <div className="space-y-6 relative">
+         
+         {/* ✅ BOTÓ TOUR TRIGGER */}
+         <div className="absolute top-0 right-0 z-10">
+            <TourTrigger tourId="inventory" steps={onboardingSteps} />
+         </div>
 
-         <InventoryHeader totalItems={items.length} />
+         {/* Header amb ID */}
+         <div id="tour-inv-header">
+             <InventoryHeader totalItems={items.length} />
+         </div>
 
+         {/* Stats (Els IDs estan dins del component InventoryStats) */}
          <InventoryStats
             items={items}
             activeFilter={filter}
@@ -134,7 +170,9 @@ export function InventoryManager({ items }: InventoryManagerProps) {
             </div>
 
             <div className="flex gap-2">
+               {/* ✅ ID SCAN BUTTON */}
                <button
+                  id="tour-inv-scan"
                   onClick={() => setShowCamera(true)}
                   className="bg-slate-800 hover:bg-slate-700 text-purple-300 hover:text-white px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-slate-700 shadow-sm hover:scale-105"
                >
@@ -142,11 +180,13 @@ export function InventoryManager({ items }: InventoryManagerProps) {
                   <span className="hidden sm:inline">{t.inventory.dashboard.scan_btn}</span>
                </button>
 
+               {/* ✅ ID ADD BUTTON */}
                <button
+                  id="tour-inv-add"
                   onClick={() => setShowAddForm(!showAddForm)}
                   className={`
-                 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-lg
-                 ${showAddForm
+                  flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-lg
+                  ${showAddForm
                         ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
                         : 'bg-linear-to-r from-purple-600 to-indigo-600 text-white hover:scale-105'
                      }
@@ -163,7 +203,10 @@ export function InventoryManager({ items }: InventoryManagerProps) {
             </div>
          </div>
 
-         <InventoryList items={filteredItems} />
+         {/* ✅ ID LLISTA */}
+         <div id="tour-inv-list">
+             <InventoryList items={filteredItems} />
+         </div>
       </div>
    );
 }
