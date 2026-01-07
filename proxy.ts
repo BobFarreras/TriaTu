@@ -18,14 +18,14 @@ export async function proxy(request: NextRequest) {
   
   return response;
 }
-
 export const config = {
   matcher: [
     /*
-     * Matcher netejat:
-     * Intercepta-ho tot EXCEPTE fitxers estàtics, imatges i assets.
-     * Inclou /api per si de cas, però sobretot protegeix les pàgines normals.
+     * Matcher net:
+     * Executa el middleware a TOTA l'aplicació EXCEPTE fitxers estàtics.
+     * NO excloguis 'login', 'register' o 'invite' aquí. Han de passar pel middleware
+     * perquè la sessió es validi correctament.
      */
-    '/((?!_next/static|_next/image|favicon.ico|login|register|auth|invite|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

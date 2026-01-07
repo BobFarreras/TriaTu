@@ -1,3 +1,4 @@
+// =================== FILE: src/app/actions/auth-actions.ts ===================
 'use server'
 
 import { revalidatePath } from 'next/cache';
@@ -9,8 +10,10 @@ export async function login(formData: FormData) {
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  // ✅ 1. Llegim el camp 'next' (o per defecte al dashboard)
-  const next = (formData.get('next') as string) || '/dashboard';
+  
+  // Obtenim el 'next' i el sanegem
+  const nextRaw = formData.get('next') as string;
+  const next = nextRaw || '/dashboard';
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -18,14 +21,16 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
+    // Retornem l'error sense fer redirect (millor UX)
     return { error: error.message };
   }
 
-  // Comprovem seguretat (que no ens treguin de la web)
+  // 🛡️ SECURITY CHECK: Evitem Open Redirects
+  // Només redirigim si la ruta comença per '/' (és interna)
+  // Si algú intenta ?next=http://malicious.com, el forcem a /dashboard
   const finalRedirect = next.startsWith('/') ? next : '/dashboard';
 
   revalidatePath('/', 'layout');
-  // ✅ 2. Redirigim a la invitació!
   redirect(finalRedirect);
 }
 
@@ -34,8 +39,8 @@ export async function signup(formData: FormData) {
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  // ✅ 1. Llegim el camp 'next'
-  const next = (formData.get('next') as string) || '/dashboard';
+  const nextRaw = formData.get('next') as string;
+  const next = nextRaw || '/dashboard';
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -49,11 +54,9 @@ export async function signup(formData: FormData) {
   const finalRedirect = next.startsWith('/') ? next : '/dashboard';
 
   revalidatePath('/', 'layout');
-  // ✅ 2. Redirigim a la invitació!
   redirect(finalRedirect);
 }
 
-// signOutAction es queda igual
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();

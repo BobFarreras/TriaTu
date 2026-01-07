@@ -15,12 +15,14 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/dashboard';
+  // ✅ Decodifiquem per seguretat
+  const next = decodeURIComponent(searchParams.get('next') || '/dashboard');
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault(); // 🛑 Atura el comportament natiu, però el method="POST" és la xarxa de seguretat
     setError(null);
     const formData = new FormData(event.currentTarget);
+
     startTransition(async () => {
       const result = await login(formData);
       if (result?.error) setError(result.error);
@@ -55,14 +57,19 @@ function LoginForm() {
         {/* TARGETA */}
         <div className="bg-zinc-900/70 backdrop-blur-xl rounded-4xl px-6 py-6 md:p-8 border-4 border-zinc-800 shadow-xl relative overflow-hidden">
 
-          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-6 relative z-10">
+          {/* ⚠️ SEGURETAT: method="POST" és obligatori. 
+            Si JS falla, això evita que la password vagi a la URL.
+          */}
+          <form onSubmit={handleSubmit} method="POST" className="space-y-6">
+
+            {/* Passem el next com a hidden input per recuperar-lo al server action */}
             <input type="hidden" name="next" value={next} />
 
             <AuthInput
               name="email"
               type="email"
               label={t.auth.email_label}
-              placeholder={t.auth.email_placeholder}
+              placeholder="usuari@exemple.com"
               required
             />
 
@@ -71,24 +78,19 @@ function LoginForm() {
                 name="password"
                 type="password"
                 label={t.auth.password_label}
-                placeholder={t.auth.password_placeholder}
+                placeholder="••••••••"
                 required
               />
-              <div className="text-right">
-                <Link href="#" className="text-[10px] font-bold text-gray-400 hover:text-blue-400 uppercase tracking-wider p-1">
-                  {t.auth.forgot_password}
-                </Link>
-              </div>
             </div>
 
             {error && (
-              <div className="bg-red-900/20 text-red-400 p-2 md:p-4 rounded-xl text-xs md:text-sm font-bold text-center border-2 border-red-900/50 animate-shake">
+              <div className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm font-bold text-center border border-red-500/20">
                 🚫 {error}
               </div>
             )}
 
             <Button
-              className="w-full py-3 md:py-5 text-lg md:text-xl rounded-xl md:rounded-2xl bg-blue-600 border-b-4 border-blue-800 hover:bg-blue-500 shadow-lg text-white transition-all hover:-translate-y-1 mt-2 active:border-b-0 active:translate-y-1"
+              className="w-full py-4 text-lg font-bold rounded-xl shadow-lg mt-2"
               type="submit"
               isLoading={isPending}
             >

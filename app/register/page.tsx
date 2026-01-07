@@ -59,7 +59,11 @@ function RegisterForm() {
 
           <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-green-400 to-emerald-500"></div>
 
-          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-6 relative z-10">
+          <form
+            onSubmit={handleSubmit}
+            method="POST" // 👈 AFEGEIX AIXÒ SI O SI
+            className="space-y-3 md:space-y-6 relative z-10"
+          >
             <input type="hidden" name="next" value={next} />
             <AuthInput
               name="email"
