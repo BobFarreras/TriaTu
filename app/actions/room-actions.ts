@@ -16,6 +16,13 @@ import {
   ClearHistorySchema,
   AddCandidateSchema
 } from '@/core/application/schemas/inputSchemas';
+// Imports de la teva nova lògica AUTO
+import { ResolveAutoDecision } from '@/core/usecases/decision/ResolveAutoDecision';
+import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
+import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
+import { RuleBasedDecisionProvider } from '@/adapters/ai/RuleBaseDecisionProvider';
+
+
 
 // Tipus de retorn
 export type ActionState = {
@@ -139,7 +146,7 @@ export async function addCandidateAction(roomId: string, content: string): Promi
 }
 
 // ---------------------------------------------------------
-// 4. MAKE DECISION
+// 4. MAKE DECISION (DISPATCHER: MANUAL vs MAGIC)
 // ---------------------------------------------------------
 export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'manual') {
   const supabase = await createClient();
@@ -147,6 +154,7 @@ export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'm
 
   if (!user) return { success: false, error: "Unauthorized" };
 
+  // Validem input
   const validation = MakeDecisionSchema.safeParse({
     roomId,
     requesterUserId: user.id,
@@ -158,13 +166,30 @@ export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'm
   }
 
   try {
-    const useCase = container.getMakeGroupDecision();
+    let outcome;
 
-    const outcome = await useCase.execute({
-      roomId: validation.data.roomId,
-      requesterUserId: validation.data.requesterUserId,
-      mode: validation.data.mode
-    });
+    if (mode === 'magic') {
+      // 🔮 MODE AUTO (Nou fluxe amb les teves entitats)
+      // Instanciem les dependències aquí per claredat (o utilitzem container si ho registrem allà)
+      const roomRepo = new SupabaseDecisionRoomRepository();
+      const profileRepo = new SupabaseUserProfileRepository(); // ✅ El teu repo
+      const provider = new RuleBasedDecisionProvider();        // ✅ El provider simple
+
+      const useCase = new ResolveAutoDecision(roomRepo, profileRepo, provider);
+      
+      // Execute llençarà error si estem en Cooldown (Time Invariant)
+      outcome = await useCase.execute(roomId, user.id);
+
+    } else {
+      // 🎲 MODE MANUAL (Flux existent)
+      // Utilitza els candidats que els usuaris han escrit manualment
+      const useCase = container.getMakeGroupDecision();
+      outcome = await useCase.execute({
+        roomId, 
+        requesterUserId: user.id,
+        mode
+      });
+    }
 
     revalidatePath(`/rooms/${roomId}`);
 
@@ -176,9 +201,16 @@ export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'm
       }
     };
 
-  } catch (error) {
-    console.error("💥 [CRASH] Error a l'acció:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Error desconegut" };
+  } catch (error: unknown) {
+    console.error("Action Error:", error);
+    const msg = error instanceof Error ? error.message : "Error desconegut";
+
+    // Gestió visual de l'error de Cooldown que ve de la teva entitat DecisionRoom
+    if (msg.includes("Wait")) {
+       return { success: false, error: `⏳ ${msg}` };
+    }
+
+    return { success: false, error: msg };
   }
 }
 
