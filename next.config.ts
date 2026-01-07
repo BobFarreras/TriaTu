@@ -1,26 +1,32 @@
+// =================== FILE: next.config.ts ===================
 import type { NextConfig } from "next";
-// ✅ CORRECCIÓ: Usem import estàndard en lloc de require
 import withPWAInit from "@ducanh2912/next-pwa";
 
+// 1. Detectamos el entorno
+const isDev = process.env.NODE_ENV !== "production";
+
+// 2. Configuramos el PWA (pero no lo aplicamos todavía)
 const withPWA = withPWAInit({
   dest: "public",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
-  disable: process.env.NODE_ENV === "development",
+  disable: isDev, // Desactivar en dev para que Turbopack funcione
   workboxOptions: {
     disableDevLogs: true,
   },
 });
 
+// 3. Tu configuración base de Next.js (con Headers de seguridad y Turbo)
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+   
   },
   
-  // ✅ IMPLEMENTACIÓ DE HEADERS DE SEGURETAT OWASP
+  // HEADERS DE SEGURIDAD OWASP
   async headers() {
     return [
       {
@@ -32,7 +38,6 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
-          // ⚠️ ALERTA: He eliminat 'camera=()' del Permissions-Policy perquè si volem fer fotos de la nevera, la necessitarem!
           { key: 'Permissions-Policy', value: 'geolocation=(), interest-cohort=()' }, 
           {
             key: 'Content-Security-Policy',
@@ -42,7 +47,8 @@ const nextConfig: NextConfig = {
               style-src 'self' 'unsafe-inline';
               img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in;
               font-src 'self' data:;
-              connect-src 'self' https://*.supabase.co https://*.supabase.in;
+              connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in;
+       
             `.replace(/\s{2,}/g, ' ').trim()
           }
         ],
@@ -51,4 +57,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+// 4. LÓGICA DE EXPORTACIÓN (LA SOLUCIÓN AL ERROR)
+// Si es DEV -> Exportamos la config limpia (Turbopack feliz)
+// Si es PROD -> Exportamos la config envuelta en PWA (Webpack feliz)
+
+const finalConfig = isDev ? nextConfig : withPWA(nextConfig);
+
+export default finalConfig;

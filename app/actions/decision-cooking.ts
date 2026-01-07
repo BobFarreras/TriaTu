@@ -32,7 +32,7 @@ interface GenerateRecipeResult {
 function safeParse<T>(input: string | object | null | undefined, fallback: T): T {
     if (!input) return fallback;
     if (typeof input === 'string') {
-        try { return JSON.parse(input) as T; } catch (e) { return fallback; }
+        try { return JSON.parse(input) as T; } catch (e) { console.log(e); return fallback; }
     }
     return input as T;
 }

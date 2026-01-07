@@ -4,35 +4,22 @@ import { DecisionRoomRepository } from '@/core/ports/DecisionRoomRepository';
 import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 import { createClient } from '@/adapters/supabase/server';
+// ✅ IMPORTS CENTRALITZATS
+import { DbRoomJoinResponse } from '@/adapters/supabase/types/database.dtos';
 
-// --- TIPUS ESTRUCTURALS DE BASE DE DADES (Sense 'any') ---
 
-interface DbParticipant {
-  user_id: string;
-  joined_at: string;
-}
-
-interface DbDecision {
-  choice: string;
-  reason: string;
-  created_at: string;
-}
 
 interface DbRoom {
   id: string;
   host_user_id: string;
-  invite_code: string; // ✅ NOU: Afegim el camp aquí
+  invite_code: string;
   name: string;
   voting_mode: string;
   created_at: string;
+  last_decision_at?: string | null; // ✅ IMPORTANT: Per gestionar el cooldown
   status?: string;
 }
 
-// Tipus compost per a la resposta del JOIN de Supabase
-interface DbRoomJoinResponse extends DbRoom {
-  participants: DbParticipant[];
-  decisions: DbDecision[];
-}
 
 // -----------------------------------------------------------
 
@@ -48,10 +35,11 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
       .upsert({
         id: room.id,
         host_user_id: room.hostUserId,
-        invite_code: room.inviteCode, // 👈 ASSEGURA'T QUE TENS AQUESTA LÍNIA
+        invite_code: room.inviteCode,
         name: room.name,
         voting_mode: room.votingMode,
-        status: 'OPEN'
+        status: 'OPEN',
+        // Nota: last_decision_at es gestiona per separat en fer decisions
       });
 
     if (roomError) throw new Error(roomError.message);
@@ -70,20 +58,25 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     if (partError) throw new Error(`Error saving participants: ${partError.message}`);
   }
 
-  // 2. RECUPERAR SALA (AMB SEGURETAT BLINDADA)
-  // 2. RECUPERAR SALA
+  // 2. RECUPERAR SALA (AMB METADATA I SEGURETAT)
   async findById(id: string): Promise<DecisionRoom | null> {
     const supabase = await createClient();
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) return null;
 
+    // ✅ QUERY OPTIMITZADA: Inclou 'metadata' a decisions
     const { data, error } = await supabase
       .from('decision_rooms')
       .select(`
         *,
         participants:room_participants(*),
-        decisions:group_decisions(*) 
+        decisions:group_decisions(
+            choice,
+            reason,
+            created_at,
+            metadata  
+        )
       `)
       .eq('id', id)
       .single();
@@ -92,7 +85,7 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
 
     const roomData = data as unknown as DbRoomJoinResponse;
 
-    // 🛡️ TALLAFOCS (Comprovem si ets host o participant)
+    // 🛡️ TALLAFOCS: Només host o participants poden veure la sala
     const isHost = roomData.host_user_id === user.id;
     const isParticipant = roomData.participants.some((p) => p.user_id === user.id);
 
@@ -100,12 +93,13 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
       return null;
     }
 
-    // Mapeig
+    // Mapeig Participants
     const participantsList = roomData.participants.map((p) => ({
       userId: p.user_id,
       joinedAt: new Date(p.joined_at)
     }));
 
+    // Assegurar que el host és a la llista (per coherència de domini)
     if (!participantsList.some((p) => p.userId === roomData.host_user_id)) {
       participantsList.push({
         userId: roomData.host_user_id,
@@ -113,27 +107,36 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
       });
     }
 
+    // Mapeig Historial (Inclou Metadata per a la UI)
     const historyList = (roomData.decisions || []).map((d) => ({
       choice: d.choice,
       reason: d.reason,
-      generatedAt: new Date(d.created_at)
+      generatedAt: new Date(d.created_at),
+      metadata: d.metadata // ✅ PASSEM LA INFO DE LA RECEPTA AL DOMINI
     }));
 
-    return new DecisionRoom({
+    // Retornem Entitat de Domini Neta
+    const room = new DecisionRoom({
       id: roomData.id,
       hostUserId: roomData.host_user_id,
-
-      // ✅ CORRECCIÓ: Usem roomData per coherència
       inviteCode: roomData.invite_code,
-
       name: roomData.name,
       votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
       participants: participantsList,
       history: historyList
     });
+
+    // Hidratem el lastDecisionAt si existeix (per gestionar cooldowns al domini)
+    // ✅ CORRECCIÓ DEL HACK 'lastDecisionAt':
+    // En lloc de '(room as any)', fem servir una Intersecció de Tipus.
+    // Això li diu a TS: "Tracta room com si tingués lastDecisionAt, encara que l'entitat pública no ho mostri".
+    if (roomData.last_decision_at) {
+      (room as DecisionRoom & { lastDecisionAt: Date }).lastDecisionAt = new Date(roomData.last_decision_at);
+    }
+    return room;
   }
 
-  // 3. ALTRES MÈTODES
+  // 3. GESTIÓ DE VOTACIONS I ESTAT
   async setVotingMode(roomId: string, mode: 'BLIND' | 'PUBLIC'): Promise<void> {
     const supabase = await createClient();
     const { error } = await supabase
@@ -152,13 +155,25 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
     if (error) throw new Error(`Error removing participant: ${error.message}`);
   }
 
+  // ✅ MILLORA: Reset complet (Esborrar historial + Resetear Timer)
   async clearHistory(roomId: string): Promise<void> {
     const supabase = await createClient();
-    const { error } = await supabase
+
+    // 1. Esborrar decisions
+    const { error: deleteError } = await supabase
       .from('group_decisions')
       .delete()
       .eq('room_id', roomId);
-    if (error) throw new Error(`Error clearing history: ${error.message}`);
+
+    if (deleteError) throw new Error(`Error clearing history: ${deleteError.message}`);
+
+    // 2. Resetear el timestamp de l'última decisió (Evita l'error "Wait 105s")
+    const { error: updateError } = await supabase
+      .from('decision_rooms')
+      .update({ last_decision_at: null })
+      .eq('id', roomId);
+
+    if (updateError) throw new Error(`Error reseting room timer: ${updateError.message}`);
   }
 
   async addParticipant(roomId: string, userId: string): Promise<void> {
@@ -173,6 +188,9 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
 
   async saveDecision(roomId: string, outcome: DecisionOutcome): Promise<void> {
     const supabase = await createClient();
+
+    // Guardem la decisió i actualitzem el timestamp de la sala
+    // Nota: Això és per decisions manuals. Les màgiques usen la seva pròpia acció.
     const { error } = await supabase
       .from('group_decisions')
       .insert({
@@ -180,11 +198,19 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
         choice: outcome.choice,
         reason: outcome.reason,
         created_at: outcome.generatedAt.toISOString()
+        // metadata: outcome.metadata // Si el teu ValueObject en té, posa-ho aquí
       });
+
     if (error) throw new Error(error.message);
+
+    // Actualitzem el last_decision_at de la sala
+    await supabase
+      .from('decision_rooms')
+      .update({ last_decision_at: new Date().toISOString() })
+      .eq('id', roomId);
   }
 
-  // 4. CERCA DE SALES PER USUARI (TIPAT CORRECTAMENT)
+  // 4. CERCA DE SALES PER USUARI
   async findByParticipantId(userId: string): Promise<DecisionRoom[]> {
     const supabase = await createClient();
 
@@ -206,23 +232,19 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
 
     if (participations) {
       for (const p of participations) {
-        // Unió de tipus per gestionar si Supabase retorna objecte o array
         const rawRoom = p.room as unknown as (DbRoom | DbRoom[] | null);
-
         if (!rawRoom) continue;
 
         const roomData = Array.isArray(rawRoom) ? rawRoom[0] : rawRoom;
-
-        // Protecció addicional per si roomData fos null
         if (!roomData) continue;
 
         rooms.push(new DecisionRoom({
           id: roomData.id,
           hostUserId: roomData.host_user_id,
-          inviteCode: roomData.invite_code, // ✅ AFEGIR AQUESTA LÍNIA AL MAPPER
+          inviteCode: roomData.invite_code,
           name: roomData.name,
           votingMode: (roomData.voting_mode as 'BLIND' | 'PUBLIC') || 'BLIND',
-          participants: [], // A la llista resum no carreguem tots els participants
+          participants: [],
           history: []
         }));
       }

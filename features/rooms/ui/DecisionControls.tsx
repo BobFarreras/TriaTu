@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react';
+// ✅ IMPORTAR LA NOVA ACCIÓ MÀGICA
+import { generateMagicDecisionAction } from '@/app/actions/decision-actions'; 
 import { makeGroupDecisionAction } from '@/app/actions/room-actions';
 import { addCandidateAction, toggleVotingModeAction, removeCandidateAction } from '@/app/actions/candidate-actions';
 import { Button } from '@/components/ui/Button';
@@ -36,14 +38,9 @@ export function DecisionControls({
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // ❌ HE ELIMINAT EL USEEFFECT QUE DONAVA ERROR
-  // No cal sincronitzar l'estat. Simplement usarem 'displayValue' a baix.
-
   const handleAddCandidate = async () => {
-    // Si estem en mode simulació, deleguem al pare
     if (onSimulatedAdd && simulatedInputValue) {
         onSimulatedAdd();
-        // No netegem l'estat local perquè estem usant la prop simulada
         return;
     }
 
@@ -68,10 +65,20 @@ export function DecisionControls({
     });
   };
 
+  // ⚡ AQUI ESTAVA EL PROBLEMA ⚡
   const handleDecide = () => {
     setError(null);
     startTransition(async () => {
-      const res = await makeGroupDecisionAction(roomId, mode);
+      let res;
+
+      // Si estem en mode MÀGIC, cridem a l'algoritme de recomanació
+      if (mode === 'magic') {
+          res = await generateMagicDecisionAction(roomId);
+      } else {
+          // Si estem en mode MANUAL (Roulotte), cridem a l'atzar simple
+          res = await makeGroupDecisionAction(roomId, mode);
+      }
+
       if (!res.success) setError(res.error || t.room.err_general);
     });
   };
@@ -82,8 +89,6 @@ export function DecisionControls({
     });
   };
 
-  // ✅ SOLUCIÓ: Calculem el valor a mostrar "al vol"
-  // Si hi ha simulació, manen les dades del tour. Si no, l'estat local.
   const displayInputValue = simulatedInputValue || inputValue;
   const showLoading = isPending || isSimulatingLoading;
 
@@ -143,7 +148,6 @@ export function DecisionControls({
                 >
                   {isHidden ? t.room.hidden_candidate : c.content}
                   
-                  {/* Botó esborrar (desactivat si és fake) */}
                   {(isMine || isHost) && !c.id.startsWith('fake-') && (
                     <button 
                       onClick={() => handleDeleteCandidate(c.id)}
@@ -167,12 +171,10 @@ export function DecisionControls({
           {/* INPUT BARRA INFERIOR */}
           <div id="tour-room-input" className="flex gap-2 relative">
               <input 
-                // ✅ AQUÍ ÉS LA CLAU: Usem la variable calculada
                 value={displayInputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={t.room.input_placeholder}
-                // Desactivem l'input real si estem simulant per evitar conflictes visuals
                 readOnly={!!simulatedInputValue}
                 className="w-full pl-6 pr-4 py-4 bg-zinc-800 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-bold text-lg text-white placeholder:text-zinc-600 transition-all"
               />
@@ -206,6 +208,7 @@ export function DecisionControls({
           <Button 
             onClick={handleDecide}
             isLoading={showLoading}
+            // En mode màgic no necessitem candidats a la llista, els busca a la BD
             disabled={mode === 'manual' && candidates.length === 0}
             className={`w-full text-xl py-6 rounded-2xl shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98] ${
                 mode === 'magic' 
