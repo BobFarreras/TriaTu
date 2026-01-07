@@ -1,18 +1,21 @@
-// =================== FILE: src/app/actions/auth-actions.ts ===================
+// src/app/actions/auth-actions.ts
 'use server'
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
 
-export async function login(formData: FormData) {
+// ✅ Definim la interfície de resposta (Domain Layer)
+// Això és Clean Code: definim el contracte del que retorna la nostra acció
+export type AuthResult = { error: string } | void;
+
+export async function login(formData: FormData): Promise<AuthResult> {
   const supabase = await createClient();
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  
-  // Obtenim el 'next' i el sanegem
   const nextRaw = formData.get('next') as string;
+  // Sanitize: Si next és buit o null, fallback a dashboard
   const next = nextRaw || '/dashboard';
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -21,20 +24,19 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    // Retornem l'error sense fer redirect (millor UX)
+    // Retornem l'objecte d'error (compatible amb AuthResult)
     return { error: error.message };
   }
 
-  // 🛡️ SECURITY CHECK: Evitem Open Redirects
-  // Només redirigim si la ruta comença per '/' (és interna)
-  // Si algú intenta ?next=http://malicious.com, el forcem a /dashboard
+  // Prevenció Open Redirect
   const finalRedirect = next.startsWith('/') ? next : '/dashboard';
 
   revalidatePath('/', 'layout');
+  // Redirect llança una excepció interna ("NEXT_REDIRECT"), per tant, tècnicament retorna `void` abans de sortir.
   redirect(finalRedirect);
 }
 
-export async function signup(formData: FormData) {
+export async function signup(formData: FormData): Promise<AuthResult> {
   const supabase = await createClient();
 
   const email = formData.get('email') as string;

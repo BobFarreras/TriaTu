@@ -1,12 +1,12 @@
-// =================== FILE: src/adapters/supabase/middleware.ts ===================
+// src/utils/supabase/middleware.ts
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
-  // 1. Creem una resposta inicial
-  // Això és necessari perquè Supabase pugui injectar les cookies aquí
-  let supabaseResponse = NextResponse.next({
-    request,
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
   });
 
   const supabase = createServerClient(
@@ -18,60 +18,39 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // A. Actualitzem cookies a la REQUEST (perquè els Server Components les vegin)
-          cookiesToSet.forEach(({ name, value }) => 
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          
-          // B. Regenerem la resposta amb les noves cookies
-          supabaseResponse = NextResponse.next({
+          response = NextResponse.next({
             request,
           });
-          
-          // C. Actualitzem cookies a la RESPONSE (perquè el navegador les guardi)
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            response.cookies.set(name, value, options)
           );
         },
       },
     }
   );
 
-  // 2. Refresquem sessió (Això fa la màgia de mantenir l'usuari loguejat)
+  // 1. Obtenim l'usuari de manera segura
   const { data: { user } } = await supabase.auth.getUser();
 
-  // 3. PROTECCIÓ DE RUTES
-  const path = request.nextUrl.pathname;
-
-  // Definim explícitament on pot anar un usuari SENSE estar loguejat
-  const publicPaths = [
-    '/login', 
-    '/register', 
-    '/auth',   // Per callbacks de confirmació d'email
-    '/invite', // ✅ IMPRESCINDIBLE per entrar a sales
-    '/'        // Landing page
-  ];
-
-  // Comprovem si l'usuari està intentant accedir a una ruta pública
-  const isAccessingPublicPath = publicPaths.some(publicPath => 
-    path.startsWith(publicPath)
-  );
-
-  // CAS: Usuari NO loguejat intenta anar a lloc privat -> Redirigir a Login
-  if (!user && !isAccessingPublicPath) {
+  // 2. PROTECCIÓ DE RUTES (Aquí és on fallava el test segurament)
+  // Si no hi ha usuari I la ruta comença per /dashboard...
+  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    // Guardem on volia anar per tornar-hi després
-    url.searchParams.set('next', path);
+    // Afegim el next param per millorar la UX després del login
+    url.searchParams.set('next', request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
 
-  // CAS: Usuari JA loguejat intenta anar a Login o Register -> Redirigir a Dashboard
-  if (user && (path === '/login' || path === '/register')) {
+  // 3. (Opcional) Si ja està loguejat i va al login/register, enviar al dashboard
+  if (user && (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register'))) {
      const url = request.nextUrl.clone();
-     url.pathname = '/dashboard'; // O '/rooms'
+     url.pathname = '/dashboard';
      return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  return response;
 }
