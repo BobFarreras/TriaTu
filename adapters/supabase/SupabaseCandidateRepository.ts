@@ -30,16 +30,14 @@ export class SupabaseCandidateRepository implements CandidateRepository {
     async getAllForRoom(roomId: string): Promise<Candidate[]> {
         const supabase = await createClient();
 
-        // Tipem la resposta de Supabase amb <CandidateRow[]>
         const { data, error } = await supabase
             .from('room_candidates')
             .select('*')
             .eq('room_id', roomId)
-            .returns<CandidateRow[]>(); // <--- TRUC MÀGIC PER EVITAR ANY
+            .returns<CandidateRow[]>();
 
         if (error) throw new Error(error.message);
 
-        // Ara 'd' ja té tipus CandidateRow, no cal 'any'
         return (data || []).map((d) => ({
             id: d.id,
             roomId: d.room_id,
@@ -48,15 +46,26 @@ export class SupabaseCandidateRepository implements CandidateRepository {
         }));
     }
     
-    async deleteById(candidateId: string, userId: string): Promise<void> {
+    // ⚠️ AQUI ESTAVA EL PROBLEMA ⚠️
+    async deleteById(candidateId: string): Promise<void> {
         const supabase = await createClient();
-        const { error } = await supabase
+        
+        // CORRECCIÓ:
+        // 1. Traiem .eq('user_id', userId) -> L'RLS ja decidirà si tens permís.
+        // 2. Afegim count: 'exact' -> Per saber si realment s'ha esborrat.
+        
+        const { error, count } = await supabase
             .from('room_candidates')
-            .delete()
-            .eq('id', candidateId)
-            .eq('user_id', userId);
+            .delete({ count: 'exact' }) 
+            .eq('id', candidateId);
+            // .eq('user_id', userId);  <-- ELIMINAT! L'Admin no és el propietari, però pot esborrar.
 
         if (error) throw new Error(error.message);
+
+        // Si count és 0, vol dir que l'RLS t'ha bloquejat o la ID no existeix
+        if (count === 0) {
+            throw new Error("No tens permís per esborrar aquesta opció o ja no existeix.");
+        }
     }
 
     async deleteAllForRoom(roomId: string): Promise<void> {

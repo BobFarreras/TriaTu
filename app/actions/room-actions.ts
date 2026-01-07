@@ -7,7 +7,7 @@ import { container } from '@/services/container';
 // ✅ Imports correctes dels Adapters
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
-import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger'; 
+import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
 
 import {
   CreateRoomSchema,
@@ -21,7 +21,7 @@ import { ResolveAutoDecision } from '@/core/usecases/decision/ResolveAutoDecisio
 import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
 import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
 import { RuleBasedDecisionProvider } from '@/adapters/ai/RuleBaseDecisionProvider';
-
+import { checkRoomDailyLimit } from '@/lib/security/decision-limit'; // ✅ IMPORT NOU
 
 
 // Tipus de retorn
@@ -112,7 +112,7 @@ export async function addCandidateAction(roomId: string, content: string): Promi
 
   // B. RATE LIMITING (Anti-Spam)
   const limiter = new SupabaseRateLimiter();
-  
+
   // Clau única: usuari + acció + sala (perquè pugui escriure a altres sales si vol)
   const canProceed = await limiter.check(
     `add_cand:${user.id}:${roomId}`,
@@ -123,12 +123,12 @@ export async function addCandidateAction(roomId: string, content: string): Promi
   // C. LOGGING DE SEGURETAT (Si supera el límit)
   if (!canProceed) {
     const logger = new SupabaseSecurityLogger();
-    
+
     // Registrem l'intent de spam
     await logger.log('WARN', 'RATE_LIMIT_BREACH', user.id, {
-        action: 'add_candidate',
-        roomId: roomId,
-        limit: 10
+      action: 'add_candidate',
+      roomId: roomId,
+      limit: 10
     });
 
     return { success: false, error: "Estàs enviant opcions massa ràpid. Relaxa't un moment." };
@@ -165,6 +165,12 @@ export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'm
     return { success: false, error: getZodError(validation.error) };
   }
 
+
+  // 1. 🛡️ VERIFICAR LÍMITS (Ara la manual també està protegida!)
+  const limitCheck = await checkRoomDailyLimit(supabase, roomId);
+  if (!limitCheck.allowed) {
+    return { success: false, error: limitCheck.error };
+  }
   try {
     let outcome;
 
@@ -176,7 +182,7 @@ export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'm
       const provider = new RuleBasedDecisionProvider();        // ✅ El provider simple
 
       const useCase = new ResolveAutoDecision(roomRepo, profileRepo, provider);
-      
+
       // Execute llençarà error si estem en Cooldown (Time Invariant)
       outcome = await useCase.execute(roomId, user.id);
 
@@ -185,7 +191,7 @@ export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'm
       // Utilitza els candidats que els usuaris han escrit manualment
       const useCase = container.getMakeGroupDecision();
       outcome = await useCase.execute({
-        roomId, 
+        roomId,
         requesterUserId: user.id,
         mode
       });
@@ -207,7 +213,7 @@ export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'm
 
     // Gestió visual de l'error de Cooldown que ve de la teva entitat DecisionRoom
     if (msg.includes("Wait")) {
-       return { success: false, error: `⏳ ${msg}` };
+      return { success: false, error: `⏳ ${msg}` };
     }
 
     return { success: false, error: msg };

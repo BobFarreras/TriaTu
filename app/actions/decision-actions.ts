@@ -8,7 +8,7 @@ import { IndividualDecisionSchema } from '@/core/application/schemas/inputSchema
 // ✅ NOUS IMPORTS NECESSARIS PER LA FUNCIÓ MÀGICA
 import { createClient } from '@/adapters/supabase/server';
 import { findBestRecipe, ParticipantProfile, RecipeCandidate } from '@/core/domain/services/recommendation-service';
-
+import { checkRoomDailyLimit } from '@/lib/security/decision-limit'; // ✅ IMPORT NOU
 // ✅ IMPORTS CENTRALITZATS
 import { DbProfileRow, DbSavedRecipe, DbCommunityRecipe } from '@/adapters/supabase/types/database.dtos';
 // DTOs
@@ -74,8 +74,40 @@ export async function generateMagicDecisionAction(roomId: string) {
   console.log('\n⚡ MAGIC DECISION START --- Room:', roomId);
   const supabase = await createClient();
 
+  // 1. 🛡️ VERIFICAR LÍMITS (Centralitzat)
+  const limitCheck = await checkRoomDailyLimit(supabase, roomId);
+  if (!limitCheck.allowed) {
+    return { success: false, error: limitCheck.error };
+  }
+
   try {
-    // --- PAS 1: FETCH PARTICIPANT IDs ---
+    // ---------------------------------------------------------
+    // 1. 🛡️ SEGURETAT: RATE LIMITING
+    // ---------------------------------------------------------
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    const { count, error: countError } = await supabase
+      .from('group_decisions')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', roomId)
+      .gte('created_at', oneDayAgo);
+
+    if (countError) {
+      console.error("Rate Limit Error:", countError);
+    } else {
+      const DAILY_LIMIT = 10;
+      if (count !== null && count >= DAILY_LIMIT) {
+        console.warn(`🛑 Room ${roomId} hit the daily limit (${count}/${DAILY_LIMIT})`);
+        return {
+          success: false,
+          error: `Límit diari assolit! Heu fet ${count} decisions avui. Torneu-hi demà o trieu manualment.`
+        };
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 2. FETCH PARTICIPANTS & PROFILES
+    // ---------------------------------------------------------
     const { data: participants, error: pError } = await supabase
       .from('room_participants')
       .select('user_id')
@@ -87,7 +119,6 @@ export async function generateMagicDecisionAction(roomId: string) {
     const userIds = participants.map(p => p.user_id);
     console.log(`👥 Found ${userIds.length} participants. Fetching profiles...`);
 
-    // --- PAS 2: FETCH PROFILS ---
     const { data: rawProfiles, error: profError } = await supabase
       .from('preference_profiles')
       .select('user_id, exclusions, food_preferences')
@@ -96,21 +127,19 @@ export async function generateMagicDecisionAction(roomId: string) {
 
     if (profError) throw new Error("Error fetching profiles: " + profError.message);
 
-    console.log("🥗 PROFILES FETCHED:", JSON.stringify(rawProfiles, null, 2));
-
     const groupProfile: ParticipantProfile[] = (rawProfiles || []).map((p) => ({
       id: p.user_id,
-      // Mapegem exclusions a allergies per seguretat (Hard Constraint)
       allergies: p.exclusions || [],
       dislikes: [],
       preferences: p.food_preferences || []
     }));
 
-    // --- PAS 3: FETCH RECEPTES (SAVED RECIPES) ---
-    // Consultem DIRECTAMENT la taula, sense joins que no existeixen
+    // ---------------------------------------------------------
+    // 3. FETCH RECEPTES (Saved -> Fallback Community)
+    // ---------------------------------------------------------
     const { data: rawSavedRecipes, error: rError } = await supabase
       .from('saved_recipes')
-      .select('id, name, dietary_tags, tags') // camps reals de la taula
+      .select('id, name, dietary_tags, tags')
       .limit(50)
       .returns<DbSavedRecipe[]>();
 
@@ -118,24 +147,17 @@ export async function generateMagicDecisionAction(roomId: string) {
 
     const candidates: RecipeCandidate[] = (rawSavedRecipes || [])
       .map((r) => {
-        // Combinem tags i dietary_tags per tenir més informació
         const safeTags = Array.isArray(r.dietary_tags) ? r.dietary_tags : [];
-        // Si tags és un array jsonb, l'afegim
         const extraTags = Array.isArray(r.tags) ? r.tags : [];
-
         return {
           id: r.id,
-          title: r.name, // Mapegem 'name' -> 'title'
+          title: r.name,
           tags: [...safeTags, ...extraTags],
-          description: '' // saved_recipes no té description, ho deixem buit
+          description: ''
         };
       });
 
-    console.log(`📂 Loaded ${candidates.length} saved recipes.`);
-
-    // Fallback: COMMUNITY RECIPES (Receptes Públiques)
     if (candidates.length === 0) {
-      console.log("⚠️ No saved recipes, fetching PUBLIC community recipes...");
       const { data: publicRecipes, error: pubError } = await supabase
         .from('community_recipes')
         .select('id, title, tags, description')
@@ -154,34 +176,42 @@ export async function generateMagicDecisionAction(roomId: string) {
       }
     }
 
-    if (candidates.length === 0) throw new Error("No recipes found anywhere (Saved or Community).");
+    if (candidates.length === 0) throw new Error("No recipes found anywhere.");
 
-    // --- PAS 4: EXECUTAR ALGORITME ---
+    // ---------------------------------------------------------
+    // 4. EXECUTAR ALGORITME
+    // ---------------------------------------------------------
     const result = findBestRecipe(groupProfile, candidates);
 
     if (!result.success || !result.choice) {
       throw new Error(result.error || "Decision failed");
     }
 
-    // --- PAS 5: GUARDAR A DB (CORREGIT) ---
-    // Canviem 'room_history' per 'group_decisions' que és la taula real del teu esquema
+    // ---------------------------------------------------------
+    // 5. GUARDAR A DB
+    // ---------------------------------------------------------
     const decisionEntry = {
       room_id: roomId,
       choice: result.choice,
       reason: result.reason,
-      metadata: result.metadata, // Ara funcionarà gràcies al SQL del Pas 1
-      // Opcional: Si vols omplir candidates_proposed per tenir històric
+      metadata: result.metadata,
       candidates_proposed: candidates.map(c => c.title)
     };
 
     const { error: dbError } = await supabase
-      .from('group_decisions') // 👈 NOM CORREGIT
+      .from('group_decisions')
       .insert([decisionEntry]);
 
     if (dbError) {
       console.error("DB Insert Error:", dbError);
       throw new Error("Error guardant la decisió: " + dbError.message);
     }
+
+    // ✅ EXTRA: Actualitzem el timestamp de la sala (per coherència amb el Repository)
+    await supabase
+      .from('decision_rooms')
+      .update({ last_decision_at: new Date().toISOString() })
+      .eq('id', roomId);
 
     revalidatePath(`/room/${roomId}`);
     return { success: true };

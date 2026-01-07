@@ -59,18 +59,26 @@ export async function toggleVotingModeAction(roomId: string, mode: 'BLIND' | 'PU
 
 // ✅ FIX: Afegim 'roomId' com a segon paràmetre per poder refrescar
 export async function removeCandidateAction(candidateId: string, roomId: string) {
+  console.log(`🗑️ [ACTION] removeCandidate START. ID: ${candidateId}, Room: ${roomId}`);
+  
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!user) {
+      console.error("❌ [ACTION] Unauthorized: No user session");
+      return { success: false, error: "Unauthorized" };
+  }
+
+  console.log(`👤 [ACTION] User attempting delete: ${user.id}`);
 
   try {
     const useCase = container.getRemoveCandidate();
     await useCase.execute(candidateId, user.id);
     
-    // ✅ FIX: Ara sí que podem refrescar la sala
+    console.log(`✅ [ACTION] Remove Success! Revalidating path...`);
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
+    console.error("❌ [ACTION ERROR] Remove Failed:", error);
     const msg = error instanceof Error ? error.message : "Unknown error";
     return { success: false, error: msg };
   }
