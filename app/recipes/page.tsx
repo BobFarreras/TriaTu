@@ -5,7 +5,7 @@ import { RecipeFeed } from '@/components/recipes/RecipeFeed';
 import { FilterBar } from '@/components/recipes/FilterBar';
 import { BackButton } from '@/components/ui/BackButton';
 import { CreateRecipeButton } from '@/components/recipes/CreateRecipeButton';
-import { CommunityHeader } from '@/components/recipes/CommunityHeader'; // ✅ Import nou
+import { CommunityHeader } from '@/components/recipes/CommunityHeader';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -27,15 +27,24 @@ export default async function CommunityPage(props: PageProps) {
   
   const ITEMS_PER_PAGE = 8;
 
+  // DEBUG
+  console.log(`\n🛑 [DEBUG FILTER] Filtre: "${filterType}" | Pàgina: ${page}`);
+
   const tags: string[] = [];
   let maxTime: number | undefined = undefined;
 
-  if (filterType === 'VEGGIE') tags.push('vegetarian');
-  if (filterType === 'VEGAN') tags.push('vegan');
-  if (filterType === 'GLUTEN_FREE') tags.push('gluten-free');
-  if (filterType === 'DAIRY_FREE') tags.push('dairy-free');
-  if (filterType === 'DESSERT') tags.push('postres', 'dolços');
-  if (filterType === 'FAST') maxTime = 20;
+  // ✅ FILTRES ACTUALITZATS (Coincideixen amb la columna dietary_tags)
+  if (filterType === 'VEGGIE') tags.push('vegetarià');
+  if (filterType === 'VEGAN') tags.push('vegà');
+  if (filterType === 'GLUTEN_FREE') tags.push('sense gluten');
+  if (filterType === 'DAIRY_FREE') tags.push('sense lactosa');
+  if (filterType === 'DESSERT') tags.push('postres'); 
+  
+  if (filterType === 'FAST') {
+      maxTime = 20;
+  }
+
+  console.log(`🛑 [DEBUG TAGS] Buscant tags:`, tags);
 
   const { recipes, total } = await searchUseCase.execute({
     searchTerm: query,
@@ -44,6 +53,14 @@ export default async function CommunityPage(props: PageProps) {
     limit: ITEMS_PER_PAGE,
     offset: (page - 1) * ITEMS_PER_PAGE
   });
+
+  console.log(`✅ [DEBUG RESULT] Trobades: ${total}`);
+  
+  // ✅ FIX: Eliminat 'any'. Usem toPrimitives() per accedir a les dades de forma segura.
+  if (recipes.length > 0) {
+      const firstRecipeData = recipes[0].toPrimitives(); 
+      console.log(`   --> Primera: "${firstRecipeData.name}"`);
+  }
 
   const plainRecipes = recipes.map(recipe => recipe.toPrimitives());
 
@@ -55,7 +72,6 @@ export default async function CommunityPage(props: PageProps) {
 
   return (
     <main className="container mx-auto px-4 py-6">
-      {/* HEADER: Ara utilitza el component Client per traduccions */}
       <div className="flex flex-row justify-between items-start mb-6 gap-4">
         <CommunityHeader /> 
         <BackButton />

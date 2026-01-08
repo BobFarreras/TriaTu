@@ -5,42 +5,37 @@ import { RecipeProps } from '@/core/domain/entities/Recipe';
 import { motion } from 'framer-motion';
 import { StarRating } from './StarRating';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { getIngredientEmoji } from '@/lib/utils/emojiUtils';
+// ✅ IMPORTEM LA NOVA UTILITAT
+import { getIngredientEmoji, getMainEmoji } from '@/lib/utils/emojiUtils';
 
 interface Props {
   recipe: RecipeProps;
   userId?: string;
   userRating: number;
-
-}
-
-
-
-function getMainEmoji(name: string): string {
-    const n = name.toLowerCase();
-    if (n.includes('pizza')) return '🍕';
-    if (n.includes('hamburg')) return '🍔';
-    if (n.includes('pasta')) return '🍝';
-    if (n.includes('arròs') || n.includes('paella')) return '🥘';
-    if (n.includes('sushi')) return '🍣';
-    if (n.includes('amanida')) return '🥗';
-    if (n.includes('pastís')) return '🍰';
-    if (n.includes('pollastre')) return '🍗';
-    if (n.includes('carn')) return '🥩';
-    if (n.includes('peix')) return '🐟';
-    if (n.includes('taco')) return '🌮';
-    if (n.includes('sopa')) return '🥣';
-    return '🍽️';
 }
 
 export function RecipeCard({ recipe, userId, userRating }: Props) {
-  // ✅ 3. AGARREM LES TRADUCCIONS DEL CONTEXT
   const { t } = useLanguage();
-  // Fem un àlies per comoditat (assumint que les claus estan a create_recipe.card)
-  // Si vols moure-ho a una clau més genèrica com 'common.card', canvia-ho aquí i al diccionari.
-  const labels = t.create_recipe.card; 
+  
+  const labels = t.create_recipe.card as {
+    view_sr: string;
+    prep_time: string;
+    created_by_you: string;
+    created_by_community: string;
+  };
 
-  const mainEmoji = getMainEmoji(recipe.name);
+  // ✅ SOLUCIÓ SENSE 'ANY': Intersecció de tipus
+  // Això diu: recipe és RecipeProps I TAMBÉ pot tenir tags
+  const recipeWithTags = recipe as RecipeProps & { tags?: string[] | unknown };
+  
+  // Validem que sigui un array abans d'enviar-ho
+  const safeTags: string[] = Array.isArray(recipeWithTags.tags) 
+    ? recipeWithTags.tags as string[] 
+    : [];
+
+  // Usem la funció importada
+  const mainEmoji = getMainEmoji(recipe.name, safeTags);
+  
   const isAuthor = recipe.authorId === userId;
 
   return (
@@ -53,13 +48,13 @@ export function RecipeCard({ recipe, userId, userRating }: Props) {
       className="group relative flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg transition-all hover:border-purple-500/40"
     >
       <Link href={`/recipes/${recipe.id}`} className="absolute inset-0 z-10" prefetch={false}>
-        {/* ✅ Ara labels ja existeix gràcies al hook */}
         <span className="sr-only">{labels.view_sr} {recipe.name}</span>
       </Link>
 
       {/* --- CAPÇALERA --- */}
       <div className="relative p-5 flex gap-4 items-center bg-linear-to-r from-slate-800 to-slate-900 border-b border-slate-800">
         <div className="shrink-0 w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-4xl shadow-inner border border-slate-700 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+            {/* ✅ Emoji millorat renderitzat aquí */}
             {mainEmoji}
         </div>
         <div className="flex-1 min-w-0">
@@ -97,8 +92,8 @@ export function RecipeCard({ recipe, userId, userRating }: Props) {
       <div className="bg-slate-950 p-4 border-t border-slate-800 flex items-center justify-between relative z-20">
           <div className="flex flex-col gap-1.5">
              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                <span className="bg-slate-800 px-2 py-0.5 rounded text-xs flex items-center gap-1">
-                    ⏱️ {recipe.prepTimeMinutes}{labels.prep_time}
+                <span className="bg-slate-800 px-2 py-0.5 rounded-lg text-xs flex items-center gap-1">
+                    ⏱️ {recipe.prepTimeMinutes} {labels.prep_time}
                 </span>
              </div>
              

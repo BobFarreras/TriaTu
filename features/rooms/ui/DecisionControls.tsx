@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react';
-// ✅ IMPORTAR LA NOVA ACCIÓ MÀGICA
-import { generateMagicDecisionAction } from '@/app/actions/decision-actions';
-import { makeGroupDecisionAction } from '@/app/actions/room-actions';
+// ✅ 1. IMPORT CORRECTE: Importem només l'acció unificada des de decision-actions
+import { makeGroupDecisionAction } from '@/app/actions/decision-actions';
 import { addCandidateAction, toggleVotingModeAction, removeCandidateAction } from '@/app/actions/candidate-actions';
 import { Button } from '@/components/ui/Button';
 import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
@@ -33,7 +32,7 @@ export function DecisionControls({
   roomId, userId, isHost, mode, candidates, votingMode,
   simulatedInputValue = '', isSimulatingLoading = false, onSimulatedAdd
 }: Props) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -65,19 +64,13 @@ export function DecisionControls({
     });
   };
 
-  // ⚡ AQUI ESTAVA EL PROBLEMA ⚡
+  // ✅ 2. FUNCIÓ SIMPLIFICADA
   const handleDecide = () => {
     setError(null);
     startTransition(async () => {
-      let res;
-
-      // Si estem en mode MÀGIC, cridem a l'algoritme de recomanació
-      if (mode === 'magic') {
-        res = await generateMagicDecisionAction(roomId);
-      } else {
-        // Si estem en mode MANUAL (Roulotte), cridem a l'atzar simple
-        res = await makeGroupDecisionAction(roomId, mode);
-      }
+      
+      // Ara cridem SEMPRE a la mateixa funció, passant el mode i l'idioma
+      const res = await makeGroupDecisionAction(roomId, mode, locale);
 
       if (!res.success) setError(res.error || t.room.err_general);
     });
@@ -90,7 +83,7 @@ export function DecisionControls({
       const res = await removeCandidateAction(candidateId, roomId);
       if (!res.success) {
         console.error("❌ [UI] Error deleting:", res.error);
-        alert("Error: " + res.error); // Feedback visual ràpid
+        alert("Error: " + res.error);
       } else {
         console.log("✅ [UI] Delete action completed.");
       }
@@ -219,8 +212,8 @@ export function DecisionControls({
             // En mode màgic no necessitem candidats a la llista, els busca a la BD
             disabled={mode === 'manual' && candidates.length === 0}
             className={`w-full text-xl py-6 rounded-2xl shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98] ${mode === 'magic'
-                ? 'bg-purple-600 border-purple-800 hover:bg-purple-500 text-white'
-                : 'bg-green-600 border-green-800 hover:bg-green-500 text-white'
+              ? 'bg-purple-600 border-purple-800 hover:bg-purple-500 text-white'
+              : 'bg-green-600 border-green-800 hover:bg-green-500 text-white'
               }`}
           >
             {mode === 'magic' ? t.room.decide_magic : t.room.decide_roll}

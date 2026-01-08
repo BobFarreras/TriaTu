@@ -133,6 +133,22 @@ export const en = {
     copy_error: "Error copying link",
     share_title: "Join '{name}'",
     share_text: "Hey! Help me decide in room '{name}'. Join here:",
+    history: {
+      title: "Wall of Fame",
+      empty: "There are no trophies yet",
+      type_recipe: "Recipe",
+      type_algo: "Algorithm",
+      type_manual: "Manual",
+      match: "Match",
+      allergies: "Allergies",
+      safe: "Safe",
+      view_recipe: "View Ingredients and Steps",
+      show_more: "Show {count} more decisions...",
+      magic_match: "✨ Magic! This recipe matches the tastes of {count} people!",
+      magic_safe: "⚠️ Safe Bet: No taste matches, but it's safe for everyone.",
+      manual_reason: "Luck has decided! 🎲"
+    }
+
 
   },
   landing: {

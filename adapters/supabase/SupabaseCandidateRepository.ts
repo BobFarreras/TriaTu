@@ -2,36 +2,33 @@ import { CandidateRepository } from "@/core/ports/CandidateRepository";
 import { createClient } from "@/adapters/supabase/server";
 import { Candidate } from "@/core/domain/entities/Candidate";
 
-// ✅ DEFINIM LA FORMA DE LA TAULA (DTO)
+// DTO per a TypeScript
 interface CandidateRow {
-  id: string;
-  room_id: string;
-  user_id: string;
-  content: string;
+    id: string;
+    room_id: string;
+    user_id: string;
+    content: string;
 }
 
 export class SupabaseCandidateRepository implements CandidateRepository {
 
+    // 1. AFEGIR
     async add(roomId: string, userId: string, content: string): Promise<void> {
         const supabase = await createClient();
-
-        console.log(`🛠️ [REPO] Intentant INSERT amb user: ${userId}`);
-
+        
         const { error } = await supabase
-            .from('room_candidates')
+            .from('room_candidates') // ✅ TAULA ORIGINAL
             .insert({ room_id: roomId, user_id: userId, content });
 
-        if (error) {
-            console.error(`⛔ [DB ERROR]`, error);
-            throw new Error(error.message);
-        }
+        if (error) throw new Error(error.message);
     }
 
+    // 2. LLISTAR
     async getAllForRoom(roomId: string): Promise<Candidate[]> {
         const supabase = await createClient();
 
         const { data, error } = await supabase
-            .from('room_candidates')
+            .from('room_candidates') // ✅ TAULA ORIGINAL
             .select('*')
             .eq('room_id', roomId)
             .returns<CandidateRow[]>();
@@ -46,32 +43,25 @@ export class SupabaseCandidateRepository implements CandidateRepository {
         }));
     }
     
-    // ⚠️ AQUI ESTAVA EL PROBLEMA ⚠️
-    async deleteById(candidateId: string): Promise<void> {
+    // 3. ESBORRAR (PER ID)
+    // Ajustem la signatura per complir amb la teva interfície: (candidateId, userId)
+    async deleteById(candidateId: string, userId: string): Promise<void> {
         const supabase = await createClient();
         
-        // CORRECCIÓ:
-        // 1. Traiem .eq('user_id', userId) -> L'RLS ja decidirà si tens permís.
-        // 2. Afegim count: 'exact' -> Per saber si realment s'ha esborrat.
-        
-        const { error, count } = await supabase
-            .from('room_candidates')
-            .delete({ count: 'exact' }) 
+        const { error } = await supabase
+            .from('room_candidates') // ✅ TAULA ORIGINAL
+            .delete()
             .eq('id', candidateId);
-            // .eq('user_id', userId);  <-- ELIMINAT! L'Admin no és el propietari, però pot esborrar.
+            // .eq('user_id', userId) // Descomenta si no tens RLS i vols seguretat extra
 
         if (error) throw new Error(error.message);
-
-        // Si count és 0, vol dir que l'RLS t'ha bloquejat o la ID no existeix
-        if (count === 0) {
-            throw new Error("No tens permís per esborrar aquesta opció o ja no existeix.");
-        }
     }
 
+    // 4. ESBORRAR TOTS (Per neteja de sala)
     async deleteAllForRoom(roomId: string): Promise<void> {
         const supabase = await createClient();
         const { error } = await supabase
-            .from('room_candidates')
+            .from('room_candidates') // ✅ TAULA ORIGINAL
             .delete()
             .eq('room_id', roomId);
 

@@ -135,6 +135,22 @@ export const es = {
     copy_error: "Error al copiar el enlace",
     share_title: "Únete a '{name}'",
     share_text: "¡Ey! Ayúdame a decidir qué hacemos en la sala '{name}'. Entra aquí:",
+    history: {
+      title: "Muro de la Fama",
+      empty: "Aún no hay trofeos",
+      type_recipe: "Receta",
+      type_algo: "Algoritmo",
+      type_manual: "Manual",
+      match: "Coincidencia",
+      allergies: "Alergias",
+      safe: "Segura",
+      view_recipe: "Ver Ingredientes y Pasos",
+      show_more: "Mostrar {count} decisiones más...",
+      magic_match: "✨ ¡Magia! ¡Esta receta encaja con los gustos de {count} personas!",
+      magic_safe: "⚠️ Opción Segura: Sin coincidencias de gustos, pero apta para todos.",
+      manual_reason: "¡La suerte ha decidido! 🎲"
+    }
+
 
   },
   landing: {

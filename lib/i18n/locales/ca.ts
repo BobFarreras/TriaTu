@@ -138,6 +138,24 @@ export const ca = {
     // Textos per compartir per WhatsApp:
     share_title: "Uneix-te a '{name}'",
     share_text: "Ei! Ajuda'm a decidir què fem a la sala '{name}'. Entra aquí:",
+    // ✅ AFEGEIX AQUEST BLOC NOU:
+    history: {
+      title: "Mur de la Fama",
+      empty: "Encara no hi ha trofeus",
+      type_recipe: "Recepta",
+      type_algo: "Algoritme",
+      type_manual: "Manual",
+      match: "Coincidència",
+      allergies: "Al·lèrgies",
+      safe: "Segura",
+      view_recipe: "Veure Ingredients i Passos",
+      show_more: "Mostrar {count} decisions més...",
+      // ✅ CLAUS NOVES PER A LA LÒGICA DE DECISIÓ:fa
+      magic_match: "✨ Màgia! Aquesta recepta encaixa amb els gustos de {count} persones!",
+      magic_safe: "⚠️ Opció Segura: No hi ha coincidències de gustos, però és apta per a tothom.",
+      manual_reason: "La sort ha decidit! 🎲"
+    }
+    
   },
   landing: {
     // ... (Mantén el teu contingut de landing)

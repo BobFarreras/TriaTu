@@ -4,25 +4,14 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
-// ✅ Imports correctes dels Adapters
-import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
-import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
-import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
 
+// Imports del domini i esquemes
 import {
   CreateRoomSchema,
   ParticipantActionSchema,
-  MakeDecisionSchema,
   ClearHistorySchema,
-  AddCandidateSchema
+  // MakeDecisionSchema <-- JA NO EL NECESSITEM AQUÍ
 } from '@/core/application/schemas/inputSchemas';
-// Imports de la teva nova lògica AUTO
-import { ResolveAutoDecision } from '@/core/usecases/decision/ResolveAutoDecision';
-import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
-import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
-import { RuleBasedDecisionProvider } from '@/adapters/ai/RuleBaseDecisionProvider';
-import { checkRoomDailyLimit } from '@/lib/security/decision-limit'; // ✅ IMPORT NOU
-
 
 // Tipus de retorn
 export type ActionState = {
@@ -41,7 +30,7 @@ type CreateRoomResult = {
   error?: string;
 };
 
-// Helper per errors de Zod (unknown per passar linter)
+// Helper per errors de Zod
 function getZodError(error: z.ZodError<unknown>): string {
   return error.issues[0]?.message || "Dades invàlides";
 }
@@ -91,137 +80,7 @@ export async function joinRoomAction(roomId: string, userId: string): Promise<Ac
 }
 
 // ---------------------------------------------------------
-// 3. AFEGIR CANDIDAT (AMB SEGURETAT COMPLETA)
-// ---------------------------------------------------------
-export async function addCandidateAction(roomId: string, content: string): Promise<ActionState> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { success: false, error: "Unauthorized" };
-
-  // A. VALIDACIÓ INPUT (Zod)
-  const validation = AddCandidateSchema.safeParse({
-    roomId,
-    userId: user.id,
-    content
-  });
-
-  if (!validation.success) {
-    return { success: false, error: getZodError(validation.error) };
-  }
-
-  // B. RATE LIMITING (Anti-Spam)
-  const limiter = new SupabaseRateLimiter();
-
-  // Clau única: usuari + acció + sala (perquè pugui escriure a altres sales si vol)
-  const canProceed = await limiter.check(
-    `add_cand:${user.id}:${roomId}`,
-    10, // Max 10 candidats
-    60  // En 60 segons
-  );
-
-  // C. LOGGING DE SEGURETAT (Si supera el límit)
-  if (!canProceed) {
-    const logger = new SupabaseSecurityLogger();
-
-    // Registrem l'intent de spam
-    await logger.log('WARN', 'RATE_LIMIT_BREACH', user.id, {
-      action: 'add_candidate',
-      roomId: roomId,
-      limit: 10
-    });
-
-    return { success: false, error: "Estàs enviant opcions massa ràpid. Relaxa't un moment." };
-  }
-
-  try {
-    const repo = new SupabaseCandidateRepository();
-    await repo.add(validation.data.roomId, validation.data.userId, validation.data.content);
-
-    revalidatePath(`/rooms/${roomId}`);
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : "Error afegint opció" };
-  }
-}
-
-// ---------------------------------------------------------
-// 4. MAKE DECISION (DISPATCHER: MANUAL vs MAGIC)
-// ---------------------------------------------------------
-export async function makeGroupDecisionAction(roomId: string, mode: 'magic' | 'manual') {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { success: false, error: "Unauthorized" };
-
-  // Validem input
-  const validation = MakeDecisionSchema.safeParse({
-    roomId,
-    requesterUserId: user.id,
-    mode
-  });
-
-  if (!validation.success) {
-    return { success: false, error: getZodError(validation.error) };
-  }
-
-
-  // 1. 🛡️ VERIFICAR LÍMITS (Ara la manual també està protegida!)
-  const limitCheck = await checkRoomDailyLimit(supabase, roomId);
-  if (!limitCheck.allowed) {
-    return { success: false, error: limitCheck.error };
-  }
-  try {
-    let outcome;
-
-    if (mode === 'magic') {
-      // 🔮 MODE AUTO (Nou fluxe amb les teves entitats)
-      // Instanciem les dependències aquí per claredat (o utilitzem container si ho registrem allà)
-      const roomRepo = new SupabaseDecisionRoomRepository();
-      const profileRepo = new SupabaseUserProfileRepository(); // ✅ El teu repo
-      const provider = new RuleBasedDecisionProvider();        // ✅ El provider simple
-
-      const useCase = new ResolveAutoDecision(roomRepo, profileRepo, provider);
-
-      // Execute llençarà error si estem en Cooldown (Time Invariant)
-      outcome = await useCase.execute(roomId, user.id);
-
-    } else {
-      // 🎲 MODE MANUAL (Flux existent)
-      // Utilitza els candidats que els usuaris han escrit manualment
-      const useCase = container.getMakeGroupDecision();
-      outcome = await useCase.execute({
-        roomId,
-        requesterUserId: user.id,
-        mode
-      });
-    }
-
-    revalidatePath(`/rooms/${roomId}`);
-
-    return {
-      success: true,
-      outcome: {
-        choice: outcome.choice,
-        reason: outcome.reason
-      }
-    };
-
-  } catch (error: unknown) {
-    console.error("Action Error:", error);
-    const msg = error instanceof Error ? error.message : "Error desconegut";
-
-    // Gestió visual de l'error de Cooldown que ve de la teva entitat DecisionRoom
-    if (msg.includes("Wait")) {
-      return { success: false, error: `⏳ ${msg}` };
-    }
-
-    return { success: false, error: msg };
-  }
-}
-
-// ---------------------------------------------------------
-// 5. KICK PARTICIPANT
+// 3. KICK PARTICIPANT
 // ---------------------------------------------------------
 export async function kickParticipantAction(roomId: string, participantId: string) {
   const supabase = await createClient();
@@ -252,7 +111,7 @@ export async function kickParticipantAction(roomId: string, participantId: strin
 }
 
 // ---------------------------------------------------------
-// 6. CLEAR HISTORY
+// 4. CLEAR HISTORY
 // ---------------------------------------------------------
 export async function clearHistoryAction(roomId: string) {
   const supabase = await createClient();
