@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { FOOD_DATA, EXCLUSION_DATA } from '@/core/constants/profile-data';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Importem context
-
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { StackedEmoji } from '@/components/ui/StackedEmoji'; // ✅ IMPORT NOU
 interface Props {
     foodPreferences: string[];
     exclusions: string[];
@@ -19,27 +19,51 @@ interface UIItem {
     label: string;
 }
 
-// Helper de dades
-const findItemData = (id: string, dataset: typeof FOOD_DATA): UIItem => {
+// ✅ 1. HELPER: Accepta un diccionari genèric
+const findItemData = (
+    id: string, 
+    dataset: typeof FOOD_DATA, 
+    dictionary: Record<string, string> | undefined
+): UIItem => {
+    // A. Busquem l'emoji a les dades estàtiques
+    let emoji = '❓';
     for (const category of dataset) {
         const item = category.items.find((i) => i.id === id);
-        if (item) return { id: item.id, emoji: item.emoji, label: item.id };
+        if (item) {
+            emoji = item.emoji;
+            break;
+        }
     }
-    return { id, emoji: '❓', label: id };
+
+    // B. Busquem la traducció. Si no hi és, tornem l'ID
+    const label = dictionary ? (dictionary[id] || id) : id;
+
+    return { id, emoji, label };
 };
 
 export function UserPreferencesSidebar({ foodPreferences, exclusions, className }: Props) {
-    const { t } = useLanguage(); // ✅ Hook
-    // 1. Preparem dades
+    const { t } = useLanguage();
+    
+    // ✅ 2. GUSTOS: Fem servir 't.profile.food'
     const preferencesList = useMemo(() => {
         const safe = Array.isArray(foodPreferences) ? foodPreferences : [];
-        return safe.map(id => findItemData(id, FOOD_DATA));
-    }, [foodPreferences]);
+        
+        // TRUC: Fem un cast a 'any' o 'Record' per evitar que TS es queixi si les claus no coincideixen exactament
+        // Això imita el que fèiem al ProfileForm
+        const dict = (t.profile?.food || {}) as Record<string, string>; 
+        
+        return safe.map(id => findItemData(id, FOOD_DATA, dict));
+    }, [foodPreferences, t]);
 
+    // ✅ 3. EXCLUSIONS: Fem servir 't.profile.exclusions'
     const exclusionsList = useMemo(() => {
         const safe = Array.isArray(exclusions) ? exclusions : [];
-        return safe.map(id => findItemData(id, EXCLUSION_DATA));
-    }, [exclusions]);
+        
+        // TRUC: Mateix sistema per les exclusions
+        const dict = (t.profile?.exclusions || {}) as Record<string, string>;
+
+        return safe.map(id => findItemData(id, EXCLUSION_DATA, dict));
+    }, [exclusions, t]);
 
     return (
         <aside className={`
@@ -52,7 +76,7 @@ export function UserPreferencesSidebar({ foodPreferences, exclusions, className 
                 <Link
                     href="/profile"
                     className="w-10 h-10 bg-indigo-600 hover:bg-indigo-500 rounded-xl flex items-center justify-center border-b-[3px] border-indigo-900 active:border-b-0 active:translate-y-0.75 transition-all group shadow-lg shadow-indigo-900/20"
-                    title={t.profile.sidebar.edit} // ✅ Traducció
+                    title={t.profile?.sidebar?.edit || "Editar"} 
                 >
                     <span className="text-xl group-hover:rotate-12 transition-transform filter drop-shadow-md">😎</span>
                 </Link>
@@ -61,7 +85,7 @@ export function UserPreferencesSidebar({ foodPreferences, exclusions, className 
             {/* 2. ZONA GUSTOS */}
             <div className="w-full flex-2 min-h-0 border-b border-zinc-800/50 flex flex-col relative">
                 <ScrollableSection
-                    title={t.profile.sidebar.likes} // ✅ Traducció
+                    title={t.profile?.sidebar?.likes || "GUSTOS"} 
                     items={preferencesList}
                     color="green"
                 />
@@ -70,7 +94,7 @@ export function UserPreferencesSidebar({ foodPreferences, exclusions, className 
             {/* 3. ZONA ALÈRGIES */}
             <div className="w-full flex-1 min-h-0 flex flex-col relative pt-2">
                 <ScrollableSection
-                    title={t.profile.sidebar.alerts} // ✅ Traducció
+                    title={t.profile?.sidebar?.alerts || "ALERTA"} 
                     items={exclusionsList}
                     color="red"
                 />
@@ -80,10 +104,9 @@ export function UserPreferencesSidebar({ foodPreferences, exclusions, className 
     );
 }
 
-// ----------------------------------------------------------------------
-// COMPONENT: SECCIÓ AMB SCROLL MANUAL (Fletxes)
-// ----------------------------------------------------------------------
-
+// ... (La resta del codi ScrollableSection i ItemBubble es manté igual que abans)
+// ...
+// ...
 interface SectionProps {
     title: string;
     items: UIItem[];
@@ -95,37 +118,30 @@ function ScrollableSection({ title, items, color }: SectionProps) {
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
 
-    // Funció per comprovar si calen fletxes
     const checkScroll = () => {
         if (listRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = listRef.current;
             setCanScrollUp(scrollTop > 0);
-            // Donem 1px de marge per errors de arrodoniment
             setCanScrollDown(scrollTop + clientHeight < scrollHeight - 1);
         }
     };
 
-    // Observer per detectar canvis de mida o d'items
     useEffect(() => {
         checkScroll();
         const element = listRef.current;
         if (!element) return;
-
         element.addEventListener('scroll', checkScroll);
-        // També observem si canvia la mida de la finestra
         const resizeObserver = new ResizeObserver(checkScroll);
         resizeObserver.observe(element);
-
         return () => {
             element.removeEventListener('scroll', checkScroll);
             resizeObserver.disconnect();
         };
     }, [items]);
 
-    // Acció de moure l'scroll
     const scroll = (direction: 'up' | 'down') => {
         if (listRef.current) {
-            const scrollAmount = 120; // Píxels a moure (aprox 3 items)
+            const scrollAmount = 120;
             listRef.current.scrollBy({
                 top: direction === 'up' ? -scrollAmount : scrollAmount,
                 behavior: 'smooth'
@@ -139,43 +155,25 @@ function ScrollableSection({ title, items, color }: SectionProps) {
 
     return (
         <div className="flex flex-col h-full w-full items-center">
-            {/* Títol fix */}
             <div className={`text-[9px] font-black ${labelColor} uppercase tracking-widest py-1 opacity-80 shrink-0`}>
                 {title}
             </div>
-
-            {/* Fletxa PUJAR (Només si cal) */}
             <div className="h-6 shrink-0 flex items-center justify-center w-full">
                 {canScrollUp && (
-                    <button
-                        onClick={() => scroll('up')}
-                        className="text-zinc-600 hover:text-white transition-colors animate-in fade-in slide-in-from-bottom-2 duration-200"
-                    >
+                    <button onClick={() => scroll('up')} className="text-zinc-600 hover:text-white transition-colors animate-in fade-in slide-in-from-bottom-2 duration-200">
                         <ChevronUp size={16} />
                     </button>
                 )}
             </div>
-
-            {/* Llista Scrollable (Scrollbar amagat) */}
-            <div
-                ref={listRef}
-                className="flex-1 w-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 py-1"
-            >
+            <div ref={listRef} className="flex-1 w-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 py-1">
                 {items.map((item) => (
                     <ItemBubble key={item.id} {...item} variant={color} />
                 ))}
-
-                {/* Indicador final (opcional, per omplir espai) */}
                 <div className="h-4 w-full shrink-0"></div>
             </div>
-
-            {/* Fletxa BAIXAR (Només si cal) */}
             <div className="h-6 shrink-0 flex items-center justify-center w-full">
                 {canScrollDown && (
-                    <button
-                        onClick={() => scroll('down')}
-                        className="text-zinc-600 hover:text-white transition-colors animate-in fade-in slide-in-from-top-2 duration-200"
-                    >
+                    <button onClick={() => scroll('down')} className="text-zinc-600 hover:text-white transition-colors animate-in fade-in slide-in-from-top-2 duration-200">
                         <ChevronDown size={16} />
                     </button>
                 )}
@@ -185,7 +183,7 @@ function ScrollableSection({ title, items, color }: SectionProps) {
 }
 
 // ----------------------------------------------------------------------
-// SUBCOMPONENTS VISUALS (Tooltips & Bubbles)
+// COMPONENT: BUBBLE AMB SUPORT PER EMOJIS MULTIPLES (STACKED)
 // ----------------------------------------------------------------------
 
 function ItemBubble({ emoji, label, variant }: { emoji: string; label: string; variant: 'green' | 'red' }) {
@@ -196,9 +194,9 @@ function ItemBubble({ emoji, label, variant }: { emoji: string; label: string; v
     const handleMouseEnter = () => {
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
-            setCoords({
-                top: rect.top + (rect.height / 2),
-                left: rect.right + 12
+            setCoords({ 
+                top: rect.top + (rect.height / 2), 
+                left: rect.right + 12 
             });
             setIsHovered(true);
         }
@@ -211,18 +209,19 @@ function ItemBubble({ emoji, label, variant }: { emoji: string; label: string; v
 
     return (
         <>
-            <div
-                ref={triggerRef}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={() => setIsHovered(false)}
-                title={label} // <--- ADD THIS: Native tooltip and test accessibility
+            <div 
+                ref={triggerRef} 
+                onMouseEnter={handleMouseEnter} 
+                onMouseLeave={() => setIsHovered(false)} 
+                aria-label={label} 
                 className={`
-                w-12 h-12 shrink-0 rounded-lg border flex items-center justify-center text-lg cursor-help transition-all duration-200
-                ${styles[variant]}
-                ${isHovered ? 'scale-110 shadow-lg ring-1 ring-white/20' : ''}
-            `}
+                    w-12 h-12 shrink-0 rounded-lg border flex items-center justify-center cursor-help transition-all duration-200 relative overflow-hidden
+                    ${styles[variant]} 
+                    ${isHovered ? 'scale-110 shadow-lg ring-1 ring-white/20' : ''}
+                `}
             >
-                {emoji}
+                {/* ✅ Usem el component compartit (size="md") */}
+                <StackedEmoji emoji={emoji} size="md" />
             </div>
 
             {isHovered && (
@@ -234,20 +233,10 @@ function ItemBubble({ emoji, label, variant }: { emoji: string; label: string; v
 
 function PortalTooltip({ top, left, label }: { top: number, left: number, label: string }) {
     if (typeof document === 'undefined') return null;
-
     return createPortal(
-        <div
-            className="fixed z-9999 pointer-events-none flex items-center animate-in fade-in zoom-in-95 duration-150"
-            style={{
-                top: top,
-                left: left,
-                transform: 'translateY(-50%)'
-            }}
-        >
+        <div className="fixed z-9999 pointer-events-none flex items-center animate-in fade-in zoom-in-95 duration-150" style={{ top: top, left: left, transform: 'translateY(-50%)' }}>
             <div className="w-0 h-0 border-t-[6px] border-t-transparent border-r-[6px] border-r-zinc-900 border-b-[6px] border-b-transparent -mr-px"></div>
-            <div className="bg-zinc-900 border border-zinc-700 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-2xl whitespace-nowrap">
-                {label}
-            </div>
+            <div className="bg-zinc-900 border border-zinc-700 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-2xl whitespace-nowrap">{label}</div>
         </div>,
         document.body
     );

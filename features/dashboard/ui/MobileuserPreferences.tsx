@@ -1,4 +1,3 @@
-// src/components/profile/MobileUserPreferences.tsx
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
@@ -6,7 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { FOOD_DATA, EXCLUSION_DATA } from '@/core/constants/profile-data';
-
+import { StackedEmoji } from '@/components/ui/StackedEmoji'; // ✅ IMPORT NOU
 interface Props {
   foodPreferences: string[];
   exclusions: string[];
@@ -19,26 +18,46 @@ interface UIItem {
     label: string;
 }
 
-const findItemData = (id: string, dataset: typeof FOOD_DATA): UIItem => {
+// ✅ 1. HELPER ACTUALITZAT (Igual que al Sidebar)
+const findItemData = (
+    id: string, 
+    dataset: typeof FOOD_DATA, 
+    dictionary: Record<string, string> | undefined
+): UIItem => {
+  // A. Busquem l'emoji
+  let emoji = '❓';
   for (const category of dataset) {
     const item = category.items.find((i) => i.id === id);
-    if (item) return { id: item.id, emoji: item.emoji, label: item.id };
+    if (item) {
+        emoji = item.emoji;
+        break;
+    }
   }
-  return { id, emoji: '❓', label: id };
+  
+  // B. Busquem la traducció al diccionari
+  const label = dictionary ? (dictionary[id] || id) : id;
+
+  return { id, emoji, label };
 };
 
 export function MobileUserPreferences({ foodPreferences, exclusions, className }: Props) {
   const { t } = useLanguage();
   
+  // ✅ 2. GUSTOS: Passem 't.profile.food'
   const preferencesList = useMemo(() => {
     const safe = Array.isArray(foodPreferences) ? foodPreferences : [];
-    return safe.map(id => findItemData(id, FOOD_DATA));
-  }, [foodPreferences]);
+    const dict = (t.profile?.food || {}) as Record<string, string>;
 
+    return safe.map(id => findItemData(id, FOOD_DATA, dict));
+  }, [foodPreferences, t]);
+
+  // ✅ 3. EXCLUSIONS: Passem 't.profile.exclusions'
   const exclusionsList = useMemo(() => {
     const safe = Array.isArray(exclusions) ? exclusions : [];
-    return safe.map(id => findItemData(id, EXCLUSION_DATA));
-  }, [exclusions]);
+    const dict = (t.profile?.exclusions || {}) as Record<string, string>;
+
+    return safe.map(id => findItemData(id, EXCLUSION_DATA, dict));
+  }, [exclusions, t]);
 
   const hasData = preferencesList.length > 0 || exclusionsList.length > 0;
 
@@ -73,8 +92,8 @@ export function MobileUserPreferences({ foodPreferences, exclusions, className }
 
           {!hasData && (
              <span className="text-zinc-500 text-xs italic whitespace-nowrap pl-2">
-                {/* TRADUCCIÓ APLICADA */}
-                {t.profile.no_data}
+                {/* Fallback per si no existeix la traducció */}
+                {t.profile?.no_data || "Sense dades"}
              </span>
           )}
         </div>
@@ -83,7 +102,6 @@ export function MobileUserPreferences({ foodPreferences, exclusions, className }
   );
 }
 
-// ... (La resta de components auxiliars MobileBubble i MobilePortalTooltip es mantenen igual)
 // ----------------------------------------------------------------
 // BUBBLE MÒBIL AMB PORTAL TOOLTIP (CLICK)
 // ----------------------------------------------------------------
@@ -116,12 +134,13 @@ function MobileBubble({ emoji, label, variant }: { emoji: string; label: string;
             ref={triggerRef}
             onClick={handleClick}
             className={`
-                shrink-0 w-9 h-9 rounded-full border flex items-center justify-center text-lg transition-transform active:scale-95
+                shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-transform active:scale-95 relative overflow-hidden
                 ${styles[variant]}
                 ${isActive ? 'ring-2 ring-white/20 scale-105' : ''}
             `}
         >
-            {emoji}
+            {/* ✅ Usem el component compartit (size="sm") */}
+            <StackedEmoji emoji={emoji} size="sm" />
         </div>
         {isActive && (
             <MobilePortalTooltip top={coords.top} left={coords.left} label={label} />
@@ -135,14 +154,14 @@ function MobilePortalTooltip({ top, left, label }: { top: number, left: number, 
 
     return createPortal(
         <div 
-            className="fixed z-[9999] pointer-events-none flex flex-col items-center animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
+            className="fixed z-9999 pointer-events-none flex flex-col items-center animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
             style={{ 
                 top: top, 
                 left: left, 
                 transform: 'translateX(-50%)'
             }}
         >
-            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-zinc-900 -mt-[6px] mb-[0px]"></div>
+            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-zinc-900 -mt-1.5 mb-0"></div>
             <div className="bg-zinc-900 border border-zinc-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap">
                 {label}
             </div>
