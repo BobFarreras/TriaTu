@@ -905,6 +905,11 @@ export const es = {
 
 
 
+  },
+  errors: {
+    username_empty: "El nombre de usuario es obligatorio.",
+    save_error: "No se pudo guardar. Inténtalo de nuevo.",
+    generic: "Ocurrió un error inesperado."
   }
 
 };

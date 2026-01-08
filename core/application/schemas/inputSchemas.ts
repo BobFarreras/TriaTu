@@ -54,7 +54,7 @@ export const AuthSchema = z.object({
 // --- 2. PERFIL D'USUARI (Update Profile) ---
 export const UpdateProfileSchema = z.object({
   userId: UuidSchema,
-  username: SafeText.max(30, "El nom d'usuari és massa llarg (màx 30)"),
+  username: z.string().trim().min(1, { message: "ERR_USERNAME_EMPTY" }),
   // Acceptem emojis o text curt. Regex simple per evitar scripts
   avatarEmoji: z.string().trim().max(5, "Només un emoji").regex(/^[^<>]*$/, "Emoji invàlid").optional().or(z.literal('')),
   foodPreferences: z.array(SafeText).max(20, "Màxim 20 preferències"),
@@ -104,3 +104,5 @@ export const ToggleStockSchema = z.object({
   quantityRequired: z.number().positive(),
   action: z.enum(['CONSUME', 'RESTORE'])
 });
+
+

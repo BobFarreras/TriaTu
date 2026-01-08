@@ -905,6 +905,11 @@ export const en = {
 
 
 
+  },
+  errors: {
+    username_empty: "Username is required.",
+    save_error: "Could not save. Please try again.",
+    generic: "An unexpected error occurred."
   }
 
 };

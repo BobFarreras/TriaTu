@@ -905,11 +905,15 @@ export const ca = {
       step_candidates_desc: "Aquí apareixeran totes les propostes del grup. Si ets el Host, pots esborrar les que no t'agradin.",
 
       step_input_title: "Proposa Alguna Cosa! 💡",
-      step_input_desc: "Escriu la teva idea (ex: 'Pizza', 'Sushi') i prem el botó + per afegir-la a la llista.",
 
       step_action_title: "El Botó de la Veritat 🔴",
       step_action_desc: "Quan tothom hagi posat les seves opcions, prem aquest botó i la IA decidirà el guanyador!"
 
     }
   },
+  errors: {
+    username_empty: "El nom d'usuari és obligatori.",
+    save_error: "No s'ha pogut guardar. Torna-ho a provar.",
+    generic: "Ha passat un error inesperat."
+  }
 };

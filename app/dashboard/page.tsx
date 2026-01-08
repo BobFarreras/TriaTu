@@ -1,51 +1,53 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
-import { DashboardContent } from '@/features/dashboard/ui/DashboardContent'; // Assegura't que la ruta és correcta
+import { DashboardContent } from '@/features/dashboard/ui/DashboardContent'; 
 import { container } from '@/services/container';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
+// ✅ IMPORT DEL REPOSITORI NOU
+import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect('/login');
 
-  const name = user.email?.split('@')[0] || 'Jugador 1';
+  // ✅ 1. RECUPEREM EL PERFIL COMPLET (Amb la lògica que hem arreglat)
+  const userRepo = new SupabaseUserProfileRepository();
+  const userProfile = await userRepo.getById(user.id);
 
-  // ✅ 1. RECUPEREM LES SALES (Server Side)
+  // ✅ 2. DETERMINEM EL NOM A MOSTRAR
+  // Si té 'username' al perfil, el fem servir. Si no, agafem el mail.
+  const displayName = userProfile?.username || user.email?.split('@')[0] || 'Chef';
+
+  // ✅ 3. RECUPEREM LES SALES (Server Side)
   const getUserRooms = container.getUserRooms();
   const rooms = await getUserRooms.execute(user.id);
 
-  // ✅ 2. RECUPEREM EL PERFIL (NOU)
-  // Nota: Si tens un UseCase 'getUserProfile', usa'l. Si no, fem una crida directa segura (Read Model).
-  const { data: rawProfile } = await supabase
-    .from('preference_profiles')
-    .select('food_preferences, exclusions')
-    .eq('user_id', user.id)
-    .single();
-
-  // Normalitzem per evitar errors si és null
-  const profile = {
-    foodPreferences: rawProfile?.food_preferences || [],
-    exclusions: rawProfile?.exclusions || []
+  // ✅ 4. PREPAREM LES DADES DEL PERFIL PER A LA UI
+  // Fem servir els getters de l'entitat UserProfile (.preferences, .restrictions)
+  const profileData = {
+    foodPreferences: userProfile?.preferences || [],
+    exclusions: userProfile?.restrictions || []
   };
 
-  // ✅ 3. Mapegem a DTO simple per a les sales
+  // ✅ 5. MAPEGEM A DTO PER A LES SALES
   const roomsDTO = rooms.map(r => ({
     id: r.id,
     name: r.name,
     isHost: r.hostUserId === user.id
   }));
 
-  // ✅ 4. Passem totes les dades al client
+  // ✅ 6. RENDERITZEM
   return (
-    <OnboardingProvider> {/* 👈 IMPORTANT */}
-      <OnboardingOverlay /> {/* 👈 IMPORTANT */}
+    <OnboardingProvider>
+      <OnboardingOverlay />
       <DashboardContent
-        userName={name}
+        userName={displayName} // Ara passarà "Hakermain" (o el que tinguis)
         userId={user.id}
         userRooms={roomsDTO}
-        profileData={profile} // Ara 'profile' ja existeix
+        profileData={profileData}
       />
     </OnboardingProvider>
   );

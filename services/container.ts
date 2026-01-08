@@ -3,10 +3,9 @@ import { SupabaseClient } from '@supabase/supabase-js'; // ✅ Importem el tipus
 // ADAPTERS - SUPABASE
 import { SupabaseDecisionRepository } from '@/adapters/supabase/SupabaseDecisionRepository';
 import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
-import { SupabasePreferenceRepository } from '@/adapters/supabase/SupabasePreferenceRepository';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
 import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository';
-import { SupabaseUserRepository } from '@/adapters/supabase/SupabaseUserRepository';
+
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 
 // ADAPTERS - AI
@@ -25,7 +24,7 @@ import { RecipeMatcher } from '@/core/domain/services/RecipeMatcher';
 
 // PORTS (Interfícies)
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
-import { UserRepository } from '@/core/ports/UserRepository';
+
 import { RecipeRepository } from '@/core/ports/RecipeRepository';
 
 // USE CASES - ROOMS & DECISIONS
@@ -58,11 +57,12 @@ import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe
 import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
 import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration'; // ✅ NOU
 import { SupabaseRankingRepository } from '@/adapters/supabase/SupabaseRankingRepository';
+import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
 // --- INSTÀNCIES STATELESS (Singletons Implícits) ---
 // Són classes que no guarden estat intern, per tant podem reutilitzar la mateixa instància sempre.
 const decisionRepo = new SupabaseDecisionRepository();
 const roomRepo = new SupabaseDecisionRoomRepository();
-const profileRepo = new SupabasePreferenceRepository();
+
 const foodKnowledgeService = new FoodKnowledgeService();
 const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
@@ -78,24 +78,27 @@ const robustRecognizer = new FallbackImageRecognizer(geminiAdapter, openAIAdapte
 // --- DOMAIN SERVICES ---
 const recipeMatcher = new RecipeMatcher();
 
+
+// ✅ CORRECCIÓ: Instanciem el repositori BO
+const userProfileRepo = new SupabaseUserProfileRepository();
 // --- LAZY SINGLETONS ---
 // Inicialitzem sota demanda per estalviar recursos o evitar problemes d'ordre d'inicialització.
 let recipeGeneratorInstance: RecipeGenerator | null = null;
-let userRepositoryInstance: UserRepository | null = null;
+
 
 export const container = {
   // === DECISION & ROOMS ===
-  getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, profileRepo, individualEngine),
+  getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, userProfileRepo, individualEngine),
   getCreateDecisionRoom: () => new CreateDecisionRoom(roomRepo),
   getJoinDecisionRoom: () => new JoinDecisionRoom(roomRepo),
-  getMakeGroupDecision: () => new MakeGroupDecision(roomRepo, profileRepo, candidateRepo, groupResolver),
+  getMakeGroupDecision: () => new MakeGroupDecision(roomRepo, userProfileRepo, candidateRepo, groupResolver),
   getRemoveParticipant: () => new RemoveParticipant(roomRepo),
   getClearRoomHistory: () => new ClearRoomHistory(roomRepo),
   getSetVotingMode: () => new SetRoomVotingMode(roomRepo),
   getUserRooms: () => new GetUserRooms(roomRepo),
 
   // === CANDIDATES & PROFILE ===
-  getUpdateUserProfile: () => new UpdateUserProfile(profileRepo),
+  getUpdateUserProfile: () => new UpdateUserProfile(userProfileRepo),
   getAddCandidate: () => new AddCandidate(candidateRepo),
   getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
 
@@ -120,13 +123,7 @@ export const container = {
     return recipeGeneratorInstance;
   },
 
-  // === USER ===
-  getUserRepository: (): UserRepository => {
-    if (!userRepositoryInstance) {
-      userRepositoryInstance = new SupabaseUserRepository();
-    }
-    return userRepositoryInstance;
-  },
+
 
   // === RECIPES (DATA & USE CASES) ===
 

@@ -1,11 +1,9 @@
-import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
-import { PreferenceProfile } from '@/core/domain/entities/PreferenceProfile';
-import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
+import { DecisionRoom } from '../domain/entities/DecisionRoom';
+import { DecisionOutcome } from '../domain/value-objects/DecisionOutcome';
+import { UserProfile } from '../domain/entities/UserProfile'; // ✅ NOU IMPORT
 
 export interface GroupDecisionResolver {
-  resolve(
-      room: DecisionRoom, 
-      participantProfiles: PreferenceProfile[], 
-      candidates?: string[] // <-- NOU PARÀMETRE
-  ): Promise<DecisionOutcome>;
+  // ABANS: resolve(room: DecisionRoom, profiles: PreferenceProfile[]): Promise<DecisionOutcome>;
+  // ARA:
+  resolve(room: DecisionRoom, profiles: UserProfile[]): Promise<DecisionOutcome>;
 }
