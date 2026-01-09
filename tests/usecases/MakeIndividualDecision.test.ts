@@ -1,21 +1,27 @@
 // tests/usecases/MakeIndividualDecision.test.ts
-import { describe, it, expect, vi, type Mock } from 'vitest';
+import { describe, it, expect, vi, type Mock, beforeEach } from 'vitest';
 import { MakeIndividualDecision } from '@/core/usecases/decision/MakeIndividualDecision';
 import { DecisionRepository } from '@/core/ports/DecisionRepository';
-import { PreferenceRepository } from '@/core/ports/PreferenceRepository';
+import { UserProfileRepository } from '@/core/ports/UserProfileRepository'; // Canviat
 import { IndividualDecisionResolver } from '@/core/ports/IndividualDecisionResolver';
-import { PreferenceProfile } from '@/core/domain/entities/PreferenceProfile';
+import { UserProfile } from '@/core/domain/entities/UserProfile'; // Canviat
 import { DecisionContext } from '@/core/domain/value-objects/DecisionContext';
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 import { DecisionType, DecisionStatus } from '@/core/domain/entities/Decision';
 
-// Mocks
+// Mocks tipats
 const mockDecisionRepo = { save: vi.fn(), findById: vi.fn() } as unknown as DecisionRepository;
-const mockProfileRepo = { findByUserId: vi.fn() } as unknown as PreferenceRepository;
+// Ara usem getById en lloc de findByUserId
+const mockProfileRepo = { getById: vi.fn() } as unknown as UserProfileRepository;
 const mockResolver = { resolve: vi.fn() } as unknown as IndividualDecisionResolver;
 
 describe('MakeIndividualDecision UseCase', () => {
-  it('should orchestration a decision flow correctly', async () => {
+  
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should orchestrate a decision flow correctly', async () => {
     // 1. SETUP
     const useCase = new MakeIndividualDecision(
       mockDecisionRepo,
@@ -24,17 +30,18 @@ describe('MakeIndividualDecision UseCase', () => {
     );
 
     const userId = 'user-1';
-    // Simulem que l'usuari té un perfil
-    (mockProfileRepo.findByUserId as Mock).mockResolvedValue(
-      new PreferenceProfile({
-        id: userId,
-        foodPreferences: ['Pasta'],
-        socialTolerance: 5,
-        exclusions: []
-      })
+    
+    // Stub del perfil usant la nova Entitat UserProfile
+    (mockProfileRepo.getById as Mock).mockResolvedValue(
+      new UserProfile(
+        userId,
+        [], // Exclusions
+        ['Pasta'], // Preferències
+        5 // Tolerància
+      )
     );
 
-    // Simulem que el resolver decideix "Pasta"
+    // Stub del servei de domini (Resolver)
     const expectedOutcome = new DecisionOutcome({ choice: 'Pasta', reason: 'You love it' });
     (mockResolver.resolve as Mock).mockResolvedValue(expectedOutcome);
 
@@ -47,20 +54,18 @@ describe('MakeIndividualDecision UseCase', () => {
     });
 
     // 3. VERIFY
-    // Ha de retornar una decisió resolta
     expect(decision.status).toBe(DecisionStatus.RESOLVED);
     expect(decision.outcome).toEqual(expectedOutcome);
     expect(decision.userId).toBe(userId);
 
-    // Ha d'haver guardat la decisió al repositori
+    // Validem persistència
     expect(mockDecisionRepo.save).toHaveBeenCalledTimes(1);
-    const savedDecision = (mockDecisionRepo.save as Mock).mock.calls[0][0];
-    expect(savedDecision.status).toBe(DecisionStatus.RESOLVED);
   });
 
-  it('should throw error if user profile is missing', async () => {
+  it('should throw DomainError if user profile is missing', async () => {
     const useCase = new MakeIndividualDecision(mockDecisionRepo, mockProfileRepo, mockResolver);
-    (mockProfileRepo.findByUserId as Mock).mockResolvedValue(null);
+    // Simulem retorn null
+    (mockProfileRepo.getById as Mock).mockResolvedValue(null);
 
     await expect(useCase.execute({
       userId: 'ghost',

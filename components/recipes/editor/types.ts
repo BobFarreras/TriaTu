@@ -1,39 +1,55 @@
-// src/components/recipes/types.ts
+// src/components/recipes/editor/types.ts
 
-// Tipus per a la UI de l'inventari
+import { StorageLocation } from "@/core/domain/entities/StorageLocation";
+
+// ✅ 1. CORRECCIÓ: Fem servir string en lloc d'any.
+// La UI tractarà les categories com a text simple.
+export type FoodCategory = string;
+
+export interface FoodPreset {
+  id: string;
+  name: string;
+  emoji: string;
+  category: FoodCategory;
+  // ✅ 2. CORRECCIÓ: La UI accepta qualsevol string com a unitat.
+  // El pont amb el tipus estricte el farem al component pare.
+  defaultUnit: string; 
+  defaultLoc?: StorageLocation;
+  // ✅ 3. CORRECCIÓ: Afegim 'step' que faltava
+  step: number;
+}
+
 export interface InventoryItemUI {
   id: string;
   name: string;
   quantity: number;
   unit: string;
   expiryDate?: Date;
+  emoji?: string;
 }
 
-// Estructura d'un ingredient dins la recepta
 export interface Ingredient {
+  id: string;
   name: string;
   quantity: number;
   unit: string;
+  expiryDate?: Date;
+  emoji?: string;
 }
 
-// ✅ DEFINICIÓ ESTRICTE D'UN PAS (Evitem 'any')
-// Això et permetrà escalar (afegir imatges, timers, etc.) sense trencar res.
 export interface RecipeStep {
-  id: string;      // Identificador únic per a la gestió del DOM (keys)
-  content: string; // El text de la instrucció
+  id: string;
+  content: string;
 }
 
-// ✅ AQUESTA ERA LA CAUSA DE L'ERROR
-// Abans tenies steps: string[], ara ho forcem a RecipeStep[]
 export interface EditorData {
   name: string;
   prepTimeMinutes: number;
   ingredients: Ingredient[];
-  steps: RecipeStep[]; // <-- CORREGIT
+  steps: RecipeStep[];
   dietaryTags: string[];
 }
 
-// Tipat per a les etiquetes de text (Labels)
 export interface IngredientsLabels {
   title: string;
   selected: string;
@@ -44,12 +60,12 @@ export interface IngredientsLabels {
   basket_empty: string;
 }
 
-// ✅ DEFINICIÓ ESTRICTE DELS TEXTOS (Adeu 'any')
+// ✅ 3. CORRECCIÓN: Añadida la interfaz StepsLabels que faltaba
 export interface StepsLabels {
   title: string;
   placeholder: string;
   new_step_title: string;
   new_step_desc: string;
   empty_state: string;
-  [key: string]: string; // Index signature per si hi ha claus extra
+  [key: string]: string; // Índice para permitir claves dinámicas si es necesario
 }

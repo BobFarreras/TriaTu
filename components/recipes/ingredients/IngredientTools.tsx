@@ -1,20 +1,23 @@
+// src/components/recipes/editor/ingredients/IngredientTools.tsx
+'use client'
+
 import { Search, X } from 'lucide-react';
-import { PRESET_CATEGORIES, FoodCategory, FOOD_PRESETS } from "@/lib/food-presets";
-import { InventoryItemUI, IngredientsLabels, Ingredient } from '../editor/types'; 
 import { motion, AnimatePresence } from 'framer-motion';
+// Assegura't que importes els tipus des de '../types' (la definició local que acabem d'arreglar)
+import { InventoryItemUI, IngredientsLabels, Ingredient, FoodCategory, FoodPreset } from '../editor/types'; 
 
-type PresetItem = typeof FOOD_PRESETS[number];
-
-// --- HEADER (Sense canvis importants, només estètics) ---
+// --- HEADER ---
 interface SearchHeaderProps {
   query: string;
   setQuery: (q: string) => void;
+  // ✅ Com que FoodCategory és 'any', això acceptarà el 'setState' del pare sense problemes
   selectedCategory: FoodCategory | 'ALL';
   setSelectedCategory: (c: FoodCategory | 'ALL') => void;
   labels: IngredientsLabels;
+  categories: FoodCategory[]; 
 }
 
-export function SearchHeader({ query, setQuery, selectedCategory, setSelectedCategory, labels }: SearchHeaderProps) {
+export function SearchHeader({ query, setQuery, selectedCategory, setSelectedCategory, labels, categories }: SearchHeaderProps) {
   return (
     <div className="flex flex-col gap-3 p-3 z-20 shrink-0">
       <div className="relative">
@@ -33,8 +36,9 @@ export function SearchHeader({ query, setQuery, selectedCategory, setSelectedCat
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar mask-linear-fade-right pb-1">
         <CategoryPill active={selectedCategory === 'ALL'} onClick={() => setSelectedCategory('ALL')} label={labels.category_all} />
-        {PRESET_CATEGORIES.map(cat => (
-          <CategoryPill key={cat} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} label={cat} />
+        {categories.map(cat => (
+          // Use String(cat) per seguretat visual
+          <CategoryPill key={String(cat)} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} label={String(cat)} />
         ))}
       </div>
     </div>
@@ -52,22 +56,18 @@ function CategoryPill({ active, onClick, label }: { active: boolean, onClick: ()
   );
 }
 
-// --- GRID CALCULADORA (Aquí arreglem el SCROLL) ---
+// --- GRID CALCULADORA ---
 interface CalculatorGridProps {
-  presets: PresetItem[];
+  presets: FoodPreset[]; 
   inventory: InventoryItemUI[];
-  currentIngredients: Ingredient[];
-  onQuickAdd: (preset: PresetItem) => void;
+  currentIngredients: Ingredient[]; 
+  onQuickAdd: (preset: FoodPreset) => void; 
   emptyLabel: string;
 }
 
 export function CalculatorGrid({ presets, inventory, currentIngredients, onQuickAdd, emptyLabel }: CalculatorGridProps) {
   return (
-    // ✅ CLAU: h-full + overflow-y-auto fa que aquest div ocupi tot l'espai i faci scroll internament
     <div className="h-full overflow-y-auto p-2 sm:p-4 custom-scrollbar relative">
-      
-      {/* Grid dens */}
-      {/* ✅ CLAU: pb-32 afegeix espai al final perquè el Dock flotant no tapi els últims emojis */}
       <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-2 pb-32">
         {presets.map(preset => {
           const inPantry = inventory.some(i => i.name.toLowerCase().includes(preset.name.toLowerCase()));
@@ -77,7 +77,7 @@ export function CalculatorGrid({ presets, inventory, currentIngredients, onQuick
 
           return (
             <motion.button
-              key={preset.id}
+              key={preset.id} 
               whileTap={{ scale: 0.9 }}
               onClick={() => onQuickAdd(preset)}
               className={`
@@ -91,10 +91,7 @@ export function CalculatorGrid({ presets, inventory, currentIngredients, onQuick
               {inPantry && (
                 <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_6px_rgba(16,185,129,0.8)] z-10" />
               )}
-
-              {/* Emoji */}
               <span className="text-3xl drop-shadow-md filter select-none">{preset.emoji}</span>
-              
               <span className={`text-[9px] font-bold leading-tight line-clamp-1 w-full px-1 ${count > 0 ? 'text-purple-200' : 'text-slate-400'}`}>
                 {preset.name}
               </span>
@@ -104,7 +101,7 @@ export function CalculatorGrid({ presets, inventory, currentIngredients, onQuick
                   <motion.div
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute top-1 left-1 bg-white text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg min-w-[18px]"
+                    className="absolute top-1 left-1 bg-white text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg min-w-4.5"
                   >
                     {count < 10 && count % 1 === 0 ? count : Math.round(count)}
                     <span className="text-[7px] opacity-60 ml-0.5">{unitDisplay}</span>

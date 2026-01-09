@@ -1,4 +1,3 @@
-// src/components/recipes/editor/IngredientsManager.tsx
 'use client'
 
 import { EditorData, InventoryItemUI, IngredientsLabels } from './types';
@@ -38,30 +37,31 @@ export function IngredientsManager({ data, update, inventory, labels }: Props) {
         onConfirm={confirmAdd}
       />
 
-      {/* h-full és crucial aquí perquè els fills s'expandeixin */}
       <div className="flex flex-col h-full w-full relative overflow-hidden">
         
-        {/* Header (Sense fons opac, deixem que passi el blur del pare) */}
         <div className="shrink-0">
             <SearchHeader 
-            query={query} setQuery={setQuery}
-            selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
-            labels={labels}
+              query={query} 
+              setQuery={setQuery}
+              selectedCategory={selectedCategory} 
+              // ✅ JA NO CAL FER CAP 'as ...' EXTRANY
+              setSelectedCategory={setSelectedCategory}
+              labels={labels}
+              categories={Array.from(new Set(filteredPresets.map(p => p.category)))}
             />
         </div>
 
-        {/* Grid (flex-1 per ocupar la resta de l'espai) */}
         <div className="flex-1 overflow-hidden relative">
             <CalculatorGrid 
-            presets={filteredPresets}
-            inventory={inventory}
-            currentIngredients={data.ingredients}
-            onQuickAdd={quickAdd}
-            emptyLabel={labels.empty_search}
+              presets={filteredPresets}
+              inventory={inventory}
+              currentIngredients={data.ingredients}
+              // ✅ CORRECCIÓ: Passem directament la funció, els tipus ara coincideixen
+              onQuickAdd={quickAdd}
+              emptyLabel={labels.empty_search}
             />
         </div>
 
-        {/* Dock (Flotant a baix) */}
         <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
              <div className="pointer-events-auto">
                 <IngredientDock 

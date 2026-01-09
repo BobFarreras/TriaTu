@@ -1,28 +1,79 @@
-// src/components/inventory/ConsumeButton.tsx
 'use client';
 
-import { useState } from 'react';
+import { useTransition } from 'react';
 import { consumeItemAction } from '@/app/actions/inventory';
+import { toast } from 'sonner';
 
-export function ConsumeButton({ itemId, currentQty }: { itemId: string, currentQty: number }) {
-  const [isLoading, setIsLoading] = useState(false);
+interface Props {
+  itemId: string;
+  currentQty: number;
+}
 
-  const handleConsume = async () => {
-    // Aquí podries obrir un Modal bonic en lloc del confirm natiu en futures iteracions
-    if (!confirm(`😋 T'has menjat una unitat?`)) return;
-    
-    setIsLoading(true);
-    await consumeItemAction(itemId, 1);
-    setIsLoading(false);
+export function ConsumeButton({ itemId, currentQty }: Props) {
+  const [isPending, startTransition] = useTransition();
+  
+  // Si queda 1 o menys, és l'últim
+  const isLastItem = currentQty <= 1;
+
+  const handleConsume = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    startTransition(async () => {
+      try {
+        await consumeItemAction(itemId, 1);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(isLastItem ? 50 : 20);
+        }
+      } catch (error) {
+        toast.error("Error", { description: "Error al consumir" });
+      }
+    });
   };
 
+  // ESTILS BASE: Molt subtils (fons fosc transparent, sense vores fortes)
+  const baseStyles = "relative flex items-center justify-center transition-all duration-200 overflow-hidden group z-20 backdrop-blur-sm";
+  
+  // ESTATS DE COLOR (Només es noten al Hover)
+  const colorStyles = isLastItem 
+    ? "bg-black/20 hover:bg-red-900/30 text-slate-400 hover:text-red-300" // Acabar: Subtil -> Vermellós al hover
+    : "bg-black/20 hover:bg-purple-900/30 text-slate-400 hover:text-white"; // Consumir: Subtil -> Blanc al hover
+
   return (
-    <button 
+    <button
       onClick={handleConsume}
-      disabled={isLoading}
-      className="text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+      disabled={isPending}
+      className={`${baseStyles} ${colorStyles} 
+        /* MÒBIL: Cercle petit (32px) */
+        w-8 h-8 rounded-full 
+        /* DESKTOP: Més ample, rectangle arrodonit */
+        md:w-full md:h-8 md:rounded-lg
+      `}
     >
-      {isLoading ? '⏳' : '🍽️ Consumir (-1)'}
+      {/* LOADING STATE */}
+      {isPending ? (
+        <span className="animate-spin text-xs">⏳</span>
+      ) : isLastItem ? (
+        <>
+          {/* ICONA PAPERERA */}
+          <span className="text-sm md:text-base filter grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+            🗑️
+          </span>
+          {/* TEXT (Només Desktop) */}
+          <span className="hidden md:inline ml-2 text-[10px] font-bold uppercase tracking-wider">
+            Acabar
+          </span>
+        </>
+      ) : (
+        <>
+          {/* ICONA RESTAR */}
+          <span className="text-sm md:text-base opacity-70 group-hover:opacity-100 transition-all">
+            ➖
+          </span>
+          {/* TEXT (Només Desktop) */}
+          <span className="hidden md:inline ml-2 text-[10px] font-bold uppercase tracking-wider">
+            Consumir
+          </span>
+        </>
+      )}
     </button>
   );
 }

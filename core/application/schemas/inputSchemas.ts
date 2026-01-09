@@ -6,7 +6,7 @@ const SafeText = z.string()
   .trim()
   .min(1, "El camp no pot estar buit")
   .max(500, "Màxim 500 caràcters") // Evita que ens omplin la DB
-  .regex(/^[^<>]*$/, "No es permeten els caràcters < o > per seguretat"); 
+  .regex(/^[^<>]*$/, "No es permeten els caràcters < o > per seguretat");
 
 // Validació d'UUIDs (per evitar SQL injection en IDs)
 const UuidSchema = z.string().uuid("L'ID no és vàlid");
@@ -57,8 +57,8 @@ export const UpdateProfileSchema = z.object({
   username: z.string().trim().min(1, { message: "ERR_USERNAME_EMPTY" }),
   // Acceptem emojis o text curt. Regex simple per evitar scripts
   avatarEmoji: z.string().trim().max(5, "Només un emoji").regex(/^[^<>]*$/, "Emoji invàlid").optional().or(z.literal('')),
-  foodPreferences: z.array(SafeText).max(20, "Màxim 20 preferències"),
-  exclusions: z.array(SafeText).max(20, "Màxim 20 exclusions"),
+  foodPreferences: z.array(z.string()),
+  exclusions: z.array(z.string()),
   socialTolerance: z.number().min(0).max(10, "La tolerància ha de ser entre 0 i 10")
 });
 

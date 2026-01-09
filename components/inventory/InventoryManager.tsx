@@ -7,11 +7,11 @@ import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { isItemExpiringSoon } from '@/lib/inventoryUtils';
-
+import { BulkAddItemForm } from './BulkAddItemForm'; // ✅ Importem el nou component
 // UI Components
 import { InventoryStats } from './InventoryStats';
 import { InventoryList } from './InventoryList';
-import { AddItemForm } from './AddItemForm';
+
 import { CameraScanner } from '../scanner/CameraScanner';
 import { ScannedListEditor } from '../scanner/ScannedListEditor';
 import { AROverlay } from '../scanner/AROverlay';
@@ -138,7 +138,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
    // --- VISTA 3: DASHBOARD PRINCIPAL ---
    return (
       <div className="space-y-6 relative">
-         
+
          {/* ✅ BOTÓ TOUR TRIGGER */}
          <div className="absolute top-0 right-0 z-10">
             <TourTrigger tourId="inventory" steps={onboardingSteps} />
@@ -146,7 +146,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
 
          {/* Header amb ID */}
          <div id="tour-inv-header">
-             <InventoryHeader totalItems={items.length} />
+            <InventoryHeader totalItems={items.length} />
          </div>
 
          {/* Stats (Els IDs estan dins del component InventoryStats) */}
@@ -196,16 +196,22 @@ export function InventoryManager({ items }: InventoryManagerProps) {
                </button>
             </div>
          </div>
+         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showAddForm ? 'max-h-200 opacity-100' : 'max-h-0 opacity-0'}`}>
 
-         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showAddForm ? 'max-h-375 opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="pt-2 pb-6">
-               <AddItemForm />
+         </div>
+         {/* ZONA DESPLEGABLE DEL FORMULARI */}
+         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showAddForm ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="pt-2 pb-6 px-1">
+               {/* ✅ AQUI ESTÀ EL CANVI PRINCIPAL */}
+               {showAddForm && (
+                  <BulkAddItemForm onClose={() => setShowAddForm(false)} />
+               )}
             </div>
          </div>
 
          {/* ✅ ID LLISTA */}
          <div id="tour-inv-list">
-             <InventoryList items={filteredItems} />
+            <InventoryList items={filteredItems} />
          </div>
       </div>
    );

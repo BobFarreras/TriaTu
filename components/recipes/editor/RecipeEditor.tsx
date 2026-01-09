@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 import { useOnboarding, TourStep } from '@/components/onboarding/OnboardingContext';
 import { TourTrigger } from '@/components/onboarding/TourTrigger';
 import { useRecipeForm } from './useRecipeForm';
-
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
 interface Props {
   userInventory: InventoryItemUI[];
 }
@@ -21,8 +21,7 @@ export function RecipeEditor({ userInventory }: Props) {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'ingredients' | 'steps'>('ingredients');
 
-  const { data, setData, loading, errors, handleSave } = useRecipeForm(t.create_recipe, setActiveTab);
-
+  const { data, setData, loading, errors, handleSave, feedback, closeFeedback } = useRecipeForm(t.create_recipe, setActiveTab);
   const { startTour, currentStepIndex, isActive, steps: activeSteps } = useOnboarding();
 
   const onboardingSteps: TourStep[] = useMemo(() => [
@@ -60,7 +59,14 @@ export function RecipeEditor({ userInventory }: Props) {
 
   return (
     <div className="flex flex-col h-full bg-slate-950 relative">
-
+      {/* ✅ AFEGIM EL MODAL AQUÍ (Pot anar a qualsevol lloc, és fixed) */}
+      <FeedbackModal
+        isOpen={feedback.isOpen}
+        onClose={closeFeedback}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+      />
       {/* ✅ CORRECTE: El botó està aquí, fora de les pestanyes i del header */}
       {/* top-4 right-4 el posiciona relatiu a tota la pantalla/contenidor */}
       <div className="absolute top-4 right-4 z-9990">

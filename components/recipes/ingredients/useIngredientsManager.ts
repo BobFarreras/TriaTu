@@ -1,23 +1,50 @@
-// src/components/recipes/ingredients/useIngredientsManager.ts
 import { useState, useMemo } from 'react';
-// ✅ FEM SERVIR 'Ingredient' EXPLICITAMENT ABAIX
-import { EditorData, Ingredient } from '../editor/types';
-import { FOOD_PRESETS, FoodCategory } from "@/lib/food-presets";
+// ✅ CANVI 1: Importem TOTS els tipus de la UI, no de la llibreria
+import { EditorData, Ingredient, FoodPreset } from '../editor/types';
+import { FOOD_PRESETS } from "@/lib/food-presets";
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export function useIngredientsManager(data: EditorData, update: (d: EditorData) => void) {
+  const { t } = useLanguage();
+
   const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<FoodCategory | 'ALL'>('ALL');
+  // ✅ CANVI 2: 'selectedCategory' ara és string (perquè pot ser "🥦 Verdura")
+  const [selectedCategory, setSelectedCategory] = useState<string | 'ALL'>('ALL');
   
   const [activeItem, setActiveItem] = useState<{name: string, emoji: string, unit: string} | null>(null);
   const [qty, setQty] = useState(1);
 
+  // 1. TRADUCCIÓ
+  // ✅ CANVI 3: Tipem explícitament el retorn com a FoodPreset[] (el de la UI)
+  const translatedPresets = useMemo<FoodPreset[]>(() => {
+    return FOOD_PRESETS.map(preset => {
+      // Cast segur per accedir al diccionari
+      const itemTranslations = t.food?.items as Record<string, string> | undefined;
+      const translatedName = itemTranslations?.[preset.id] || preset.name;
+
+      const catTranslations = t.food?.categories as Record<string, string> | undefined;
+      const translatedCategory = catTranslations?.[preset.category] || preset.category;
+
+      return {
+        ...preset,
+        name: translatedName,
+        category: translatedCategory, 
+        // TypeScript es queixava de defaultUnit, ens assegurem que sigui string
+        defaultUnit: preset.defaultUnit as string,
+        // Afegim step si no hi és (encara que a food-presets n'hi hauria d'haver)
+        step: preset.step || 1 
+      };
+    });
+  }, [t]);
+
+  // 2. FILTRATGE
   const filteredPresets = useMemo(() => {
-    return FOOD_PRESETS.filter(preset => {
+    return translatedPresets.filter(preset => {
       const matchesSearch = preset.name.toLowerCase().includes(query.toLowerCase());
       const matchesCategory = selectedCategory === 'ALL' || preset.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [query, selectedCategory]);
+  }, [query, selectedCategory, translatedPresets]);
 
   const getIncrementStep = (unit: string) => {
     switch (unit) {
@@ -29,12 +56,14 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
     }
   };
 
-  const quickAdd = (preset: typeof FOOD_PRESETS[0]) => {
+  // ✅ CANVI 4: La funció accepta el FoodPreset de la UI (traduït)
+  // Ja no fem servir 'typeof FOOD_PRESETS[0]' perquè això forçava el tipus estricte
+  const quickAdd = (preset: FoodPreset) => {
     const existingIndex = data.ingredients.findIndex(i => i.name === preset.name);
+    
+    // Si la unitat ve com a string genèric, el switch funciona igual
     const step = getIncrementStep(preset.defaultUnit);
     
-    // ✅ CORRECCIÓ 1: 'const' en lloc de 'let'.
-    // ✅ CORRECCIÓ 2: Tipatge explícit ': Ingredient[]' per usar l'import.
     const newIngredients: Ingredient[] = [...data.ingredients];
 
     if (existingIndex >= 0) {
@@ -45,9 +74,11 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
       };
     } else {
       newIngredients.push({
+        id: crypto.randomUUID(),
         name: preset.name,
         quantity: step,
-        unit: preset.defaultUnit
+        unit: preset.defaultUnit,
+        emoji: preset.emoji 
       });
     }
 
@@ -65,7 +96,7 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
     });
   };
 
-  const openSelection = (preset: typeof FOOD_PRESETS[0]) => {
+  const openSelection = (preset: FoodPreset) => {
     setActiveItem({ name: preset.name, emoji: preset.emoji, unit: preset.defaultUnit });
     setQty(1);
   };
@@ -79,22 +110,22 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
     if (!activeItem) return;
     
     const existingIndex = data.ingredients.findIndex(i => i.name === activeItem.name);
-    // ✅ CORRECCIÓ: Aquí també 'const' i tipatge
     const newIngredients: Ingredient[] = [...data.ingredients];
     
     if (existingIndex >= 0) {
-       // Si ja existeix, sumem la quantitat del modal a l'existent
        const current = newIngredients[existingIndex];
        newIngredients[existingIndex] = {
          ...current,
          quantity: current.quantity + qty,
-         unit: activeItem.unit // Actualitzem la unitat a la nova seleccionada
+         unit: activeItem.unit 
        };
     } else {
        newIngredients.push({ 
+         id: crypto.randomUUID(),
          name: activeItem.name, 
          quantity: qty, 
-         unit: activeItem.unit 
+         unit: activeItem.unit,
+         emoji: activeItem.emoji
        });
     }
     

@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 import { DecisionProvider } from '@/context/DecisionContext';
-
+import { Toaster } from 'sonner'; // 👈 IMPORTA AIXÒ
 const inter = Inter({ subsets: ["latin"] });
 
 // 1. Defineix la URL real de la teva web (si estàs en local, posa localhost)
@@ -11,14 +11,14 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://triatu.vercel.app"
 
 export const metadata: Metadata = {
   // ✅ Això arregla les rutes de les imatges
-  metadataBase: new URL(BASE_URL), 
+  metadataBase: new URL(BASE_URL),
 
   title: {
     default: "TriaTu",
     template: "%s | TriaTu"
   },
   description: "Decisions en grup fàcils i ràpides",
-  
+
   // ✅ CONFIGURACIÓ OPEN GRAPH (PER A WHATSAPP)
   openGraph: {
     title: "TriaTu",
@@ -83,6 +83,8 @@ export default function RootLayout({
         <LanguageProvider >
           <DecisionProvider>
             {children}
+            {/* ✅ AFEGEIX AIXÒ AL FINAL DEL BODY */}
+            <Toaster position="top-center" richColors />
           </DecisionProvider>
         </LanguageProvider>
       </body>

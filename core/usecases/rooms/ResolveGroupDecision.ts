@@ -1,9 +1,10 @@
-// core/usecases/rooms/ResolveGroupDecision.ts
 import { DecisionRoomRepository } from '@/core/ports/DecisionRoomRepository';
-import { PreferenceRepository } from '@/core/ports/PreferenceRepository';
 import { GroupDecisionResolver } from '@/core/ports/GroupDecisionResolver';
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
-import { PreferenceProfile } from '@/core/domain/entities/PreferenceProfile';
+
+// ✅ CANVI 1: Imports nous correctes
+import { UserProfileRepository } from '@/core/ports/UserProfileRepository';
+import { UserProfile } from '@/core/domain/entities/UserProfile';
 
 type Input = {
   roomId: string;
@@ -13,7 +14,8 @@ type Input = {
 export class ResolveGroupDecision {
   constructor(
     private readonly roomRepo: DecisionRoomRepository,
-    private readonly prefRepo: PreferenceRepository,
+    // ✅ CANVI 2: Canviem el tipus del repositori
+    private readonly userRepo: UserProfileRepository,
     private readonly resolver: GroupDecisionResolver
   ) {}
 
@@ -28,16 +30,13 @@ export class ResolveGroupDecision {
     }
 
     // 3. Recollir perfils de tots els participants
-    // Nota: Això es podria optimitzar amb un mètode 'findAllByIds' al repo, però iterem per simplicitat MVP.
-    const profiles: PreferenceProfile[] = [];
-    for (const participant of room.participants) {
-      const profile = await this.prefRepo.findByUserId(participant.userId);
-      if (profile) {
-        profiles.push(profile);
-      }
-    }
+    // ✅ CANVI 3: Optimització. En lloc de fer un bucle lent, demanem tots de cop.
+    // El teu UserProfileRepository ja té aquest mètode (getProfilesByIds).
+    const participantIds = room.participants.map(p => p.userId);
+    const profiles: UserProfile[] = await this.userRepo.getProfilesByIds(participantIds);
 
     // 4. Màgia (Algoritme)
+    // Ara 'resolver.resolve' accepta UserProfile[] gràcies als canvis anteriors
     const outcome = await this.resolver.resolve(room, profiles);
 
     // 5. Aplicar resultat i tancar

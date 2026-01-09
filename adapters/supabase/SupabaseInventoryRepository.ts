@@ -154,4 +154,30 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     const { error } = await supabase.from('inventory_items').delete().in('id', ids);
     if (error) throw new Error(error.message);
   }
+
+  // ✅ NOU MÈTODE: Inserció Massiva
+  async saveBatch(items: InventoryItem[]): Promise<void> {
+    const supabase = await createClient();
+
+    // Mapegem totes les entitats a files de la BD
+    const rows = items.map(item => ({
+      id: item.id,
+      user_id: item.userId,
+      name: item.name,
+      emoji: item.emoji,
+      quantity: item.quantity,
+      unit: item.unit,
+      location: item.location,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString() : null,
+      added_at: item.addedAt.toISOString()
+    }));
+
+    // Fem una única crida a Supabase
+    const { error } = await supabase.from('inventory_items').insert(rows);
+
+    if (error) {
+      console.error('Error batch saving inventory items:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+  }
 }

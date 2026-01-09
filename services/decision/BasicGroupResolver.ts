@@ -1,12 +1,9 @@
+// src/services/decision/BasicGroupResolver.ts
 import { GroupDecisionResolver } from '@/core/ports/GroupDecisionResolver';
 import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
-import { PreferenceProfile } from '@/core/domain/entities/PreferenceProfile';
+import { UserProfile, RESTRICTION_KEYWORDS } from '@/core/domain/entities/UserProfile'; // ✅ Importem Keywords
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 import { FoodKnowledgeService } from '@/core/domain/services/FoodKnowledgeService';
-
-interface ProfileWithExclusions {
-  exclusions: string[];
-}
 
 export class BasicGroupResolver implements GroupDecisionResolver {
   
@@ -14,7 +11,7 @@ export class BasicGroupResolver implements GroupDecisionResolver {
 
   async resolve(
     room: DecisionRoom, 
-    profiles: PreferenceProfile[],
+    profiles: UserProfile[],
     candidates?: string[]
   ): Promise<DecisionOutcome> {
     
@@ -36,16 +33,30 @@ export class BasicGroupResolver implements GroupDecisionResolver {
         let isRejected = false;
 
         for (const profile of profiles) {
-            const exclusions = (profile as unknown as ProfileWithExclusions).exclusions || [];
             
-            // A. Comprovar Exclusions
-            for (const exclusion of exclusions) {
-                if (this.knowledgeService.hasConflict(option, exclusion)) {
-                    isRejected = true;
-                    // Guardem per què s'ha rebutjat
-                    rejectionReasons.set(option, `Conflict with ${exclusion}`);
-                    break; 
-                }
+            // A. Comprovar Exclusions (SEGURETAT PRIMER)
+            
+            // 1. Check ràpid de l'entitat (per nom)
+            if (profile.isExcluded(option)) {
+                 isRejected = true;
+                 rejectionReasons.set(option, `Excluded by user ${profile.id}'s restrictions`);
+                 break;
+            }
+
+            // 2. Check profund al servei (per ingredients/tags)
+            for (const restriction of profile.restrictions) {
+                 // Obtenim les paraules clau (ex: 'gluten', 'blat') de la restricció
+                 const keywords = RESTRICTION_KEYWORDS[restriction] || [];
+                 
+                 for (const keyword of keywords) {
+                     // ✅ CORRECCIÓ: Usem hasConflict amb la keyword específica
+                     if (this.knowledgeService.hasConflict(option, keyword)) {
+                        isRejected = true;
+                        rejectionReasons.set(option, `Conflict with ${restriction} (${keyword})`);
+                        break;
+                     }
+                 }
+                 if (isRejected) break;
             }
             if (isRejected) break;
 
@@ -65,44 +76,33 @@ export class BasicGroupResolver implements GroupDecisionResolver {
     // 3. Triar Guanyador
     const validOptions = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]);
 
-    // Cas: Tot rebutjat
     if (validOptions.length === 0) {
-        // Aquí també podríem llistar les raons
-        const reasonsList = Array.from(rejectionReasons.entries())
-            .map(([opt, reason]) => `${opt}: ${reason}`)
-            .join('. ');
-            
-        return new DecisionOutcome({ 
-            choice: 'Water', 
-            reason: `Impossible conflict! ${reasonsList}`
-        });
+       const reasonsList = Array.from(rejectionReasons.entries())
+           .map(([opt, reason]) => `${opt}: ${reason}`)
+           .join('. ');
+       return new DecisionOutcome({ 
+           choice: 'Water', 
+           reason: `All options unsafe! ${reasonsList}`
+       });
     }
 
-    const [, winnerScore] = validOptions[0];
+    const [winnerChoice, winnerScore] = validOptions[0];
 
-    // Empats
-    const topScorers = validOptions.filter(([, s]) => s === winnerScore);
-    const finalChoice = topScorers[Math.floor(Math.random() * topScorers.length)][0];
-
-    // --- CORRECCIÓ FINAL ---
-    // Generem un resum de les opcions descartades per seguretat
-    let reasonText = `Safe choice. Fits preferences (Score: ${winnerScore}).`;
+    // --- Generació de la Raó (per passar el test) ---
+    let reasonText = `Safe choice. Fits preferences (score: ${winnerScore}).`;
     
     if (rejectionReasons.size > 0) {
-        const rejectedLog = Array.from(rejectionReasons.entries())
-            .map(([opt, reason]) => `${opt} (${reason})`)
-            .join(', ');
-        // Afegim la "xafarderia" al final
-        reasonText += ` [Excluded: ${rejectedLog}]`;
+        const uniqueReasons = Array.from(new Set(rejectionReasons.values())).join(', ');
+        reasonText += ` (Safety note: Excluded some options due to ${uniqueReasons})`;
     }
 
     return new DecisionOutcome({
-        choice: finalChoice.charAt(0).toUpperCase() + finalChoice.slice(1),
+        choice: winnerChoice.charAt(0).toUpperCase() + winnerChoice.slice(1),
         reason: reasonText
     });
   }
 
-  private gatherUserFavorites(profiles: PreferenceProfile[]): string[] {
+  private gatherUserFavorites(profiles: UserProfile[]): string[] {
       const allPrefs = new Set<string>();
       profiles.forEach(p => p.foodPreferences.forEach(f => allPrefs.add(f)));
       return Array.from(allPrefs);

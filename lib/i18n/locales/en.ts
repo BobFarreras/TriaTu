@@ -769,7 +769,17 @@ export const en = {
         healthy: 'Healthy',
         dessert: 'Dessert'
       }
-    }
+    },
+    errors: {
+      title_missing: "Title missing",
+      title_missing_desc: "Give your masterpiece a name before saving 👨‍🍳",
+      ingredients_missing: "Ingredients missing",
+      ingredients_missing_desc: "You can't cook without food! Add at least one ingredient.",
+      steps_missing: "Steps missing",
+      steps_missing_desc: "Tell us how to make the recipe, step by step.",
+      missing_prefix: "Missing prefix or incorrect format"
+    },
+
   },
   onboarding: {
     buttons: {

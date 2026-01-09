@@ -95,7 +95,7 @@ export const ca = {
 
   },
   room: {
-    // ... (Mantén el teu contingut de room intacte)
+
     back_home: '← Tornar a l\'inici',
     new_room_title: 'Nova Sala',
     id_label: 'ID',
@@ -155,7 +155,7 @@ export const ca = {
       magic_safe: "⚠️ Opció Segura: No hi ha coincidències de gustos, però és apta per a tothom.",
       manual_reason: "La sort ha decidit! 🎲"
     }
-    
+
   },
   landing: {
     // ... (Mantén el teu contingut de landing)
@@ -781,7 +781,18 @@ export const ca = {
         healthy: 'Saludable',
         dessert: 'Postres'
       }
-    }
+    },
+    errors: {
+      title_missing: "Falta el Títol",
+      title_missing_desc: "Posa-li un nom a la teva obra mestra abans de guardar 👨‍🍳",
+      ingredients_missing: "Falten Ingredients",
+      ingredients_missing_desc: "No es pot cuinar sense menjar! Afegeix almenys un ingredient.",
+      steps_missing: "Falten els Passos",
+      steps_missing_desc: "Explica'ns com es fa la recepta, pas a pas.",
+      missing_prefix: "Falten", 
+      
+     
+    },
 
 
   },
@@ -915,14 +926,16 @@ export const ca = {
 
       step4_title: "Historial de Decisions 📜",
       step4_desc: "Aquí es guardaran totes les decisions preses. Pots consultar-les o netejar la llista.",
-      
+
       step_mode_title: "Votació Cega o Pública? 👁️",
       step_mode_desc: "Pots amagar les opcions dels altres per evitar que es copiïn, o fer-ho tot visible.",
 
       step_candidates_title: "Les Opcions 📝",
       step_candidates_desc: "Aquí apareixeran totes les propostes del grup. Si ets el Host, pots esborrar les que no t'agradin.",
 
-      step_input_title: "Proposa Alguna Cosa! 💡",
+      // ✅ AFEGEIX AQUESTES CLAUS NOVES QUE EL CODI DEMANA:
+      step_input_title: "Proposa una opció",
+      step_input_desc: "Escriu aquí la teva proposta per al grup.",
 
       step_action_title: "El Botó de la Veritat 🔴",
       step_action_desc: "Quan tothom hagi posat les seves opcions, prem aquest botó i la IA decidirà el guanyador!"

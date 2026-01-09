@@ -104,9 +104,7 @@ export function UserPreferencesSidebar({ foodPreferences, exclusions, className 
     );
 }
 
-// ... (La resta del codi ScrollableSection i ItemBubble es manté igual que abans)
-// ...
-// ...
+
 interface SectionProps {
     title: string;
     items: UIItem[];

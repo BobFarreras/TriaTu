@@ -1,9 +1,9 @@
-// src/components/CameraScanner.tsx
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
-import { scanImageAction } from '@/app/actions/scan';
+// ⚠️ ASSEGURA'T QUE AQUEST IMPORT ÉS EL CORRECTE
+import { scanImageAction } from '@/app/actions/scan'; 
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 
 interface CameraScannerProps {
@@ -11,64 +11,96 @@ interface CameraScannerProps {
   onCancel: () => void;
 }
 
+// ✅ 1. FUNCIÓ PURA DE JAVASCRIPT (SENSE FETCH = SENSE ERROR DE SEGURETAT)
+function base64ToBlob(base64: string, mimeType = 'image/jpeg') {
+  try {
+    const arr = base64.split(',');
+    const data = arr[1];
+    const byteString = atob(data);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeType });
+  } catch (e) {
+    console.error("Error convertint base64:", e);
+    return null;
+  }
+}
+
 export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
   const webcamRef = useRef<Webcam>(null);
 
-  // Estats per controlar el flux visual
   const [isProcessing, setIsProcessing] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null); // Guardem la foto aquí
-  const [flash, setFlash] = useState(false); // Per l'efecte de disparador
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [flash, setFlash] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
+  // ✅ 2. REDUÏM RESOLUCIÓ PER EVITAR "FAILED TO FETCH" AL SERVIDOR
+  // 1920x1080 a vegades genera un fitxer > 4MB que bloqueja la Server Action.
   const videoConstraints = {
     facingMode: facingMode,
-    width: { ideal: 1920 },
-    height: { ideal: 1080 }
+    width: { ideal: 1280 }, // Baixem a 720p (Suficient per llegir text)
+    height: { ideal: 720 }
   };
 
   const capture = useCallback(async () => {
-    // 1. Capturar la imatge
-    const imageSrc = webcamRef.current?.getScreenshot();
-    if (!imageSrc) return;
+    // ✅ 3. QUALITAT AL 0.6 (60%) PER REDUIR PES
+    const imageSrc = webcamRef.current?.getScreenshot({ width: 1280, height: 720 });
+    
+    if (!imageSrc) {
+        alert("No s'ha pogut capturar la imatge");
+        return;
+    }
 
-    // 2. Feedback visual immediat
+    // Feedback visual
     setFlash(true);
     setTimeout(() => setFlash(false), 150);
     setCapturedImage(imageSrc);
     setIsProcessing(true);
 
     try {
-      // 3. Convertir a File
-      const res = await fetch(imageSrc);
-      const blob = await res.blob();
+      // ❌ NO FEM FETCH AQUÍ (Això és el que donava l'error de seguretat)
+      // const res = await fetch(imageSrc); 
+
+      // ✅ CONVERSIÓ DIRECTA
+      const blob = base64ToBlob(imageSrc);
+      if (!blob) throw new Error("Error en processar la imatge");
+
+      // Si el fitxer encara és massa gran (>4MB), l'Action fallarà.
+      // Amb 720p i 0.92 (defecte webp) o jpeg hauria d'anar bé.
       const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
 
       const formData = new FormData();
       formData.append('image', file);
 
-      // 4. Cridar a la IA
+      console.log("📤 Enviant imatge al servidor...", file.size / 1024, "KB");
+
+      // Cridar a la Server Action
       const result = await scanImageAction(formData);
 
       if (result.success) {
         onItemsFound(result.items, imageSrc);
       } else {
-        // Llancem un error manual per caure al catch
-        throw new Error(result.error || 'Error desconegut al processar');
+        throw new Error(result.error || 'No s\'han detectat ingredients.');
       }
-    } catch (error: unknown) { // ✅ CORRECCIÓ: Usem 'unknown' en lloc de 'any'
-      console.error(error);
 
-      // ✅ TYPE GUARD: Extreiem el missatge de forma segura
-      let errorMessage = 'Error de connexió o processament';
+    } catch (error: unknown) {
+      console.error("❌ ERROR AL CAPTURAR:", error);
 
+      let errorMessage = 'Error desconegut';
       if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
+        // Si l'error és "Failed to fetch" AQUÍ, vol dir que la Server Action ha petat per mida
+        if (error.message.includes("fetch")) {
+            errorMessage = "La imatge és massa gran o hi ha problemes de xarxa.";
+        } else {
+            errorMessage = error.message;
+        }
       }
 
-      alert(`Error: ${errorMessage}`);
-      setCapturedImage(null);
+      alert(`⚠️ ${errorMessage}`);
+      setCapturedImage(null); // Tornem a la càmera
     } finally {
       setIsProcessing(false);
     }
@@ -81,7 +113,7 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
 
-      {/* --- HEADER --- */}
+      {/* HEADER */}
       <div className="absolute top-0 w-full p-4 flex justify-between items-center z-20">
         <button onClick={onCancel} disabled={isProcessing} className="text-white bg-black/40 px-4 py-2 rounded-full backdrop-blur-md font-bold text-sm border border-white/10">
           ✕ Tancar
@@ -93,67 +125,37 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
         )}
       </div>
 
-      {/* --- AREA PRINCIPAL (VISOR) --- */}
+      {/* VISOR */}
       <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
-
-        {/* 1. VISOR DE CÀMERA (Només si no tenim foto capturada) */}
         {!capturedImage && (
           <Webcam
             audio={false}
             ref={webcamRef}
             screenshotFormat="image/jpeg"
-            screenshotQuality={0.8} // ✅ CANVI: De 1 a 0.8 (molt més lleuger, mateixa precisió IA)
+            screenshotQuality={0.6} // ✅ QUALITAT AL 60%
             forceScreenshotSourceSize={true}
             videoConstraints={videoConstraints}
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
 
-        {/* 2. FOTO CONGELADA (Es mostra quan hem disparat) */}
         {capturedImage && (
-          <img
-            src={capturedImage}
-            alt="Captured"
-            className="absolute inset-0 w-full h-full object-contain bg-black"
-          />
+          <img src={capturedImage} alt="Captured" className="absolute inset-0 w-full h-full object-contain bg-black" />
         )}
 
-        {/* 3. GUIES D'ENQUADRAMENT (Només en mode càmera) */}
-        {!isProcessing && !capturedImage && (
-          <div className="absolute inset-0 pointer-events-none opacity-30 flex items-center justify-center">
-            <div className="w-64 h-64 border-2 border-white/50 rounded-3xl border-dashed"></div>
-          </div>
-        )}
-
-        {/* 4. ANIMACIÓ D'ESCANEIG (LÀSER) - Es mostra durant el processament */}
+        {/* LOADING SPINNER */}
         {isProcessing && (
-          <div className="absolute inset-0 z-10 pointer-events-none">
-            {/* Fons lleugerament enfosquit per resaltar el làser */}
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>
-
-            {/* Línia làser que es mou (animació Tailwind personalitzada o CSS estàndard) */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
-
-            {/* Text informatiu centrat */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="bg-black/60 px-6 py-3 rounded-2xl backdrop-blur-md border border-white/10 flex flex-col items-center">
-                <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                <p className="text-cyan-300 font-bold text-lg tracking-wide">ANALITZANT...</p>
-                <p className="text-white/70 text-xs">Identificant productes i caducitats</p>
-              </div>
-            </div>
+          <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center">
+             <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+             <p className="text-white font-bold text-lg animate-pulse">Analitzant...</p>
           </div>
         )}
 
-        {/* 5. EFECTE FLASH (Pantalla blanca ràpida) */}
-        {flash && (
-          <div className="absolute inset-0 bg-white z-50 animate-out fade-out duration-150"></div>
-        )}
+        {flash && <div className="absolute inset-0 bg-white z-50 animate-out fade-out duration-150"></div>}
       </div>
 
-      {/* --- FOOTER (BOTÓ DE DISPARAR) --- */}
-      {/* L'ocultem mentre processa per netejar la pantalla */}
-      {!isProcessing && (
+      {/* BOTÓ DISPARAR */}
+      {!isProcessing && !capturedImage && (
         <div className="absolute bottom-0 w-full p-8 flex justify-center items-center pb-12 z-20 bg-linear-to-t from-black/80 to-transparent">
           <button
             onClick={capture}
@@ -163,16 +165,6 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
           </button>
         </div>
       )}
-
-      {/* Definició inline de l'animació scan si no la tens a tailwind.config.js */}
-      <style jsx global>{`
-        @keyframes scan {
-          0% { top: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }

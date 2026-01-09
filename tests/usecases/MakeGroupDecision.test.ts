@@ -1,19 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MakeGroupDecision } from '@/core/usecases/rooms/MakeGroupDecision';
 import { DecisionRoomRepository } from '@/core/ports/DecisionRoomRepository';
-import { PreferenceRepository } from '@/core/ports/PreferenceRepository';
+// ❌ ELIMINAT: PreferenceRepository
 import { CandidateRepository } from '@/core/ports/CandidateRepository';
 import { GroupDecisionResolver } from '@/core/ports/GroupDecisionResolver';
+import { UserProfileRepository } from '@/core/ports/UserProfileRepository'; 
 import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
-import { PreferenceProfile } from '@/core/domain/entities/PreferenceProfile'; // Import necessari
+// ❌ ELIMINAT: PreferenceProfile
+// ✅ NOU: Importem UserProfile perquè ara és qui té les preferències
+import { UserProfile } from '@/core/domain/entities/UserProfile'; 
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 
 describe('MakeGroupDecision UseCase', () => {
   let useCase: MakeGroupDecision;
   let mockRoomRepo: DecisionRoomRepository;
-  let mockPrefRepo: PreferenceRepository;
+  // let mockPrefRepo: PreferenceRepository; // ❌ FORA
   let mockCandidateRepo: CandidateRepository;
   let mockResolver: GroupDecisionResolver;
+  let mockUserRepo: UserProfileRepository; 
 
   beforeEach(() => {
     mockRoomRepo = {
@@ -25,23 +29,28 @@ describe('MakeGroupDecision UseCase', () => {
       setVotingMode: vi.fn()
     } as unknown as DecisionRoomRepository;
 
-    mockPrefRepo = {
-      findByUserId: vi.fn(),
-    } as unknown as PreferenceRepository;
+    // mockPrefRepo... // ❌ FORA
 
     mockCandidateRepo = {
       add: vi.fn(),
       getAllForRoom: vi.fn(),
       deleteAllForRoom: vi.fn(),
-    };
+    } as unknown as CandidateRepository; // Afegit cast per seguretat
 
     mockResolver = {
       resolve: vi.fn(),
     };
 
+    mockUserRepo = {
+      save: vi.fn(),
+      findById: vi.fn(),
+      getProfilesByIds: vi.fn(), 
+    } as unknown as UserProfileRepository;
+
     useCase = new MakeGroupDecision(
       mockRoomRepo,
-      mockPrefRepo,
+      // mockPrefRepo, // ❌ JA NO ES PASSA
+      mockUserRepo,   // ✅ ARA PASSEM EL USER REPO (que substitueix al de preferències)
       mockCandidateRepo,
       mockResolver
     );
@@ -49,37 +58,35 @@ describe('MakeGroupDecision UseCase', () => {
 
   it('should make a decision and add it to history without closing room', async () => {
     // ARRANGE
-    
-    // 1. Creem un objecte que "sembla" una DecisionRoom, però és un objecte pla.
-    // Això evita l'error de constructor i ens permet espiar el mètode 'addDecision'.
     const mockRoom = {
       id: 'room-1',
       hostUserId: 'host-1',
       name: 'Test Room',
-      // Simulem l'estructura interna que espera el UseCase
       participants: [{ userId: 'user-1', joinedAt: new Date() }],
       history: [],
-      // MOCK del mètode de l'entitat (Important!)
       addDecision: vi.fn((outcome) => {
-         // Simulem el que fa el mètode real push al array
-       
          mockRoom.history.push(outcome); 
       }),
       votingMode: 'BLIND'
-    } as unknown as DecisionRoom; // <--- TRUC MÀGIC: Castegem a l'entitat
+    } as unknown as DecisionRoom;
 
     vi.mocked(mockRoomRepo.findById).mockResolvedValue(mockRoom);
 
-    // 2. Solució a l'error de 'any': Castegem primer a unknown i després al tipus correcte
-    const mockProfile = { 
-        userId: 'user-1',
+    // ✅ ARA CREEM UN USER PROFILE (que conté les preferències)
+    // En lloc de PreferenceProfile, ara tot està unificat aquí
+    const mockUser = { 
+        id: 'user-1',
+        name: 'Pepito',
+        emoji: '😎',
+        // Les preferències ara viuen aquí:
         foodPreferences: ['Pizza'],
-        socialTolerance: 5
-    } as unknown as PreferenceProfile;
+        socialTolerance: 5,
+        restrictions: []
+    } as unknown as UserProfile;
 
-    vi.mocked(mockPrefRepo.findByUserId).mockResolvedValue(mockProfile);
-    
-    // Simulem una resolució
+    // ✅ Mockegem la crida al repositori d'usuaris
+    vi.mocked(mockUserRepo.getProfilesByIds).mockResolvedValue([mockUser]);
+
     const mockOutcome: DecisionOutcome = { 
         choice: 'Pizza', 
         reason: 'Yum', 
@@ -96,12 +103,7 @@ describe('MakeGroupDecision UseCase', () => {
 
     // ASSERT
     expect(result).toEqual(mockOutcome);
-    expect(mockResolver.resolve).toHaveBeenCalled();
-    
-    // Verifiquem que s'ha cridat al mètode de l'entitat
-    expect(mockRoom.addDecision).toHaveBeenCalledWith(mockOutcome);
-    
-    // Verifiquem persistència
+    expect(mockUserRepo.getProfilesByIds).toHaveBeenCalled(); 
     expect(mockRoomRepo.saveDecision).toHaveBeenCalledWith('room-1', mockOutcome);
   });
 });

@@ -1,77 +1,135 @@
-// src/components/recipes/editor/useRecipeForm.ts
 'use client'
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+// import { toast } from 'sonner'; 
 import { createRecipeAction } from '@/app/actions/create-recipe';
 import { EditorData } from './types';
 import { Dictionary } from '@/lib/i18n/dictionaries';
 
+// ✅ 1. AFEGIM EL MAPA DE TRADUCCIÓ (Anglès UI -> Català DB)
+// Això assegura que a la DB es guardin en l'idioma que els filtres esperen.
+const DB_TAGS_MAPPING: Record<string, string> = {
+  // Dietes
+  'vegan': 'vegà',
+  'vegetarian': 'vegetarià',
+  'gluten-free': 'sense gluten',
+  'dairy-free': 'sense lactosa',
+  'healthy': 'sa',
+  
+  // Tipus de plat
+  'breakfast': 'esmorzar',
+  'lunch': 'dinar',
+  'dinner': 'sopar',
+  'snack': 'snack',
+  'dessert': 'postres',
+  
+  // Característiques
+  'quick': 'ràpid',
+  'spicy': 'picant',
+  'traditional': 'tradicional',
+  'fresh': 'fresc',
+  'winter': 'hivern',
+  'summer': 'estiu',
+  'meat': 'carn',
+  'fish': 'peix',
+  'pasta': 'pasta',
+  'rice': 'arròs'
+};
+
+// Definim l'estat del modal
+type FeedbackState = {
+  isOpen: boolean;
+  type: 'error' | 'success';
+  title: string;
+  message: string;
+};
+
 export function useRecipeForm(labels: Dictionary['create_recipe'], setActiveTab: (tab: 'ingredients' | 'steps') => void) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
-  // Errors visuals
-  const [errors, setErrors] = useState({
-    name: false,
-    ingredients: false,
-    steps: false
+
+  // ESTAT NOU: Control del Modal
+  const [feedback, setFeedback] = useState<FeedbackState>({
+    isOpen: false, type: 'error', title: '', message: ''
   });
 
-  // Dades del formulari
-  const [data, setData] = useState<EditorData>({
-    name: '',
-    prepTimeMinutes: 30,
-    ingredients: [],
-    steps: [],
-    dietaryTags: []
+  // Errors visuals 
+  const [errors, setErrors] = useState({
+    name: false, ingredients: false, steps: false
   });
+
+  const [data, setData] = useState<EditorData>({
+    name: '', prepTimeMinutes: 30, ingredients: [], steps: [], dietaryTags: []
+  });
+
+  const closeFeedback = () => setFeedback(prev => ({ ...prev, isOpen: false }));
 
   const handleSave = async () => {
-    // 1. Reset Errors
     setErrors({ name: false, ingredients: false, steps: false });
-    let hasError = false;
 
-    // 2. Validacions
+    // VALIDACIONS AMB TRADUCCIÓ DINÀMICA
     if (!data.name.trim()) {
-      toast.error("Falta el Títol!", { description: "Posa-li un nom a la teva obra mestra 👨‍🍳" });
       setErrors(prev => ({ ...prev, name: true }));
-      hasError = true;
+      setFeedback({
+        isOpen: true, type: 'error',
+        title: labels.errors.title_missing,
+        message: labels.errors.title_missing_desc
+      });
+      return;
     }
-    else if (data.ingredients.length === 0) {
-      toast.error("Falten Ingredients!", { description: "No es pot cuinar sense menjar! Afegeix-ne algun." });
+
+    if (data.ingredients.length === 0) {
       setErrors(prev => ({ ...prev, ingredients: true }));
       setActiveTab('ingredients');
-      hasError = true;
+      setFeedback({
+        isOpen: true, type: 'error',
+        title: labels.errors.ingredients_missing,
+        message: labels.errors.ingredients_missing_desc
+      });
+      return;
     }
-    else if (data.steps.length === 0) {
-      toast.error("Falten els Passos!", { description: "Explica'ns com es fa la recepta." });
+
+    if (data.steps.length === 0) {
       setErrors(prev => ({ ...prev, steps: true }));
       setActiveTab('steps');
-      hasError = true;
+      setFeedback({
+        isOpen: true, type: 'error',
+        title: labels.errors.steps_missing,
+        message: labels.errors.steps_missing_desc
+      });
+      return;
     }
 
-    if (hasError) return;
+    // ✅ 2. PREPARAR DADES: TRADUCCIÓ DE TAGS
+    // Abans d'enviar, canviem els tags d'Anglès (UI) a Català (DB)
+    const translatedTags = data.dietaryTags.map(tag => DB_TAGS_MAPPING[tag] || tag);
 
-    // 3. Guardar
+    // Creem un objecte nou amb els tags traduïts
+    const payload = {
+      ...data,
+      dietaryTags: translatedTags
+    };
+
+    // GUARDAR AL SERVIDOR
     setLoading(true);
-    const result = await createRecipeAction(data);
+    // ✅ Enviem el payload traduït en lloc de 'data' directament
+    const result = await createRecipeAction(payload);
     setLoading(false);
 
     if (result.success) {
-      toast.success(labels.toasts.success_title, { description: labels.toasts.success_desc });
       router.push(`/recipes/${result.recipeId}`);
     } else {
-      toast.error(labels.toasts.error_title, { description: result.error });
+      setFeedback({
+        isOpen: true, type: 'error',
+        title: labels.toasts.error_title,
+        message: result.error || "Hi ha hagut un error inesperat."
+      });
     }
   };
 
   return {
-    data,
-    setData,
-    loading,
-    errors,
-    handleSave
+    data, setData, loading, errors, handleSave,
+    feedback, closeFeedback 
   };
 }

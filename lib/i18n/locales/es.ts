@@ -768,7 +768,17 @@ export const es = {
         healthy: 'Sano',
         dessert: 'Postre'
       }
-    }
+    },
+    errors: {
+      title_missing: "Falta el título",
+      title_missing_desc: "Ponle un nombre a tu obra maestra antes de guardar 👨‍🍳",
+      ingredients_missing: "Faltan ingredientes",
+      ingredients_missing_desc: "¡No se puede cocinar sin comida! Añade al menos un ingrediente.",
+      steps_missing: "Faltan los pasos",
+      steps_missing_desc: "Explícanos cómo se hace la receta, paso a paso.",
+      missing_prefix: "Falta el prefijo o formato incorrecto"
+    },
+
   },
   onboarding: {
     buttons: {
