@@ -1,14 +1,15 @@
-// src/services/container.ts
-import { SupabaseClient } from '@supabase/supabase-js'; // ✅ Importem el tipus
+import { SupabaseClient } from '@supabase/supabase-js';
+
 // ADAPTERS - SUPABASE
 import { SupabaseDecisionRepository } from '@/adapters/supabase/SupabaseDecisionRepository';
 import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
-import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository';
-
+import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository'; // ✅ Aquest ara demana client
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
+import { SupabaseRankingRepository } from '@/adapters/supabase/SupabaseRankingRepository';
+import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
 
-// ADAPTERS - AI
+// ADAPTERS - AI (Aquests SI poden ser estàtics perquè no depenen de l'usuari)
 import { OpenAIImageRecognizer } from '@/adapters/openai/OpenAIImageRecognizer';
 import { GeminiImageRecognizer } from '@/adapters/gemini/GeminiImageRecognizer';
 import { FallbackImageRecognizer } from '@/adapters/strategies/FallbackImageRecognizer';
@@ -22,12 +23,11 @@ import { BasicGroupResolver } from '@/services/decision/BasicGroupResolver';
 import { FoodKnowledgeService } from '@/core/domain/services/FoodKnowledgeService';
 import { RecipeMatcher } from '@/core/domain/services/RecipeMatcher';
 
-// PORTS (Interfícies)
+// PORTS
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
-
 import { RecipeRepository } from '@/core/ports/RecipeRepository';
 
-// USE CASES - ROOMS & DECISIONS
+// USE CASES
 import { MakeIndividualDecision } from '@/core/usecases/decision/MakeIndividualDecision';
 import { CreateDecisionRoom } from '@/core/usecases/rooms/CreateDecisionRoom';
 import { JoinDecisionRoom } from '@/core/usecases/rooms/JoinDecisionRoom';
@@ -36,8 +36,6 @@ import { RemoveParticipant } from '@/core/usecases/rooms/RemoveParticipant';
 import { ClearRoomHistory } from '@/core/usecases/rooms/ClearRoomHistory';
 import { SetRoomVotingMode } from '@/core/usecases/rooms/SetRoomVotingMode';
 import { GetUserRooms } from "@/core/usecases/rooms/GetUserRooms";
-
-// USE CASES - CANDIDATES & PROFILE
 import { UpdateUserProfile } from '@/core/usecases/profile/UpdateUserProfile';
 import { AddCandidate } from '@/core/usecases/candidates/AddCandidate';
 import { RemoveCandidate } from '@/core/usecases/candidates/RemoveCandidate';
@@ -51,43 +49,87 @@ import { UpdateItem } from '@/core/usecases/inventory/UpdateItem';
 import { DeleteItem } from '@/core/usecases/inventory/DeleteItem';
 import { CookRecipe } from '@/core/usecases/inventory/CookRecipe';
 import { SuggestRecipes } from '@/core/usecases/inventory/SuggestRecipes';
-
-// USE CASES - RECIPES
 import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe';
 import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
-import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration'; // ✅ NOU
-import { SupabaseRankingRepository } from '@/adapters/supabase/SupabaseRankingRepository';
-import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
-// --- INSTÀNCIES STATELESS (Singletons Implícits) ---
-// Són classes que no guarden estat intern, per tant podem reutilitzar la mateixa instància sempre.
-const decisionRepo = new SupabaseDecisionRepository();
-const roomRepo = new SupabaseDecisionRoomRepository();
+import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration';
 
+// --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
+// AI i serveis de domini pur que no toquen BBDD d'usuari directament
 const foodKnowledgeService = new FoodKnowledgeService();
 const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
-const candidateRepo = new SupabaseCandidateRepository();
-const inventoryRepo = new SupabaseInventoryRepository();
-const recipeRepo = new SupabaseRecipeRepository();
+const recipeMatcher = new RecipeMatcher();
 
-// --- SCANNER SERVICES ---
 const geminiAdapter = new GeminiImageRecognizer();
 const openAIAdapter = new OpenAIImageRecognizer();
 const robustRecognizer = new FallbackImageRecognizer(geminiAdapter, openAIAdapter);
 
-// --- DOMAIN SERVICES ---
-const recipeMatcher = new RecipeMatcher();
-
-
-// ✅ CORRECCIÓ: Instanciem el repositori BO
-const userProfileRepo = new SupabaseUserProfileRepository();
-// --- LAZY SINGLETONS ---
-// Inicialitzem sota demanda per estalviar recursos o evitar problemes d'ordre d'inicialització.
+// Lazy Singleton per al generador de receptes (AI)
 let recipeGeneratorInstance: RecipeGenerator | null = null;
+const getRecipeGenerator = (): RecipeGenerator => {
+  if (!recipeGeneratorInstance) {
+    const gemini = new GeminiRecipeGenerator();
+    const openai = new OpenAIRecipeGenerator();
+    recipeGeneratorInstance = new FallbackRecipeGenerator(gemini, openai);
+  }
+  return recipeGeneratorInstance;
+};
 
+// ⚠️ ELIMINEM: const inventoryRepo = new SupabaseInventoryRepository(); 
+// (Això donava l'error perquè li faltava el client)
+
+// ⚠️ ATENCIÓ: Els repositoris com decisionRepo, roomRepo, etc. també haurien de 
+// demanar client si fan servir RLS (Row Level Security). 
+// Per ara arreglo només INVENTARI per solucionar el teu error, però tingues-ho en compte.
+
+const decisionRepo = new SupabaseDecisionRepository();
+const roomRepo = new SupabaseDecisionRoomRepository();
+const candidateRepo = new SupabaseCandidateRepository();
+const recipeRepo = new SupabaseRecipeRepository();
+const userProfileRepo = new SupabaseUserProfileRepository();
 
 export const container = {
-  // === DECISION & ROOMS ===
+  // === INVENTORY (ARA DEMANEN EL CLIENT) ===
+  // Injecció de Dependències Dinàmica (Request Scoped)
+  
+  getAddItem: (client: SupabaseClient) => 
+    new AddItem(new SupabaseInventoryRepository(client)),
+
+  getConsumeItem: (client: SupabaseClient) => 
+    new ConsumeItem(new SupabaseInventoryRepository(client)),
+
+  getGetExpiringItems: (client: SupabaseClient) => 
+    new GetExpiringItems(new SupabaseInventoryRepository(client)),
+
+  getGetUserInventory: (client: SupabaseClient) => 
+    new GetUserInventory(new SupabaseInventoryRepository(client)),
+
+  getUpdateItem: (client: SupabaseClient) => 
+    new UpdateItem(new SupabaseInventoryRepository(client)),
+
+  getDeleteItem: (client: SupabaseClient) => 
+    new DeleteItem(new SupabaseInventoryRepository(client)),
+
+  getCookRecipe: (client: SupabaseClient) => 
+    new CookRecipe(new SupabaseInventoryRepository(client), recipeMatcher),
+
+  // Mode Xef: Inventari + IA
+  getSuggestRecipes: (client: SupabaseClient) => {
+    return new SuggestRecipes(
+      new SupabaseInventoryRepository(client), // Repo dinàmic
+      recipeRepo,
+      getRecipeGenerator(),
+      recipeMatcher
+    );
+  },
+  // Mètode especial per quan necessites el repo "pelat" (ex: batch inserts)
+  getInventoryRepo: (client: SupabaseClient) => 
+    new SupabaseInventoryRepository(client),
+  // === AI & TOOLS (Stateless) ===
+  getImageRecognizer: () => robustRecognizer,
+  getRecipeGenerator: getRecipeGenerator,
+
+  // === ALTRES (Legacy / Static per ara) ===
   getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, userProfileRepo, individualEngine),
   getCreateDecisionRoom: () => new CreateDecisionRoom(roomRepo),
   getJoinDecisionRoom: () => new JoinDecisionRoom(roomRepo),
@@ -96,64 +138,16 @@ export const container = {
   getClearRoomHistory: () => new ClearRoomHistory(roomRepo),
   getSetVotingMode: () => new SetRoomVotingMode(roomRepo),
   getUserRooms: () => new GetUserRooms(roomRepo),
-
-  // === CANDIDATES & PROFILE ===
   getUpdateUserProfile: () => new UpdateUserProfile(userProfileRepo),
   getAddCandidate: () => new AddCandidate(candidateRepo),
   getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
-
-  // === INVENTORY ===
-  getAddItem: () => new AddItem(inventoryRepo),
-  getConsumeItem: () => new ConsumeItem(inventoryRepo),
-  getGetExpiringItems: () => new GetExpiringItems(inventoryRepo),
-  getGetUserInventory: () => new GetUserInventory(inventoryRepo),
-  getUpdateItem: () => new UpdateItem(inventoryRepo),
-  getDeleteItem: () => new DeleteItem(inventoryRepo),
-  getImageRecognizer: () => robustRecognizer,
-  getCookRecipe: () => new CookRecipe(inventoryRepo, recipeMatcher),
-
-  // === RECIPES (GENERATOR) ===
-  getRecipeGenerator: (): RecipeGenerator => {
-    if (!recipeGeneratorInstance) {
-      const gemini = new GeminiRecipeGenerator();
-      const openai = new OpenAIRecipeGenerator();
-      // Configuració Fallback: Gemini (Primari) -> OpenAI (Secundari)
-      recipeGeneratorInstance = new FallbackRecipeGenerator(gemini, openai);
-    }
-    return recipeGeneratorInstance;
-  },
-
-
-
-  // === RECIPES (DATA & USE CASES) ===
-
-  // ✅ 1. EXPOSAR EL REPOSITORI (Necessari per les Actions com getRandomRecipes)
   getRecipeRepository: (): RecipeRepository => recipeRepo,
-
   getSaveGeneratedRecipe: () => new SaveGeneratedRecipe(recipeRepo),
-
   getGetRecipe: () => new GetRecipe(recipeRepo),
-
-  // ✅ 2. SUGGEST RECIPES (Mode Xef: Inventari + IA)
-  getSuggestRecipes: () => {
-    const generator = container.getRecipeGenerator();
-    return new SuggestRecipes(
-      inventoryRepo,
-      recipeRepo,
-      generator,
-      recipeMatcher
-    );
-  },
-
-  // ✅ 3. RANDOM INSPIRATION (Mode Destí: Aleatori + Al·lèrgies)
   getGetRandomInspiration: () => new GetRandomInspiration(recipeRepo),
+  getRecipeById: () => ({ execute: (id: string) => recipeRepo.findById(id) }),
 
-  // Helper legacy (opcional, millor fer servir getGetRecipe)
-  getRecipeById: () => ({
-    execute: (id: string) => recipeRepo.findById(id)
-  }),
-  // ✅ Tipatge estricte: Ara sabem que supabaseClient ha de ser un client real
-  getRankingRepository: (supabaseClient: SupabaseClient) => {
-    return new SupabaseRankingRepository(supabaseClient);
-  }
+  // Exemple que ja tenies bé:
+  getRankingRepository: (client: SupabaseClient) => new SupabaseRankingRepository(client)
+
 };

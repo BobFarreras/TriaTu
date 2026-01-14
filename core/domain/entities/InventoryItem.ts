@@ -65,3 +65,14 @@ export class InventoryItem {
     return this.props.expiryDate <= targetDate && this.props.expiryDate >= today;
   }
 }
+
+// ARXIU: core/domain/entities/InventoryItem.ts
+
+
+// ✅ AFEGIR AL FINAL DEL FITXER:
+export class InsufficientStockError extends Error {
+  constructor(public readonly itemName: string, public readonly missingAmount: number) {
+    super(`No hi ha prou estoc de ${itemName}. Falten ${missingAmount}.`);
+    this.name = "InsufficientStockError";
+  }
+}

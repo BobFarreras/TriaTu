@@ -1,93 +1,52 @@
-// src/app/actions/inventory-actions.ts
+// ARXIU: src/app/actions/inventory.ts
 'use server';
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
+import { container } from '@/services/container'; // ✅ Importem el contenidor
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
-import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository';
-import { FOOD_PRESETS } from '@/lib/food-presets'; // ✅ Importa els presets
+import { FOOD_PRESETS } from '@/lib/food-presets';
+
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
 } from '@/core/application/schemas/inputSchemas';
 
-// ------------------------------------------------------------------
-// ✅ FUNCIÓ HELPER INTEL·LIGENT (Moguda a dalt per claredat)
-// ------------------------------------------------------------------
+// --- HELPERS (Es queden igual) ---
 function calculateExpiryDate(name: string, emoji?: string): Date | undefined {
   const now = new Date();
-  
-  // 1. Busquem match exacte als presets (per Nom o Emoji)
   const preset = FOOD_PRESETS.find(p => 
     p.name.toLowerCase() === name.toLowerCase() || 
     (emoji && p.emoji === emoji)
   );
-
   if (preset) {
-    const days = preset.expirationDays;
-    // Creem una nova data sumant els dies
     const result = new Date();
-    result.setDate(now.getDate() + days);
+    result.setDate(now.getDate() + preset.expirationDays);
     return result;
   }
-
-  // 2. Si no trobem res, retornem undefined (sense data)
-  // Opcional: Podries retornar 'now + 14 dies' si vols un fallback genèric
   return undefined; 
 }
 
-// ------------------------------------------------------------------
-// SCHEMAS I INTERFÍCIES
-// ------------------------------------------------------------------
-
-const BatchInventorySchema = z.array(
-  InventoryItemSchema.omit({ userId: true })
-);
-
-interface UpdateItemDTO {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  emoji: string;
-  expiryDate?: Date | null;
-  location?: string;
-}
-
-interface ItemData {
-  name: string;
-  quantity: number;
-  unit: string;
-  location: StorageLocation;
-  emoji: string;
-  expiryDate?: string | undefined;
-}
-
-function getZodError(error: z.ZodError<unknown>): string {
-  return error.issues[0]?.message || "Dades invàlides";
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
-}
+const BatchInventorySchema = z.array(InventoryItemSchema.omit({ userId: true }));
+function getZodError(error: z.ZodError<unknown>): string { return error.issues[0]?.message || "Dades invàlides"; }
+function getErrorMessage(error: unknown): string { return error instanceof Error ? error.message : String(error); }
 
 // ------------------------------------------------------------------
 // 1. ADD ITEM
 // ------------------------------------------------------------------
 export async function addItemAction(formData: FormData) {
   try {
+    // 1. Obtenim el client (essencial per seguretat)
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
+    // 2. Processem dades (Form Data Parsing)
     const expiryRaw = formData.get('expiryDate');
     const expiryString = (expiryRaw && expiryRaw !== '' && expiryRaw !== 'null' && expiryRaw !== 'undefined')
-      ? String(expiryRaw)
-      : undefined;
+      ? String(expiryRaw) : undefined;
 
     const rawData = {
       userId: user.id,
@@ -100,39 +59,24 @@ export async function addItemAction(formData: FormData) {
     };
 
     const validation = InventoryItemSchema.safeParse(rawData);
-    let finalData: ItemData | z.infer<typeof InventoryItemSchema>;
-
-    if (!validation.success) {
-      const errors = validation.error.flatten().fieldErrors;
-      // Si l'únic error és la data, fem bypass (ja ho gestionem nosaltres)
-      if (errors.expiryDate && Object.keys(errors).length === 1) {
-        finalData = rawData as unknown as ItemData;
-      } else {
-        console.error("❌ [SERVER] Error Zod Real:", errors);
-        return { success: false, error: getZodError(validation.error) };
-      }
-    } else {
-      finalData = validation.data;
-    }
-
-    // ✅ CÀLCUL INTEL·LIGENT DE DATA
-    // Si l'usuari ha posat data (expiryString), la fem servir.
-    // Si no, la calculem automàticament segons el producte.
-    let finalExpiryDate = expiryString ? new Date(expiryString) : undefined;
+    if (!validation.success) return { success: false, error: getZodError(validation.error) };
     
+    const finalData = validation.data;
+    let finalExpiryDate = expiryString ? new Date(expiryString) : undefined;
     if (!finalExpiryDate) {
         finalExpiryDate = calculateExpiryDate(String(finalData.name), String(finalData.emoji));
     }
 
-    const addItemUseCase = container.getAddItem();
+    // ✅ 3. USEM EL CONTENIDOR (Li passem el client i ell ens dona el UseCase llest)
+    const useCase = container.getAddItem(supabase);
 
-    await addItemUseCase.execute({
+    await useCase.execute({
       userId: user.id,
       name: String(finalData.name),
       quantity: Number(finalData.quantity),
       unit: String(finalData.unit),
       location: finalData.location as StorageLocation,
-      expiryDate: finalExpiryDate, // Data calculada o manual
+      expiryDate: finalExpiryDate,
       emoji: String(finalData.emoji || '📦'),
       addedAt: new Date()
     });
@@ -141,7 +85,6 @@ export async function addItemAction(formData: FormData) {
     return { success: true };
 
   } catch (error: unknown) {
-    console.error('💥 [SERVER] Error addItemAction:', error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -152,13 +95,12 @@ export async function addItemAction(formData: FormData) {
 export async function consumeItemAction(itemId: string, amount: number) {
   try {
     const validation = ConsumeItemSchema.safeParse({ itemId, amount });
+    if (!validation.success) return { success: false, error: getZodError(validation.error) };
 
-    if (!validation.success) {
-      return { success: false, error: getZodError(validation.error) };
-    }
+    const supabase = await createClient(); // 1. Client
+    const useCase = container.getConsumeItem(supabase); // 2. Container
 
-    const consumeItemUseCase = container.getConsumeItem();
-    await consumeItemUseCase.execute(validation.data.itemId, validation.data.amount);
+    await useCase.execute(validation.data.itemId, validation.data.amount);
 
     revalidatePath('/inventory');
     return { success: true };
@@ -170,33 +112,33 @@ export async function consumeItemAction(itemId: string, amount: number) {
 // ------------------------------------------------------------------
 // 3. UPDATE ITEM
 // ------------------------------------------------------------------
+interface UpdateItemDTO { id: string; name: string; quantity: number; unit: string; emoji: string; expiryDate?: Date | null; location?: string; }
+
 export async function updateItemAction(item: UpdateItemDTO) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
-    if (!item.id) throw new Error("ID is required");
-    if (!item.name) throw new Error("Name is required");
+    if (!item.id || !item.name) throw new Error("Dades incompletes");
 
-    const updateUseCase = container.getUpdateItem();
+    const useCase = container.getUpdateItem(supabase); // ✅ Container
 
-    await updateUseCase.execute({
+    await useCase.execute({
       id: item.id,
       userId: user.id,
       name: item.name,
       emoji: item.emoji || '📦',
       quantity: item.quantity,
       unit: item.unit,
-      location: (item.location as StorageLocation) || 'PANTRY',
+      location: (item.location as StorageLocation) || StorageLocation.PANTRY,
       expiryDate: item.expiryDate ? item.expiryDate : undefined,
-      addedAt: new Date()
+      addedAt: new Date() 
     });
 
     revalidatePath('/inventory');
     return { success: true };
   } catch (error: unknown) {
-    console.error("❌ [SERVER UPDATE ERROR]:", error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -206,11 +148,12 @@ export async function updateItemAction(item: UpdateItemDTO) {
 // ------------------------------------------------------------------
 export async function deleteItemAction(itemId: string) {
   try {
-    const validation = z.string().uuid().safeParse(itemId);
-    if (!validation.success) return { success: false, error: "ID invàlid" };
+    if (!itemId) return { success: false, error: "ID invàlid" };
 
-    const deleteUseCase = container.getDeleteItem();
-    await deleteUseCase.execute(itemId);
+    const supabase = await createClient();
+    const useCase = container.getDeleteItem(supabase); // ✅ Container
+
+    await useCase.execute(itemId);
 
     revalidatePath('/inventory');
     return { success: true };
@@ -229,17 +172,14 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
     if (!user) throw new Error('Unauthorized');
 
     const validation = BatchInventorySchema.safeParse(items);
-    if (!validation.success) {
-      return { success: false, error: getZodError(validation.error) };
-    }
+    if (!validation.success) return { success: false, error: getZodError(validation.error) };
 
-    const repo = new SupabaseInventoryRepository();
+    // ✅ Aquí necessitem el Repositori directament, no un UseCase.
+    // El contenidor també ens el pot donar!
+    const repo = container.getInventoryRepo(supabase);
 
     const entities = validation.data.map(d => {
-      
-      // ✅ CÀLCUL INTEL·LIGENT DE DATA (Usant la funció helper)
       let finalDate = d.expiryDate ? new Date(d.expiryDate) : undefined;
-      
       if (!finalDate) {
          finalDate = calculateExpiryDate(d.name, d.emoji);
       }
@@ -251,7 +191,7 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
         quantity: d.quantity,
         unit: d.unit,
         location: d.location as StorageLocation,
-        expiryDate: finalDate, // Data automàtica
+        expiryDate: finalDate,
         emoji: d.emoji || '📦',
         addedAt: new Date()
       });

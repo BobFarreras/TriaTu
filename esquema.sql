@@ -1,5 +1,5 @@
 
-\restrict bdXv8qgcqZyfaEengau8VamF3cSJ6eUVHRdGQtrHO9iwS5X0k1FYJcx24MXY97a
+\restrict ruk5rYhQ3fIdcbcYgFY2RNeXJQ9xjP58y6Mm1nTHVeKiNdwSTU3WXG2Vyur7Ipo
 
 
 SET statement_timeout = 0;
@@ -24,6 +24,50 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
+CREATE OR REPLACE FUNCTION "public"."check_rate_limit"("_key" "text", "_limit" integer, "_window_seconds" integer) RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    _current_count integer;
+    _window_start timestamptz;
+BEGIN
+    -- Intentem llegir l'estat actual
+    SELECT count, window_start INTO _current_count, _window_start
+    FROM public.rate_limits
+    WHERE key = _key;
+
+    -- Cas A: No existeix el registre -> El creem
+    IF NOT FOUND THEN
+        INSERT INTO public.rate_limits (key, count, window_start)
+        VALUES (_key, 1, now());
+        RETURN true;
+    END IF;
+
+    -- Cas B: La finestra de temps ha caducat -> Resetegem el comptador
+    IF now() > _window_start + (_window_seconds || ' seconds')::interval THEN
+        UPDATE public.rate_limits
+        SET count = 1, window_start = now()
+        WHERE key = _key;
+        RETURN true;
+    END IF;
+
+    -- Cas C: Dins la finestra -> Comprovem si ha superat el límit
+    IF _current_count >= _limit THEN
+        RETURN false; -- BLOQUEJAT
+    ELSE
+        -- Incrementem
+        UPDATE public.rate_limits
+        SET count = count + 1
+        WHERE key = _key;
+        RETURN true;
+    END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."check_rate_limit"("_key" "text", "_limit" integer, "_window_seconds" integer) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -36,6 +80,90 @@ $$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."has_room_access"("_room_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  -- Seguretat: Si no hi ha user o room, fora
+  IF auth.uid() IS NULL OR _room_id IS NULL THEN 
+    RETURN false; 
+  END IF;
+
+  -- 1. Check Host
+  IF EXISTS (SELECT 1 FROM public.decision_rooms WHERE id = _room_id AND host_user_id = auth.uid()) THEN
+    RETURN true;
+  END IF;
+
+  -- 2. Check Participant
+  IF EXISTS (SELECT 1 FROM public.room_participants WHERE room_id = _room_id AND user_id = auth.uid()) THEN
+    RETURN true;
+  END IF;
+
+  RETURN false;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."has_room_access"("_room_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_room_member"("_room_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 
+    FROM room_participants 
+    WHERE room_id = _room_id 
+    AND user_id = auth.uid()
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."is_room_member"("_room_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_room_participant"("_room_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 
+    FROM public.room_participants 
+    WHERE room_id = _room_id 
+    AND user_id = auth.uid()
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."is_room_participant"("_room_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."keep_latest_decisions"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  -- Esborra les decisions antigues d'aquesta sala, deixant només les 50 més recents
+  DELETE FROM group_decisions
+  WHERE id IN (
+    SELECT id FROM group_decisions
+    WHERE room_id = NEW.room_id
+    ORDER BY created_at DESC
+    OFFSET 50 -- El límit que vulguis guardar
+  );
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."keep_latest_decisions"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_recipe_rating_stats"() RETURNS "trigger"
@@ -119,6 +247,7 @@ CREATE TABLE IF NOT EXISTS "public"."decision_rooms" (
     "status" "text" DEFAULT 'OPEN'::"text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "voting_mode" "text" DEFAULT 'BLIND'::"text",
+    "invite_code" "text" DEFAULT "encode"("extensions"."gen_random_bytes"(4), 'hex'::"text"),
     CONSTRAINT "decision_rooms_voting_mode_check" CHECK (("voting_mode" = ANY (ARRAY['BLIND'::"text", 'PUBLIC'::"text"])))
 );
 
@@ -145,8 +274,11 @@ CREATE TABLE IF NOT EXISTS "public"."group_decisions" (
     "choice" "text" NOT NULL,
     "reason" "text" NOT NULL,
     "candidates_proposed" "text"[],
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb"
 );
+
+ALTER TABLE ONLY "public"."group_decisions" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."group_decisions" OWNER TO "postgres";
@@ -181,6 +313,16 @@ CREATE TABLE IF NOT EXISTS "public"."preference_profiles" (
 
 
 ALTER TABLE "public"."preference_profiles" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."rate_limits" (
+    "key" "text" NOT NULL,
+    "count" integer DEFAULT 1,
+    "window_start" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."rate_limits" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."recipe_ratings" (
@@ -223,6 +365,8 @@ CREATE TABLE IF NOT EXISTS "public"."room_candidates" (
     "created_at" timestamp with time zone DEFAULT "now"()
 );
 
+ALTER TABLE ONLY "public"."room_candidates" REPLICA IDENTITY FULL;
+
 
 ALTER TABLE "public"."room_candidates" OWNER TO "postgres";
 
@@ -232,6 +376,8 @@ CREATE TABLE IF NOT EXISTS "public"."room_participants" (
     "user_id" "uuid" NOT NULL,
     "joined_at" timestamp with time zone DEFAULT "now"()
 );
+
+ALTER TABLE ONLY "public"."room_participants" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."room_participants" OWNER TO "postgres";
@@ -257,6 +403,21 @@ CREATE TABLE IF NOT EXISTS "public"."saved_recipes" (
 
 
 ALTER TABLE "public"."saved_recipes" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."security_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "level" "text" NOT NULL,
+    "event_type" "text" NOT NULL,
+    "user_id" "uuid",
+    "ip_address" "text",
+    "details" "jsonb" DEFAULT '{}'::"jsonb",
+    CONSTRAINT "security_logs_level_check" CHECK (("level" = ANY (ARRAY['INFO'::"text", 'WARN'::"text", 'ERROR'::"text", 'CRITICAL'::"text"])))
+);
+
+
+ALTER TABLE "public"."security_logs" OWNER TO "postgres";
 
 
 CREATE OR REPLACE VIEW "public"."user_leaderboard" AS
@@ -290,6 +451,11 @@ ALTER TABLE ONLY "public"."decision_outcomes"
 
 
 ALTER TABLE ONLY "public"."decision_rooms"
+    ADD CONSTRAINT "decision_rooms_invite_code_key" UNIQUE ("invite_code");
+
+
+
+ALTER TABLE ONLY "public"."decision_rooms"
     ADD CONSTRAINT "decision_rooms_pkey" PRIMARY KEY ("id");
 
 
@@ -314,6 +480,11 @@ ALTER TABLE ONLY "public"."preference_profiles"
 
 
 
+ALTER TABLE ONLY "public"."rate_limits"
+    ADD CONSTRAINT "rate_limits_pkey" PRIMARY KEY ("key");
+
+
+
 ALTER TABLE ONLY "public"."recipe_ratings"
     ADD CONSTRAINT "recipe_ratings_pkey" PRIMARY KEY ("recipe_id", "user_id");
 
@@ -334,6 +505,11 @@ ALTER TABLE ONLY "public"."saved_recipes"
 
 
 
+ALTER TABLE ONLY "public"."security_logs"
+    ADD CONSTRAINT "security_logs_pkey" PRIMARY KEY ("id");
+
+
+
 CREATE INDEX "idx_community_recipes_author" ON "public"."community_recipes" USING "btree" ("author_id");
 
 
@@ -342,11 +518,39 @@ CREATE INDEX "idx_community_recipes_tags" ON "public"."community_recipes" USING 
 
 
 
-CREATE INDEX "idx_recipe_ratings_recipe" ON "public"."recipe_ratings" USING "btree" ("recipe_id");
+CREATE INDEX "idx_decision_rooms_invite_code" ON "public"."decision_rooms" USING "btree" ("invite_code");
+
+
+
+CREATE INDEX "idx_decisions_user_id" ON "public"."decisions" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_group_decisions_room_id" ON "public"."group_decisions" USING "btree" ("room_id");
+
+
+
+CREATE INDEX "idx_inventory_items_user_id" ON "public"."inventory_items" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_room_candidates_room_id" ON "public"."room_candidates" USING "btree" ("room_id");
+
+
+
+CREATE INDEX "idx_room_participants_user_id" ON "public"."room_participants" USING "btree" ("user_id");
 
 
 
 CREATE INDEX "idx_saved_recipes_dietary_tags" ON "public"."saved_recipes" USING "gin" ("dietary_tags");
+
+
+
+CREATE INDEX "idx_saved_recipes_tags" ON "public"."saved_recipes" USING "gin" ("tags");
+
+
+
+CREATE INDEX "idx_saved_recipes_user_id" ON "public"."saved_recipes" USING "btree" ("user_id");
 
 
 
@@ -369,6 +573,10 @@ CREATE OR REPLACE VIEW "public"."recipes_with_stats" AS
 
 
 CREATE OR REPLACE TRIGGER "on_vote_update_recipe" AFTER INSERT OR DELETE OR UPDATE ON "public"."recipe_ratings" FOR EACH ROW EXECUTE FUNCTION "public"."update_recipe_rating_stats"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_cleanup_decisions" AFTER INSERT ON "public"."group_decisions" FOR EACH ROW EXECUTE FUNCTION "public"."keep_latest_decisions"();
 
 
 
@@ -422,6 +630,11 @@ ALTER TABLE ONLY "public"."saved_recipes"
 
 
 
+ALTER TABLE ONLY "public"."security_logs"
+    ADD CONSTRAINT "security_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
 CREATE POLICY "Anyone can read ratings" ON "public"."recipe_ratings" FOR SELECT USING (true);
 
 
@@ -450,23 +663,33 @@ CREATE POLICY "Dev policy outcomes" ON "public"."decision_outcomes" USING (true)
 
 
 
-CREATE POLICY "Dev policy participants" ON "public"."room_participants" USING (true) WITH CHECK (true);
-
-
-
 CREATE POLICY "Dev policy profiles" ON "public"."preference_profiles" USING (true) WITH CHECK (true);
 
 
 
-CREATE POLICY "Enable read access for all authenticated users" ON "public"."decision_rooms" FOR SELECT TO "authenticated" USING (true);
+CREATE POLICY "Enable delete for owners and hosts" ON "public"."room_candidates" FOR DELETE USING ((("auth"."uid"() = "user_id") OR (( SELECT "decision_rooms"."host_user_id"
+   FROM "public"."decision_rooms"
+  WHERE ("decision_rooms"."id" = "room_candidates"."room_id")) = "auth"."uid"())));
 
 
 
-CREATE POLICY "Enable read access for participants" ON "public"."room_participants" FOR SELECT TO "authenticated" USING (true);
+CREATE POLICY "Enable insert for anon (login failures)" ON "public"."security_logs" FOR INSERT TO "anon" WITH CHECK (true);
 
 
 
-CREATE POLICY "Enable read/write for all (DEV ONLY)" ON "public"."decision_rooms" USING (true) WITH CHECK (true);
+CREATE POLICY "Enable insert for authenticated" ON "public"."room_candidates" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."security_logs" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable read access for all" ON "public"."room_candidates" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for authenticated users" ON "public"."decision_rooms" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -498,7 +721,15 @@ CREATE POLICY "Users can delete their own inventory" ON "public"."inventory_item
 
 
 
+CREATE POLICY "Users can delete their own recipes" ON "public"."saved_recipes" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
 CREATE POLICY "Users can insert their own inventory" ON "public"."inventory_items" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their own recipes" ON "public"."saved_recipes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -519,6 +750,26 @@ CREATE POLICY "Users can update their own inventory" ON "public"."inventory_item
 
 
 CREATE POLICY "Users can view their own inventory" ON "public"."inventory_items" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own recipes" ON "public"."saved_recipes" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "allow_host_all" ON "public"."decision_rooms" USING (("auth"."uid"() = "host_user_id"));
+
+
+
+CREATE POLICY "allow_join" ON "public"."room_participants" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "allow_participant_read" ON "public"."decision_rooms" FOR SELECT USING ("public"."has_room_access"("id"));
+
+
+
+CREATE POLICY "allow_read_participants" ON "public"."room_participants" FOR SELECT USING ("public"."has_room_access"("room_id"));
 
 
 
@@ -543,6 +794,9 @@ ALTER TABLE "public"."inventory_items" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."preference_profiles" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."rate_limits" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."recipe_ratings" ENABLE ROW LEVEL SECURITY;
 
 
@@ -555,20 +809,7 @@ ALTER TABLE "public"."room_participants" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."saved_recipes" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "smart_delete_candidates" ON "public"."room_candidates" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "smart_insert_candidates" ON "public"."room_candidates" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "smart_select_candidates" ON "public"."room_candidates" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
-   FROM "public"."decision_rooms"
-  WHERE (("decision_rooms"."id" = "room_candidates"."room_id") AND ("decision_rooms"."host_user_id" = "auth"."uid"())))) OR (EXISTS ( SELECT 1
-   FROM "public"."decision_rooms"
-  WHERE (("decision_rooms"."id" = "room_candidates"."room_id") AND ("decision_rooms"."voting_mode" = 'PUBLIC'::"text"))))));
-
+ALTER TABLE "public"."security_logs" ENABLE ROW LEVEL SECURITY;
 
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";
@@ -578,9 +819,39 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."check_rate_limit"("_key" "text", "_limit" integer, "_window_seconds" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."check_rate_limit"("_key" "text", "_limit" integer, "_window_seconds" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_rate_limit"("_key" "text", "_limit" integer, "_window_seconds" integer) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_room_member"("_room_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_room_member"("_room_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_room_member"("_room_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_room_participant"("_room_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_room_participant"("_room_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_room_participant"("_room_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."keep_latest_decisions"() TO "anon";
+GRANT ALL ON FUNCTION "public"."keep_latest_decisions"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."keep_latest_decisions"() TO "service_role";
 
 
 
@@ -632,6 +903,12 @@ GRANT ALL ON TABLE "public"."preference_profiles" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."rate_limits" TO "anon";
+GRANT ALL ON TABLE "public"."rate_limits" TO "authenticated";
+GRANT ALL ON TABLE "public"."rate_limits" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."recipe_ratings" TO "anon";
 GRANT ALL ON TABLE "public"."recipe_ratings" TO "authenticated";
 GRANT ALL ON TABLE "public"."recipe_ratings" TO "service_role";
@@ -659,6 +936,12 @@ GRANT ALL ON TABLE "public"."room_participants" TO "service_role";
 GRANT ALL ON TABLE "public"."saved_recipes" TO "anon";
 GRANT ALL ON TABLE "public"."saved_recipes" TO "authenticated";
 GRANT ALL ON TABLE "public"."saved_recipes" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."security_logs" TO "anon";
+GRANT ALL ON TABLE "public"."security_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."security_logs" TO "service_role";
 
 
 
@@ -698,6 +981,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict bdXv8qgcqZyfaEengau8VamF3cSJ6eUVHRdGQtrHO9iwS5X0k1FYJcx24MXY97a
+\unrestrict ruk5rYhQ3fIdcbcYgFY2RNeXJQ9xjP58y6Mm1nTHVeKiNdwSTU3WXG2Vyur7Ipo
 
 RESET ALL;

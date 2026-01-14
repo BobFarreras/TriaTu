@@ -42,7 +42,7 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
 
     setLoadingItems(prev => { const n = new Set(prev); n.add(index); return n; });
 
-    const result = await toggleIngredientStockAction(userId, ing.name, ing.quantity, action);
+    const result = await toggleIngredientStockAction(userId, ing.name, ing.quantity, action, ing.unit);
 
     setLoadingItems(prev => { const n = new Set(prev); n.delete(index); return n; });
 
