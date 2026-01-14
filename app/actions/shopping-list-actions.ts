@@ -6,20 +6,33 @@ import { container } from '@/services/container';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+// ✅ FIX: Afegim 'emoji' a l'esquema (opcional per si de cas, string)
 const AddItemSchema = z.object({
   name: z.string().min(1),
   quantity: z.number().positive(),
-  unit: z.string()
+  unit: z.string(),
+  emoji: z.string().optional() // <--- AQUEST ERA EL CULPABLE
 });
 
-export async function addToShoppingListAction(name: string, quantity: number, unit: string) {
+export async function addToShoppingListAction(name: string, quantity: number, unit: string, emoji?: string) {
   try {
+    // 🔍 LOG DEBUG 1: Què arriba del client?
+    console.log("🚀 [ACTION INPUT]", { name, emoji });
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    const validation = AddItemSchema.safeParse({ name, quantity, unit });
-    if (!validation.success) return { success: false, error: "Dades invàlides" };
+    // Validació
+    const validation = AddItemSchema.safeParse({ name, quantity, unit, emoji });
+    
+    if (!validation.success) {
+        console.error("❌ [VALIDATION ERROR]", validation.error);
+        return { success: false, error: "Dades invàlides" };
+    }
+
+    // 🔍 LOG DEBUG 2: Què surt de Zod? (Aquí es perdia abans)
+    console.log("✅ [ZOD OUTPUT]", validation.data);
 
     const useCase = container.getAddToShoppingList(supabase);
     
@@ -27,7 +40,8 @@ export async function addToShoppingListAction(name: string, quantity: number, un
         user.id, 
         validation.data.name, 
         validation.data.quantity, 
-        validation.data.unit
+        validation.data.unit,
+        validation.data.emoji // ✅ Ara sí que passa!
     );
 
     revalidatePath('/shopping-list');
@@ -46,7 +60,7 @@ export async function toggleShoppingItemAction(itemId: string, isChecked: boolea
     // No cal un UseCase complex per un toggle simple, accés directe al repo via container
     const repo = container.getShoppingListRepo(supabase); // *Cal afegir aquest mètode al container
     await repo.toggleCheck(itemId, isChecked);
-    
+
     revalidatePath('/shopping-list');
     return { success: true };
   } catch (error) {

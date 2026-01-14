@@ -20,9 +20,10 @@ export default async function ShoppingListPage() {
       name: i.props.name,
       quantity: i.props.quantity,
       unit: i.props.unit,
-      isChecked: i.props.isChecked
+      isChecked: i.props.isChecked,
+      emoji: i.props.emoji
   }));
-
+  
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 pb-32">
       <div className="max-w-2xl mx-auto space-y-6">

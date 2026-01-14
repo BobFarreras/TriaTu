@@ -13,6 +13,7 @@ interface ShoppingListItemRow {
   unit: string;
   is_checked: boolean;
   added_at?: string;
+  emoji?: string; // ✅ NOU
 }
 
 export class SupabaseShoppingListRepository implements ShoppingListRepository {
@@ -48,13 +49,14 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
         .from('shopping_list_items')
         .update({
           quantity: newQuantity,
-          is_checked: false
+          is_checked: false,
         })
         .eq('id', existingItem.id);
 
       if (error) throw error;
 
     } else {
+      console.log("💾 [REPO] Inserting:", item.props.emoji); // LOG
       const { error } = await this.supabase
         .from('shopping_list_items')
         .insert({
@@ -62,7 +64,9 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
           name: item.props.name,
           quantity: item.props.quantity,
           unit: item.props.unit,
-          is_checked: item.props.isChecked
+          is_checked: item.props.isChecked,
+          emoji: item.props.emoji // ✅ Actualitzem l'emoji
+
         });
 
       if (error) throw error;
@@ -105,7 +109,8 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
       name: raw.name,
       quantity: Number(raw.quantity),
       unit: raw.unit,
-      isChecked: raw.is_checked
+      isChecked: raw.is_checked,
+      emoji: raw.emoji // ✅ Recuperem l'emoji
     });
   }
 }

@@ -28,8 +28,15 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
 
   const handleAddToList = async () => {
     setLoading('list');
-    const result = await addToShoppingListAction(ingredient.name, ingredient.quantity, ingredient.unit);
-    
+
+    // ✅ FIX: Afegim el 4t argument (ingredient.emoji)
+    const result = await addToShoppingListAction(
+      ingredient.name,
+      ingredient.quantity,
+      ingredient.unit,
+      ingredient.emoji // <--- AQUESTA ÉS LA PEÇA QUE FALTAVA
+    );
+
     if (result.success) {
       toast.success(`📝 Afegit a la llista: ${ingredient.name}`);
       onClose();
@@ -43,10 +50,10 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
     setLoading('inventory');
     // ✅ PASSEM L'EMOJI A L'ACCIÓ
     const result = await quickAddInventoryAction(
-        ingredient.name, 
-        ingredient.quantity, 
-        ingredient.unit,
-        ingredient.emoji // <--- AQUI
+      ingredient.name,
+      ingredient.quantity,
+      ingredient.unit,
+      ingredient.emoji // <--- AQUI
     );
 
     if (result.success) {
@@ -64,14 +71,14 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
       {isOpen && (
         // ✅ CORRECCIÓ Z-INDEX: Pugem a z-[100] per superar qualsevol sticky header
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
             className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
           />
 
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
@@ -81,13 +88,13 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
             <div className="bg-linear-to-r from-purple-900/40 to-slate-900 p-6 text-center border-b border-slate-800">
               <div className="text-4xl mb-3">{ingredient.emoji || '⚠️'}</div> {/* Mostrem l'emoji també aquí */}
               <h2 className="text-xl font-bold text-white">Et falta ingredient!</h2>
-       
+
             </div>
 
             {/* ... Botons (igual que abans) ... */}
-             <div className="p-6 space-y-3">
+            <div className="p-6 space-y-3">
               <p className="text-xs uppercase tracking-wider text-slate-500 font-bold mb-4">Què vols fer?</p>
-              
+
               <button
                 onClick={handleAddToList}
                 disabled={loading !== null}
@@ -118,10 +125,10 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
                     <div className="text-xs text-slate-400">L'afegeix al rebost immediatament</div>
                   </div>
                 </div>
-                 {loading === 'inventory' && <span className="animate-spin">⏳</span>}
+                {loading === 'inventory' && <span className="animate-spin">⏳</span>}
               </button>
             </div>
-            
+
             {/* Footer */}
             <div className="p-4 bg-slate-950 border-t border-slate-800 text-center">
               <button onClick={onClose} className="text-sm text-slate-500 hover:text-white transition-colors">
