@@ -12,6 +12,7 @@ export interface AddItemInput {
   location: StorageLocation;
   expiryDate?: Date;
   addedAt: Date;
+  productId?: string | null;
 }
 
 export class AddItem {

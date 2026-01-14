@@ -2,31 +2,37 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 
-// 1. Detectamos el entorno
 const isDev = process.env.NODE_ENV !== "production";
 
-// 2. Configuramos el PWA (pero no lo aplicamos todavía)
 const withPWA = withPWAInit({
   dest: "public",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
-  disable: isDev, // Desactivar en dev para que Turbopack funcione
+  disable: isDev,
   workboxOptions: {
     disableDevLogs: true,
   },
 });
 
-// 3. Tu configuración base de Next.js (con Headers de seguridad y Turbo)
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '5mb',
     },
-   
+  },
+
+  // ✅ 1. Permetre optimització d'imatges de Bonpreu
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'www.compraonline.bonpreuesclat.cat',
+        pathname: '/**',
+      },
+    ],
   },
   
-  // HEADERS DE SEGURIDAD OWASP
   async headers() {
     return [
       {
@@ -41,14 +47,14 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'geolocation=(), interest-cohort=()' }, 
           {
             key: 'Content-Security-Policy',
+            // ✅ 2. Afegim el domini de Bonpreu a img-src
             value: `
               default-src 'self';
               script-src 'self' 'unsafe-eval' 'unsafe-inline';
               style-src 'self' 'unsafe-inline';
-              img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in;
+              img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in https://www.compraonline.bonpreuesclat.cat;
               font-src 'self' data:;
               connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in;
-       
             `.replace(/\s{2,}/g, ' ').trim()
           }
         ],
@@ -56,10 +62,6 @@ const nextConfig: NextConfig = {
     ];
   },
 };
-
-// 4. LÓGICA DE EXPORTACIÓN (LA SOLUCIÓN AL ERROR)
-// Si es DEV -> Exportamos la config limpia (Turbopack feliz)
-// Si es PROD -> Exportamos la config envuelta en PWA (Webpack feliz)
 
 const finalConfig = isDev ? nextConfig : withPWA(nextConfig);
 

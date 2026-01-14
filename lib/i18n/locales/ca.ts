@@ -681,6 +681,7 @@ export const ca = {
       add_title: "Afegir nou aliment",
       name_placeholder: "Què afegim al revost?",
       quantity_label: "Quantitat",
+      product_placeholder:"Escriu 'Llet' o tria categoria...",
       location: {
         fridge: "Nevera",
         pantry: "Revost",

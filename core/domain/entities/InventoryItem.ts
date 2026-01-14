@@ -12,6 +12,8 @@ export interface InventoryItemProps {
   location: StorageLocation;
   expiryDate?: Date;
   addedAt: Date;
+  productId?: string | null;
+  image?: string | null;
 }
 
 export class InventoryItem {
@@ -50,6 +52,7 @@ export class InventoryItem {
   get location() { return this.props.location; }
   get expiryDate() { return this.props.expiryDate; }
   get addedAt() { return this.props.addedAt; }
+  get productId() { return this.props.productId; }
 
   // Lògica de domini
   public isExpired(): boolean {

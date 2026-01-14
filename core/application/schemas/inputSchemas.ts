@@ -83,12 +83,13 @@ export const IndividualDecisionSchema = z.object({
 export const InventoryItemSchema = z.object({
   id: UuidSchema.optional(), // Opcional perquè al crear no en té
   userId: UuidSchema,
-  name: SafeText.max(50, "El nom de l'ingredient és massa llarg"),
+  name: z.string().min(1, "El nom és obligatori").max(200, "El nom és massa llarg"),
   quantity: z.number().min(0, "La quantitat no pot ser negativa").max(999999, "Quantitat excessiva"),
   unit: SafeText.max(10, "Unitat massa llarga"), // ex: "kg", "litres"
   location: z.enum(['FRIDGE', 'FREEZER', 'PANTRY']).default('PANTRY'), // Ajusta als teus valors
   expiryDate: z.string().datetime().optional().or(z.literal('')), // Data o buit
-  emoji: z.string().max(4).regex(/^[^<>]*$/).optional().or(z.literal(''))
+  emoji: z.string().max(4).regex(/^[^<>]*$/).optional().or(z.literal('')),
+  productId: z.string().uuid().optional().nullable().or(z.literal('')),
 });
 
 // Per consumir o eliminar

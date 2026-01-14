@@ -1,11 +1,9 @@
-// ARXIU: adapters/supabase/SupabaseInventoryRepository.ts
-
 import { InventoryRepository } from '@/core/ports/InventoryRepository';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-// DTO: La forma exacta de la taula a Supabase
+// ✅ 1. INTERFÍCIE ROBUSTA (Representa la fila SQL + el JOIN)
 interface InventoryItemRow {
   id: string;
   user_id: string;
@@ -16,9 +14,15 @@ interface InventoryItemRow {
   location: string;
   expiry_date: string | null;
   added_at: string;
+  product_id: string | null;
+  // El resultat del JOIN amb product_catalog
+  // Pot ser un objecte (si és 1:1) o null
+  product_catalog: {
+    image_url: string | null;
+  } | null; 
 }
 
-// Helper pur per separar emojis (Molt bona lògica!)
+// Helper pur per separar emojis
 function splitEmoji(text: string): { emoji: string | undefined; name: string } {
   const regex = /^([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])\s*/;
   const match = text.match(regex);
@@ -29,10 +33,8 @@ function splitEmoji(text: string): { emoji: string | undefined; name: string } {
 }
 
 export class SupabaseInventoryRepository implements InventoryRepository {
-  // ✅ CLAU: Injectem el client. Això fa feliç al TDD.
   constructor(private readonly supabase: SupabaseClient) { }
 
-  // --- Mapper Privat ---
   private toDomain(row: InventoryItemRow): InventoryItem {
     let finalEmoji = row.emoji;
     let finalName = row.name;
@@ -45,13 +47,13 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       }
     }
 
-    // ✅ SOLUCIÓ SENSE ANY: Comprovem si el string està dins els valors de l'Enum
     const isValidLocation = Object.values(StorageLocation).includes(row.location as StorageLocation);
-
-    // Si és vàlid, fem cast segur. Si no, fallback a PANTRY.
     const location: StorageLocation = isValidLocation
       ? (row.location as StorageLocation)
       : StorageLocation.PANTRY;
+
+    // ✅ Accedim de forma segura amb Optional Chaining
+    const imageUrl = row.product_catalog?.image_url || null;
 
     return InventoryItem.create({
       id: row.id,
@@ -62,69 +64,69 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       unit: row.unit,
       location: location,
       expiryDate: row.expiry_date ? new Date(row.expiry_date) : undefined,
-      addedAt: new Date(row.added_at)
+      addedAt: new Date(row.added_at),
+      productId: row.product_id || undefined,
+      image: imageUrl
     });
   }
 
-  // --- Implementació del Port ---
-
+  // ... (mètodes save i findById iguals que abans) ...
   async save(item: InventoryItem): Promise<void> {
     const row = {
-      id: item.id,
-      user_id: item.userId,
-      name: item.name,
-      emoji: item.emoji, // Guardem l'emoji net
-      quantity: item.quantity,
-      unit: item.unit,
-      location: item.location,
-      expiry_date: item.expiryDate ? item.expiryDate.toISOString() : null,
-      added_at: item.addedAt.toISOString() // Important: assegurar format ISO
+      id: item.props.id,
+      user_id: item.props.userId,
+      name: item.props.name,
+      emoji: item.props.emoji,
+      quantity: item.props.quantity,
+      unit: item.props.unit,
+      location: item.props.location,
+      expiry_date: item.props.expiryDate ? item.props.expiryDate.toISOString() : null,
+      added_at: item.props.addedAt.toISOString(),
+      product_id: item.props.productId 
     };
-
+    
     const { error } = await this.supabase.from('inventory_items').upsert(row);
-
-    if (error) {
-      console.error('Error saving inventory item:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
+    if (error) throw new Error(`Database error: ${error.message}`);
   }
 
   async findById(id: string): Promise<InventoryItem | null> {
     const { data, error } = await this.supabase
       .from('inventory_items')
-      .select('*')
+      .select('*') // Aquí no cal join normalment, o sí si vols la imatge al detall
       .eq('id', id)
       .single();
 
     if (error) {
-      // Codi específic de Supabase/Postgres per "No trobat"
       if (error.code === 'PGRST116') return null;
       throw new Error(error.message);
     }
-
     if (!data) return null;
-    return this.toDomain(data as InventoryItemRow);
+    
+    // Aquí el tipus pot ser parcial, així que fem un cast segur
+    return this.toDomain(data as unknown as InventoryItemRow);
   }
 
+  // 🔥 SOLUCIÓ AL TYPESCRIPT ERROR 🔥
   async findByUser(userId: string): Promise<InventoryItem[]> {
     const { data, error } = await this.supabase
       .from('inventory_items')
-      .select('*')
+      .select(`
+        *,
+        product_catalog (
+            image_url
+        )
+      `)
       .eq('user_id', userId)
       .order('expiry_date', { ascending: true, nullsFirst: false });
 
     if (error) throw new Error(error.message);
     if (!data) return [];
 
-    // Map segur ignorant errors de dades corruptes
-    return (data as InventoryItemRow[]).reduce((acc: InventoryItem[], row) => {
-      try {
-        acc.push(this.toDomain(row));
-      } catch (e) {
-        console.warn(`⚠️ Inventari corrupt ignorat (ID: ${row.id}):`, e);
-      }
-      return acc;
-    }, []);
+    // ✅ TRUC: `as unknown as InventoryItemRow[]`
+    // Convertim el tipus genèric de Supabase al nostre tipus estricte
+    const rows = data as unknown as InventoryItemRow[];
+    
+    return rows.map(row => this.toDomain(row));
   }
 
   async delete(id: string): Promise<void> {
@@ -132,6 +134,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     if (error) throw new Error(error.message);
   }
 
+  // 🔥 TAMBÉ APLICAT AQUÍ 🔥
   async findExpiringSoon(userId: string, daysThreshold: number): Promise<InventoryItem[]> {
     const now = new Date();
     const thresholdDate = new Date();
@@ -139,20 +142,24 @@ export class SupabaseInventoryRepository implements InventoryRepository {
 
     const { data, error } = await this.supabase
       .from('inventory_items')
-      .select('*')
+      .select(`
+        *,
+        product_catalog ( image_url ) 
+      `)
       .eq('user_id', userId)
       .lte('expiry_date', thresholdDate.toISOString())
-      .gte('expiry_date', now.toISOString()) // Opcional: per no mostrar els ja caducats
+      .gte('expiry_date', now.toISOString())
       .order('expiry_date', { ascending: true });
 
     if (error) throw new Error(error.message);
 
-    return (data as InventoryItemRow[]).map(row => this.toDomain(row));
+    // ✅ Cast segur sense 'any'
+    const rows = data as unknown as InventoryItemRow[];
+
+    return rows.map(row => this.toDomain(row));
   }
 
   async batchUpdate(updates: { id: string; quantity: number }[]): Promise<void> {
-    // Nota: Supabase no té un "update many" natiu amb valors diferents per fila fàcil.
-    // L'estratègia de Promise.all és correcta per volums baixos (<50 items).
     const promises = updates.map(update =>
       this.supabase.from('inventory_items').update({ quantity: update.quantity }).eq('id', update.id)
     );
@@ -165,20 +172,20 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     if (error) throw new Error(error.message);
   }
 
-  // Si vols utilitzar aquest mètode, recorda afegir-lo a la interfície InventoryRepository
   async saveBatch(items: InventoryItem[]): Promise<void> {
     if (items.length === 0) return;
 
     const rows = items.map(item => ({
-      id: item.id,
-      user_id: item.userId,
-      name: item.name,
-      emoji: item.emoji,
-      quantity: item.quantity,
-      unit: item.unit,
-      location: item.location,
-      expiry_date: item.expiryDate ? item.expiryDate.toISOString() : null,
-      added_at: item.addedAt.toISOString()
+      id: item.props.id,
+      user_id: item.props.userId,
+      name: item.props.name,
+      emoji: item.props.emoji,
+      quantity: item.props.quantity,
+      unit: item.props.unit,
+      location: item.props.location,
+      expiry_date: item.props.expiryDate ? item.props.expiryDate.toISOString() : null,
+      added_at: item.props.addedAt.toISOString(),
+      product_id: item.props.productId
     }));
 
     const { error } = await this.supabase.from('inventory_items').upsert(rows);

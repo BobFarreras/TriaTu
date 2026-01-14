@@ -4,18 +4,23 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseDecisionRepository } from '@/adapters/supabase/SupabaseDecisionRepository';
 import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
-import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository'; // ✅ Aquest ara demana client
+import { SupabaseInventoryRepository } from '@/adapters/supabase/SupabaseInventoryRepository';
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 import { SupabaseRankingRepository } from '@/adapters/supabase/SupabaseRankingRepository';
 import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
+import { SupabaseShoppingListRepository } from '@/adapters/supabase/SupabaseShoppingListRepository';
+// ✅ NOU: Import del repositori del catàleg
+import { SupabaseProductCatalogRepository } from '@/adapters/supabase/SupabaseProductCatalogRepository';
 
-// ADAPTERS - AI (Aquests SI poden ser estàtics perquè no depenen de l'usuari)
+// ADAPTERS - EXTERNAL (AI & SCRAPERS)
 import { OpenAIImageRecognizer } from '@/adapters/openai/OpenAIImageRecognizer';
 import { GeminiImageRecognizer } from '@/adapters/gemini/GeminiImageRecognizer';
 import { FallbackImageRecognizer } from '@/adapters/strategies/FallbackImageRecognizer';
 import { GeminiRecipeGenerator } from '@/adapters/gemini/GeminiRecipeGenerator';
 import { OpenAIRecipeGenerator } from '@/adapters/openai/OpenAIRecipeGenerator';
 import { FallbackRecipeGenerator } from '@/adapters/strategies/FallbackRecipeGenerator';
+// ✅ NOU: Import de l'adapter de Bonpreu
+import { BonpreuAdapter } from '@/adapters/external/BonpreuAdapter';
 
 // DOMAIN SERVICES
 import { BasicDecisionEngine } from '@/services/decision/BasicDecisionEngine';
@@ -49,17 +54,19 @@ import { UpdateItem } from '@/core/usecases/inventory/UpdateItem';
 import { DeleteItem } from '@/core/usecases/inventory/DeleteItem';
 import { CookRecipe } from '@/core/usecases/inventory/CookRecipe';
 import { SuggestRecipes } from '@/core/usecases/inventory/SuggestRecipes';
+// ✅ NOU: Import del Use Case de cerca de productes
+import { SearchAndCacheProducts } from '@/core/usecases/inventory/SearchAndCacheProducts';
+
+// USE CASES - RECIPES & SHOPPING
 import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe';
 import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
 import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration';
-import { SupabaseShoppingListRepository } from '@/adapters/supabase/SupabaseShoppingListRepository'; // ✅ NOU IMPORT
-import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingList'; // ✅ NOU
-import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList'; // ✅ NOU
-import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession'; // ✅ NOU
+import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingList';
+import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
+import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
 
 
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
-// AI i serveis de domini pur que no toquen BBDD d'usuari directament
 const foodKnowledgeService = new FoodKnowledgeService();
 const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
@@ -68,6 +75,9 @@ const recipeMatcher = new RecipeMatcher();
 const geminiAdapter = new GeminiImageRecognizer();
 const openAIAdapter = new OpenAIImageRecognizer();
 const robustRecognizer = new FallbackImageRecognizer(geminiAdapter, openAIAdapter);
+
+// ✅ NOU: Instància global de l'adapter de Bonpreu (no té estat d'usuari)
+const bonpreuAdapter = new BonpreuAdapter();
 
 // Lazy Singleton per al generador de receptes (AI)
 let recipeGeneratorInstance: RecipeGenerator | null = null;
@@ -80,13 +90,7 @@ const getRecipeGenerator = (): RecipeGenerator => {
   return recipeGeneratorInstance;
 };
 
-// ⚠️ ELIMINEM: const inventoryRepo = new SupabaseInventoryRepository(); 
-// (Això donava l'error perquè li faltava el client)
-
-// ⚠️ ATENCIÓ: Els repositoris com decisionRepo, roomRepo, etc. també haurien de 
-// demanar client si fan servir RLS (Row Level Security). 
-// Per ara arreglo només INVENTARI per solucionar el teu error, però tingues-ho en compte.
-
+// Repositoris que no depenen del client (però compte amb RLS en el futur)
 const decisionRepo = new SupabaseDecisionRepository();
 const roomRepo = new SupabaseDecisionRoomRepository();
 const candidateRepo = new SupabaseCandidateRepository();
@@ -94,9 +98,7 @@ const recipeRepo = new SupabaseRecipeRepository();
 const userProfileRepo = new SupabaseUserProfileRepository();
 
 export const container = {
-  // === INVENTORY (ARA DEMANEN EL CLIENT) ===
-  // Injecció de Dependències Dinàmica (Request Scoped)
-
+  // === INVENTORY ===
   getAddItem: (client: SupabaseClient) =>
     new AddItem(new SupabaseInventoryRepository(client)),
 
@@ -121,20 +123,28 @@ export const container = {
   // Mode Xef: Inventari + IA
   getSuggestRecipes: (client: SupabaseClient) => {
     return new SuggestRecipes(
-      new SupabaseInventoryRepository(client), // Repo dinàmic
+      new SupabaseInventoryRepository(client),
       recipeRepo,
       getRecipeGenerator(),
       recipeMatcher
     );
   },
-  // Mètode especial per quan necessites el repo "pelat" (ex: batch inserts)
+  
   getInventoryRepo: (client: SupabaseClient) =>
     new SupabaseInventoryRepository(client),
-  // === AI & TOOLS (Stateless) ===
+
+  // ✅ NOU: Use Case per buscar i guardar productes (Cache)
+  getSearchAndCacheProducts: (client: SupabaseClient) => 
+    new SearchAndCacheProducts(
+      bonpreuAdapter,
+      new SupabaseProductCatalogRepository(client)
+    ),
+
+  // === AI & TOOLS ===
   getImageRecognizer: () => robustRecognizer,
   getRecipeGenerator: getRecipeGenerator,
 
-  // === ALTRES (Legacy / Static per ara) ===
+  // === DECISIONS ===
   getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, userProfileRepo, individualEngine),
   getCreateDecisionRoom: () => new CreateDecisionRoom(roomRepo),
   getJoinDecisionRoom: () => new JoinDecisionRoom(roomRepo),
@@ -146,13 +156,13 @@ export const container = {
   getUpdateUserProfile: () => new UpdateUserProfile(userProfileRepo),
   getAddCandidate: () => new AddCandidate(candidateRepo),
   getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
+  
+  // === RECIPES ===
   getRecipeRepository: (): RecipeRepository => recipeRepo,
   getSaveGeneratedRecipe: () => new SaveGeneratedRecipe(recipeRepo),
   getGetRecipe: () => new GetRecipe(recipeRepo),
   getGetRandomInspiration: () => new GetRandomInspiration(recipeRepo),
   getRecipeById: () => ({ execute: (id: string) => recipeRepo.findById(id) }),
-
-  // Exemple que ja tenies bé:
   getRankingRepository: (client: SupabaseClient) => new SupabaseRankingRepository(client),
 
   // === SHOPPING LIST ===
@@ -170,5 +180,4 @@ export const container = {
 
   getShoppingListRepo: (client: SupabaseClient) =>
     new SupabaseShoppingListRepository(client)
-
 };
