@@ -37,7 +37,7 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-4 lg:sticky lg:top-8"
+            className="lg:col-span-4 lg:sticky lg:top-8 z-9999"
           >
               <IngredientsPanel 
                   ingredients={recipe.ingredients} 

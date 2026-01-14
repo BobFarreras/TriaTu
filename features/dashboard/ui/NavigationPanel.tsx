@@ -98,6 +98,8 @@ export function NavigationPanel() {
         <span className="text-3xl md:text-5xl filter drop-shadow-lg group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">⚙️</span>
       </Link>
 
+      
+
       {/* INSTAL·LACIÓ */}
       {showInstallCard && (
         <button

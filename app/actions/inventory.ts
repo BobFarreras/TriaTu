@@ -17,8 +17,8 @@ import {
 // --- HELPERS (Es queden igual) ---
 function calculateExpiryDate(name: string, emoji?: string): Date | undefined {
   const now = new Date();
-  const preset = FOOD_PRESETS.find(p => 
-    p.name.toLowerCase() === name.toLowerCase() || 
+  const preset = FOOD_PRESETS.find(p =>
+    p.name.toLowerCase() === name.toLowerCase() ||
     (emoji && p.emoji === emoji)
   );
   if (preset) {
@@ -26,7 +26,7 @@ function calculateExpiryDate(name: string, emoji?: string): Date | undefined {
     result.setDate(now.getDate() + preset.expirationDays);
     return result;
   }
-  return undefined; 
+  return undefined;
 }
 
 const BatchInventorySchema = z.array(InventoryItemSchema.omit({ userId: true }));
@@ -60,11 +60,11 @@ export async function addItemAction(formData: FormData) {
 
     const validation = InventoryItemSchema.safeParse(rawData);
     if (!validation.success) return { success: false, error: getZodError(validation.error) };
-    
+
     const finalData = validation.data;
     let finalExpiryDate = expiryString ? new Date(expiryString) : undefined;
     if (!finalExpiryDate) {
-        finalExpiryDate = calculateExpiryDate(String(finalData.name), String(finalData.emoji));
+      finalExpiryDate = calculateExpiryDate(String(finalData.name), String(finalData.emoji));
     }
 
     // ✅ 3. USEM EL CONTENIDOR (Li passem el client i ell ens dona el UseCase llest)
@@ -133,7 +133,7 @@ export async function updateItemAction(item: UpdateItemDTO) {
       unit: item.unit,
       location: (item.location as StorageLocation) || StorageLocation.PANTRY,
       expiryDate: item.expiryDate ? item.expiryDate : undefined,
-      addedAt: new Date() 
+      addedAt: new Date()
     });
 
     revalidatePath('/inventory');
@@ -181,7 +181,7 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
     const entities = validation.data.map(d => {
       let finalDate = d.expiryDate ? new Date(d.expiryDate) : undefined;
       if (!finalDate) {
-         finalDate = calculateExpiryDate(d.name, d.emoji);
+        finalDate = calculateExpiryDate(d.name, d.emoji);
       }
 
       return InventoryItem.create({
@@ -204,6 +204,49 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
 
   } catch (error: unknown) {
     console.error('Error in addBatchItemsAction:', error);
+    return { success: false, error: getErrorMessage(error) };
+  }
+
+}
+// ✅ MODIFICAT: Afegim paràmetre 'emoji' (opcional)
+export async function quickAddInventoryAction(
+  name: string,
+  quantity: number,
+  unit: string,
+  emoji?: string // <--- NOU PARÀMETRE
+) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Unauthorized');
+
+    // 1. Lògica intel·ligent per l'emoji
+    // Si ve del front, l'usem. Si no, busquem a presets. Si no, default.
+    let finalEmoji = emoji;
+    if (!finalEmoji) {
+      const preset = FOOD_PRESETS.find(p => p.name.toLowerCase() === name.toLowerCase());
+      finalEmoji = preset?.emoji || '📦';
+    }
+
+    const expiryDate = calculateExpiryDate(name, finalEmoji);
+    const useCase = container.getAddItem(supabase);
+
+    await useCase.execute({
+      userId: user.id,
+      name: name,
+      quantity: quantity,
+      unit: unit,
+      location: StorageLocation.PANTRY,
+      expiryDate: expiryDate,
+      emoji: finalEmoji, // ✅ Usem l'emoji correcte
+      addedAt: new Date()
+    });
+
+    revalidatePath('/inventory');
+    revalidatePath('/recipes');
+    return { success: true };
+
+  } catch (error: unknown) {
     return { success: false, error: getErrorMessage(error) };
   }
 }

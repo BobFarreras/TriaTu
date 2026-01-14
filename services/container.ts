@@ -52,6 +52,9 @@ import { SuggestRecipes } from '@/core/usecases/inventory/SuggestRecipes';
 import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe';
 import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
 import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration';
+import { SupabaseShoppingListRepository } from '@/adapters/supabase/SupabaseShoppingListRepository'; // ✅ NOU IMPORT
+import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingList'; // ✅ NOU
+import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList'; // ✅ NOU
 
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
 // AI i serveis de domini pur que no toquen BBDD d'usuari directament
@@ -91,26 +94,26 @@ const userProfileRepo = new SupabaseUserProfileRepository();
 export const container = {
   // === INVENTORY (ARA DEMANEN EL CLIENT) ===
   // Injecció de Dependències Dinàmica (Request Scoped)
-  
-  getAddItem: (client: SupabaseClient) => 
+
+  getAddItem: (client: SupabaseClient) =>
     new AddItem(new SupabaseInventoryRepository(client)),
 
-  getConsumeItem: (client: SupabaseClient) => 
+  getConsumeItem: (client: SupabaseClient) =>
     new ConsumeItem(new SupabaseInventoryRepository(client)),
 
-  getGetExpiringItems: (client: SupabaseClient) => 
+  getGetExpiringItems: (client: SupabaseClient) =>
     new GetExpiringItems(new SupabaseInventoryRepository(client)),
 
-  getGetUserInventory: (client: SupabaseClient) => 
+  getGetUserInventory: (client: SupabaseClient) =>
     new GetUserInventory(new SupabaseInventoryRepository(client)),
 
-  getUpdateItem: (client: SupabaseClient) => 
+  getUpdateItem: (client: SupabaseClient) =>
     new UpdateItem(new SupabaseInventoryRepository(client)),
 
-  getDeleteItem: (client: SupabaseClient) => 
+  getDeleteItem: (client: SupabaseClient) =>
     new DeleteItem(new SupabaseInventoryRepository(client)),
 
-  getCookRecipe: (client: SupabaseClient) => 
+  getCookRecipe: (client: SupabaseClient) =>
     new CookRecipe(new SupabaseInventoryRepository(client), recipeMatcher),
 
   // Mode Xef: Inventari + IA
@@ -123,7 +126,7 @@ export const container = {
     );
   },
   // Mètode especial per quan necessites el repo "pelat" (ex: batch inserts)
-  getInventoryRepo: (client: SupabaseClient) => 
+  getInventoryRepo: (client: SupabaseClient) =>
     new SupabaseInventoryRepository(client),
   // === AI & TOOLS (Stateless) ===
   getImageRecognizer: () => robustRecognizer,
@@ -148,6 +151,13 @@ export const container = {
   getRecipeById: () => ({ execute: (id: string) => recipeRepo.findById(id) }),
 
   // Exemple que ja tenies bé:
-  getRankingRepository: (client: SupabaseClient) => new SupabaseRankingRepository(client)
+  getRankingRepository: (client: SupabaseClient) => new SupabaseRankingRepository(client),
+
+  // === SHOPPING LIST ===
+  getAddToShoppingList: (client: SupabaseClient) =>
+    new AddToShoppingList(new SupabaseShoppingListRepository(client)),
+
+  getGetShoppingList: (client: SupabaseClient) =>
+    new GetShoppingList(new SupabaseShoppingListRepository(client)),
 
 };
