@@ -101,7 +101,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
    if (scannedItems && capturedImage) {
       return (
          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] transition-all duration-500 ease-in-out">
-            {/* ... Contingut editor (igual) ... */}
+          
             <div className={`relative rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-2xl transition-all duration-500 ${showImage ? 'flex-[0_0_40%] min-h-64 opacity-100' : 'flex-[0_0_0%] min-h-0 border-0 opacity-0 overflow-hidden'}`}>
                <div className="absolute inset-0 w-full h-full">
                   <AROverlay
@@ -200,7 +200,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
 
          </div>
          {/* ZONA DESPLEGABLE DEL FORMULARI */}
-         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showAddForm ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showAddForm ? 'max-h-250 opacity-100' : 'max-h-0 opacity-0'}`}>
             <div className="pt-2 pb-6 px-1">
                {/* ✅ AQUI ESTÀ EL CANVI PRINCIPAL */}
                {showAddForm && (
