@@ -5,6 +5,8 @@ import { ProductExplorer } from '@/components/inventory/products/ProductExplorer
 import { CartDock } from '@/components/inventory/products/CartDock'; // ✅ Importem el Dock
 import { ProductResult, addBatchItemsAction } from '@/app/actions/inventory';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
+// ✅ 1. IMPORTAR EL SERVEI DE SEGURETAT
+import { ExpirySafetyService } from '@/core/services/ExpirySafetyService'; // ✅ Importar
 
 interface Props {
   onClose: () => void;
@@ -15,6 +17,8 @@ interface CartItem {
   quantity: number;
 }
 
+// (La funció detectLocation la podem mantenir o usar la lògica dins del loop, 
+// però ExpirySafetyService ja fa la feina dura si li passem la ubicació)
 const detectLocation = (tags: string[] | undefined): StorageLocation => {
   if (!tags) return StorageLocation.PANTRY;
   const upperTags = tags.map(t => t.toUpperCase());
@@ -27,6 +31,7 @@ export function BulkAddItemForm({ onClose }: Props) {
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
 
   const quantitiesMap = cart.reduce((acc, item) => {
     acc[item.product.id] = item.quantity;
@@ -48,46 +53,67 @@ export function BulkAddItemForm({ onClose }: Props) {
   const handleSaveAll = async () => {
      if (cart.length === 0) return;
      setIsSaving(true);
+
      try {
-        const itemsPayload = cart.map(item => ({
-            name: item.product.name,
-            quantity: item.quantity,
-            unit: 'ut', 
-            location: detectLocation(item.product.tags), 
-            emoji: item.product.emoji,
-            productId: item.product.id
-        }));
+        const itemsPayload = cart.map(item => {
+            // 1. Detectem ubicació
+            const location = detectLocation(item.product.tags);
+            
+            // ✅ 2. CALCULEM LA DATA SEGURA (Això és el que faltava!)
+            // Passem: Nom, Ubicació i undefined (perquè no tenim data prèvia)
+            // El servei retornarà "+3 dies" per pollastre, "+6 mesos" per congelats, etc.
+            const safeExpiryDate = ExpirySafetyService.applySafetyRules(
+                item.product.name, 
+                location, 
+                undefined // No tenim data de referència
+            );
+
+            // Convertim a ISO per al servidor
+            const isoDate = new Date(safeExpiryDate).toISOString();
+
+            return {
+                name: item.product.name,
+                quantity: item.quantity,
+                unit: 'ut', 
+                location: location, 
+                emoji: item.product.emoji,
+                productId: item.product.id,
+                expiryDate: isoDate // ✅ Enviem la data calculada
+            };
+        });
+
         const result = await addBatchItemsAction(itemsPayload);
-        if (result.success) onClose();
-        else alert("Error: " + result.error);
-     } catch(e) { console.error(e); } finally { setIsSaving(false); }
+
+        if (result.success) {
+           onClose();
+        } else {
+           alert("Error guardant: " + result.error);
+        }
+     } catch(e) { 
+        console.error(e); 
+     } finally { 
+        setIsSaving(false); 
+     }
   };
 
-  return (
-    <div className="flex flex-col h-full w-full bg-slate-950">
-      
-      {/* ❌ HEM ELIMINAT LA CAPÇALERA D'AQUÍ. 
-         Ara està integrada dins del ProductExplorer.
-      */}
 
-      {/* COS PRINCIPAL */}
-      <div className="flex-1 overflow-hidden relative">
+  return (
+   
+    <div className="flex flex-col h-full w-full bg-slate-950">
+
+       <div className="flex-1 overflow-hidden relative">
          <ProductExplorer 
             onSelect={handleSelect} 
             quantities={quantitiesMap} 
-            // ✅ Passem onClose perquè el posi al lloc del buscador
             onClose={onClose} 
          />
       </div>
-
-      {/* DOCK */}
       <CartDock 
         items={cart} 
         onRemove={handleRemove}
         onSave={handleSaveAll}
         isSaving={isSaving}
       />
-
     </div>
   );
 }

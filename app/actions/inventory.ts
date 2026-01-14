@@ -8,7 +8,7 @@ import { container } from '@/services/container'; // ✅ Importem el contenidor
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { FOOD_PRESETS } from '@/lib/food-presets';
-
+import { ExpirySafetyService } from '@/core/services/ExpirySafetyService'; // ✅ IMPRESCINDIBLE
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
@@ -42,40 +42,48 @@ const BatchInventorySchema = z.array(InventoryItemSchema.omit({ userId: true }))
 function getZodError(error: z.ZodError<unknown>): string { return error.issues[0]?.message || "Dades invàlides"; }
 function getErrorMessage(error: unknown): string { return error instanceof Error ? error.message : String(error); }
 
-// ------------------------------------------------------------------
-// 1. ADD ITEM
-// ------------------------------------------------------------------
 export async function addItemAction(formData: FormData) {
   try {
-    // 1. Obtenim el client (essencial per seguretat)
+    // 1. Obtenim el client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
-    // 2. Processem dades (Form Data Parsing)
-    const expiryRaw = formData.get('expiryDate');
-    const expiryString = (expiryRaw && expiryRaw !== '' && expiryRaw !== 'null' && expiryRaw !== 'undefined')
-      ? String(expiryRaw) : undefined;
-    // 🔴 LOG 1: Què arriba cru del formulari?
-    const rawProductId = formData.get('productId');
-    console.log("🔍 [ACTION] Raw productId from FormData:", rawProductId);
+    // 2. Recuperem camps clau per a la lògica de seguretat
+    const name = String(formData.get('name') || 'Producte');
+    const location = String(formData.get('location') || 'PANTRY');
+    let expiryString = formData.get('expiryDate')?.toString();
+
+    // 🛡️ SEGURETAT: Si no arriba data (o és invàlida), la calculem nosaltres
+    if (!expiryString || expiryString === 'null' || expiryString === 'undefined' || expiryString === '') {
+       console.log(`🛡️ [SERVER] Data absent. Calculant data segura per: ${name}`);
+       
+       // El servei ens torna "YYYY-MM-DD"
+       const safeDateYMD = ExpirySafetyService.applySafetyRules(name, location, undefined);
+       
+       // La passem a ISO per a Zod i BBDD ("YYYY-MM-DDTHH:mm:ss.sssZ")
+       expiryString = new Date(safeDateYMD).toISOString();
+    }
+
+    // 🔴 LOG 1: Dades crues
+    console.log("🔍 [ACTION] Processing item:", { name, location, expiryString });
+
     const rawData = {
       userId: user.id,
-      name: formData.get('name'),
+      name: name,
       quantity: Number(formData.get('quantity')),
       unit: formData.get('unit'),
-      location: formData.get('location'),
-      expiryDate: expiryString,
+      location: location,
+      // Ara expiryString segur que té valor (o el del form, o el calculat)
+      expiryDate: expiryString, 
       emoji: formData.get('emoji'),
       // ✅ AFEGIT: Llegim el productId del formData
-      productId: formData.get('productId')
+      productId: formData.get('productId') && formData.get('productId') !== 'null'
         ? String(formData.get('productId'))
         : null
     };
 
-    // 🔴 LOG 2: Què passem a Zod?
-    console.log("🔍 [ACTION] Data entering Zod:", rawData);
-
+    // 🔴 LOG 2: Validació
     const validation = InventoryItemSchema.safeParse(rawData);
 
     if (!validation.success) {
@@ -83,16 +91,13 @@ export async function addItemAction(formData: FormData) {
       return { success: false, error: getZodError(validation.error) };
     }
 
-    // 🔴 LOG 3: Què ha sortit de Zod? (Si aquí productId falta, és culpa de l'Schema)
-    console.log("🔍 [ACTION] Data after Zod parse:", validation.data);
-
     const finalData = validation.data;
-    let finalExpiryDate = expiryString ? new Date(expiryString) : undefined;
-    if (!finalExpiryDate) {
-      finalExpiryDate = calculateExpiryDate(String(finalData.name), String(finalData.emoji));
-    }
 
-    // ✅ 3. USEM EL CONTENIDOR (Li passem el client i ell ens dona el UseCase llest)
+    // Convertim a objecte Date real (Zod ja ha garantit que l'string és ISO vàlid)
+    // Nota: Com que hem forçat el càlcul a dalt, finalData.expiryDate sempre tindrà valor
+    const finalExpiryDate = finalData.expiryDate ? new Date(finalData.expiryDate) : undefined;
+
+    // ✅ 3. USEM EL CONTENIDOR
     const useCase = container.getAddItem(supabase);
 
     await useCase.execute({
@@ -111,6 +116,7 @@ export async function addItemAction(formData: FormData) {
     return { success: true };
 
   } catch (error: unknown) {
+    console.error("💥 Error fatal a addItemAction:", error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -323,11 +329,11 @@ export async function deleteBatchItemsAction(ids: string[]) {
     if (!user) throw new Error('Unauthorized');
 
     const repo = container.getInventoryRepo(supabase);
-    
+
     // Assumim que el teu repo té un mètode batchDelete. 
     // Si no el tens al repo, fes un bucle de delete (més lent però funciona)
     // O implementa batchDelete(ids) al Repository com vam veure abans.
-    await repo.batchDelete(ids); 
+    await repo.batchDelete(ids);
 
     revalidatePath('/inventory');
     return { success: true };

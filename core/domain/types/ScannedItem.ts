@@ -1,14 +1,15 @@
-import { StorageLocation } from "@/core/domain/entities/StorageLocation";
-
 export interface ScannedItem {
   name: string;
-  emoji: string; // ✅ AFEGEIX AIXÒ
-  quantity: number;
-  unit: 'ut' | 'kg' | 'l' | 'g';
-  location: StorageLocation;
-  expiryDate?: string; 
-  confidence: number;
-  // NOU: Coordenades per pintar la caixa (AR)
-  // Format: [ymin, xmin, ymax, xmax] (valors de 0 a 1000 segons Gemini)
-  box2d?: number[]; 
+  emoji?: string;
+  quantity?: number;
+  unit?: string;
+  location?: 'PANTRY' | 'FRIDGE' | 'FREEZER';
+  expiryDate?: string;
+  box2d?: number[]; // [ymin, xmin, ymax, xmax]
+  
+  // ✅ CAMPS NOUS PER AL MATCHING
+  productId?: string;      // ID real de la BBDD
+  catalogImage?: string;   // Foto oficial del Bonpreu
+  price?: number;          // Preu real
+  matchConfidence?: number; // Com de segurs estem del match
 }

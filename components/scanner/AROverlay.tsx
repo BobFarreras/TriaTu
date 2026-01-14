@@ -8,22 +8,22 @@ interface AROverlayProps {
 }
 
 export function AROverlay({ imageSrc, items, onItemClick }: AROverlayProps) {
-  
+
   return (
     // 1. Contenidor Base: Ocupa tot l'espai disponible (negre) i CENTRA el contingut
     <div className="relative w-full h-full bg-black rounded-3xl overflow-hidden border border-slate-700 shadow-2xl flex items-center justify-center">
-      
+
       {/* 2. Wrapper d'Imatge:
            És 'relative' perquè els botons es posicionin respecte a ELL.
            No té mida fixa, s'encongeix per abraçar la imatge (gràcies al flex pare).
       */}
       <div className="relative max-w-full max-h-full">
-        <img 
-          src={imageSrc} 
-          alt="Captured" 
+        <img
+          src={imageSrc}
+          alt="Captured"
           // 3. Imatge: 'max-w-full max-h-full' fa que mai sigui més gran que la pantalla,
           // mantenint la proporció original (aspect ratio) sense retallar res.
-          className="max-w-full max-h-full object-contain block" 
+          className="max-w-full max-h-full object-contain block"
         />
 
         {items.map((item, idx) => {
@@ -31,7 +31,7 @@ export function AROverlay({ imageSrc, items, onItemClick }: AROverlayProps) {
           if (!item.box2d || item.box2d.length < 4) return null;
 
           const [ymin, xmin, ymax, xmax] = item.box2d;
-          
+
           // Conversió de coordenades 1000 -> %
           const top = ymin / 10;
           const left = xmin / 10;
@@ -50,9 +50,21 @@ export function AROverlay({ imageSrc, items, onItemClick }: AROverlayProps) {
                 height: `${height}%`,
               }}
             >
-              {/* Etiqueta flotant (Només visible si hi ha espai o en hover) */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                 {item.name}
+              {/* ETIQUETA MILLORADA */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-bold p-1 pr-3 rounded-full shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 border border-slate-700">
+
+                {/* Si tenim imatge de catàleg, la mostrem petita */}
+                {item.catalogImage ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={item.catalogImage} className="w-8 h-8 object-contain bg-white rounded-full" alt="" />
+                ) : (
+                  <span className="text-xl pl-1">{item.emoji}</span>
+                )}
+
+                <div className="flex flex-col text-left">
+                  <span className="max-w-25 truncate">{item.name}</span>
+                  {item.price && <span className="text-emerald-400">{item.price}€</span>}
+                </div>
               </div>
             </button>
           );

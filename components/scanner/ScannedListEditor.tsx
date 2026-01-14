@@ -65,11 +65,20 @@ export function ScannedListEditor({
         formData.set('unit', item.unit || 'ut');
         formData.set('location', item.location || 'PANTRY');
 
-        // Només enviem data si existeix (evita enviar string buida "")
+        // ✅ CORRECCIÓ AQUÍ:
+        // Si tenim data (ex: "2028-01-14"), la passem a ISO ("2028-01-14T00:00:00.000Z")
+        // abans d'enviar-la. Així Zod estarà content.
         if (item.expiryDate) {
-          formData.set('expiryDate', item.expiryDate);
+          const isoDate = new Date(item.expiryDate).toISOString();
+          formData.set('expiryDate', isoDate);
         }
-
+        // ✅ CLAU: AFEGIR EL PRODUCT ID AL FORM DATA
+        if (item.productId) {
+          formData.set('productId', item.productId);
+          console.log(`🔗 [CLIENT] Enllaçant producte ID: ${item.productId}`);
+        } else {
+          console.log(`⚠️ [CLIENT] Guardant com a manual (sense ID)`);
+        }
         console.log(`📨 [CLIENT] Enviant FormData per: ${item.name}`);
 
         const result = await addItemAction(formData);
