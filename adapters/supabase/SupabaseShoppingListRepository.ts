@@ -16,7 +16,7 @@ interface ShoppingListItemRow {
 }
 
 export class SupabaseShoppingListRepository implements ShoppingListRepository {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient) { }
 
   async findAll(userId: string): Promise<ShoppingListItem[]> {
     const { data, error } = await this.supabase
@@ -43,12 +43,12 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
       // Tipem l'objecte existent
       const existingItem = existing as unknown as ShoppingListItemRow;
       const newQuantity = Number(existingItem.quantity) + item.props.quantity;
-      
+
       const { error } = await this.supabase
         .from('shopping_list_items')
-        .update({ 
-            quantity: newQuantity,
-            is_checked: false 
+        .update({
+          quantity: newQuantity,
+          is_checked: false
         })
         .eq('id', existingItem.id);
 
@@ -77,7 +77,26 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
 
     if (error) throw error;
   }
+  // ✅ Implementació Toggle
+  async toggleCheck(itemId: string, isChecked: boolean): Promise<void> {
+    const { error } = await this.supabase
+      .from('shopping_list_items')
+      .update({ is_checked: isChecked })
+      .eq('id', itemId);
 
+    if (error) throw new Error(error.message);
+  }
+
+  // ✅ Implementació DeleteMany
+  async deleteMany(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    const { error } = await this.supabase
+      .from('shopping_list_items')
+      .delete()
+      .in('id', ids);
+
+    if (error) throw new Error(error.message);
+  }
   // ✅ CORRECCIÓ: Substituïm 'any' per la interfície Row
   private mapToDomain(raw: ShoppingListItemRow): ShoppingListItem {
     return new ShoppingListItem({

@@ -16,4 +16,6 @@ export interface InventoryRepository {
   
   // També necessitem poder esborrar items si la quantitat arriba a 0
   batchDelete(ids: string[]): Promise<void>;
+  saveBatch(items: InventoryItem[]): Promise<void>;
+
 }

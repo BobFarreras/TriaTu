@@ -91,6 +91,16 @@ export function NavigationPanel() {
         <h3 className="text-lg md:text-xl font-black text-white leading-none tracking-tight">{t.dashboard.nav.inventory}</h3>
         <span className="text-3xl md:text-5xl filter drop-shadow-lg group-hover:scale-110 group-hover:translate-x-1 transition-transform duration-300">📦</span>
       </Link>
+      
+      {/* 0. LLISTA DE LA COMPRA (NOU - Alta prioritat) */}
+      <Link id="tour-dash-shopping" href="/shopping-list" className={`${cardBaseClass} bg-purple-600 hover:bg-purple-500 border-purple-800 shadow-purple-900/20`}>
+        <div className="z-10 flex flex-col justify-center">
+          {/* Badge opcional si tens el count */}
+          {/* <span className="text-[9px] font-black text-purple-200 bg-purple-800/30 px-2 py-0.5 rounded w-fit mb-0.5">PENDENT</span> */}
+          <h3 className="text-lg md:text-xl font-black text-white leading-none tracking-tight">Llista Compra</h3>
+        </div>
+        <span className="text-3xl md:text-5xl filter drop-shadow-lg group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300">📝</span>
+      </Link>
 
       {/* 7. PERFIL -> ✅ ID NOU */}
       <Link id="tour-dash-profile" href="/profile" className={`${cardBaseClass} bg-zinc-700 hover:bg-zinc-600 border-zinc-900 shadow-black/20`}>
@@ -98,7 +108,7 @@ export function NavigationPanel() {
         <span className="text-3xl md:text-5xl filter drop-shadow-lg group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">⚙️</span>
       </Link>
 
-      
+
 
       {/* INSTAL·LACIÓ */}
       {showInstallCard && (

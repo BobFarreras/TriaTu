@@ -38,3 +38,38 @@ export async function addToShoppingListAction(name: string, quantity: number, un
     return { success: false, error: "No s'ha pogut afegir a la llista." };
   }
 }
+
+// ✅ 2. TOGGLE CHECK
+export async function toggleShoppingItemAction(itemId: string, isChecked: boolean) {
+  try {
+    const supabase = await createClient();
+    // No cal un UseCase complex per un toggle simple, accés directe al repo via container
+    const repo = container.getShoppingListRepo(supabase); // *Cal afegir aquest mètode al container
+    await repo.toggleCheck(itemId, isChecked);
+    
+    revalidatePath('/shopping-list');
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling item:", error);
+    return { success: false, error: "Error actualitzant" };
+  }
+}
+
+// ✅ 3. COMPLETE SESSION (Moure a inventari)
+export async function completeShoppingSessionAction() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Unauthorized');
+
+    const useCase = container.getCompleteShoppingSession(supabase); // *Cal afegir al container
+    const result = await useCase.execute(user.id);
+
+    revalidatePath('/shopping-list');
+    revalidatePath('/inventory');
+    return { success: true, count: result.added };
+  } catch (error) {
+    console.error("Error completing shopping session:", error);
+    return { success: false, error: "Error finalitzant la compra" };
+  }
+}

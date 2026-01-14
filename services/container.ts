@@ -55,6 +55,8 @@ import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspirati
 import { SupabaseShoppingListRepository } from '@/adapters/supabase/SupabaseShoppingListRepository'; // ✅ NOU IMPORT
 import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingList'; // ✅ NOU
 import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList'; // ✅ NOU
+import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession'; // ✅ NOU
+
 
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
 // AI i serveis de domini pur que no toquen BBDD d'usuari directament
@@ -159,5 +161,14 @@ export const container = {
 
   getGetShoppingList: (client: SupabaseClient) =>
     new GetShoppingList(new SupabaseShoppingListRepository(client)),
+
+  getCompleteShoppingSession: (client: SupabaseClient) =>
+    new CompleteShoppingSession(
+      new SupabaseShoppingListRepository(client),
+      new SupabaseInventoryRepository(client)
+    ),
+
+  getShoppingListRepo: (client: SupabaseClient) =>
+    new SupabaseShoppingListRepository(client)
 
 };

@@ -63,7 +63,7 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
     <AnimatePresence>
       {isOpen && (
         // ✅ CORRECCIÓ Z-INDEX: Pugem a z-[100] per superar qualsevol sticky header
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -78,10 +78,10 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
             className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden"
           >
             {/* ... Contingut visual (igual que abans) ... */}
-            <div className="bg-gradient-to-r from-purple-900/40 to-slate-900 p-6 text-center border-b border-slate-800">
+            <div className="bg-linear-to-r from-purple-900/40 to-slate-900 p-6 text-center border-b border-slate-800">
               <div className="text-4xl mb-3">{ingredient.emoji || '⚠️'}</div> {/* Mostrem l'emoji també aquí */}
               <h2 className="text-xl font-bold text-white">Et falta ingredient!</h2>
-              {/* ... */}
+       
             </div>
 
             {/* ... Botons (igual que abans) ... */}

@@ -10,4 +10,8 @@ export interface ShoppingListRepository {
   
   // Elimina un item
   delete(id: string): Promise<void>;
+
+  // ✅ NOUS MÈTODES PER GESTIÓ D'ESTAT
+  toggleCheck(itemId: string, isChecked: boolean): Promise<void>;
+  deleteMany(ids: string[]): Promise<void>; // Per netejar la llista en acabar
 }
