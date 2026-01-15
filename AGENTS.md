@@ -18,6 +18,11 @@ Testing:
 - TDD obligatori: Primer test, després codi.
 - Cap PR sense tests verds.
 
+Documentació:
+- Qualsevol canvi d'arquitectura o flux ha d'actualitzar `guia.md` i `arquitectura_assistent_de_decisions_quotidianes.md`.
+- Les guies operatives viuen a `docs/` i s'han de mantenir coherents.
+- Registra deute tècnic o riscos nous a `docs/PROJECT_AUDIT.md`.
+
 UX:
 - Una decisió = una resposta.
 - Mai més de 2 interaccions per decisió.

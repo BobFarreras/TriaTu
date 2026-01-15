@@ -1,89 +1,75 @@
-# 🥑 Triatu - Decision Making & Smart Cooking
+# 🥑 Triatu — Decision Making & Smart Cooking
 
 ![CI Status](https://github.com/BobFarreras/TriaTu/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 
-**Triatu** és una aplicació web dissenyada per resoldre el conflicte etern: *"Què sopem avui?"*. Utilitza intel·ligència col·lectiva per a grups i Intel·ligència Artificial per generar receptes basades en el teu inventari real.
+**Triatu** és una aplicació web dissenyada per resoldre el conflicte etern: _"Què sopem avui?"_.
+Utilitza intel·ligència col·lectiva per a grups i IA per generar receptes basades en el teu inventari real.
 
-## 🚀 Funcionalitats Clau
+## 🚀 Funcionalitats clau
 
-- **🗳️ Sales de Decisió:** Crea sales, convida amics i vota (mode manual o màgic) per decidir plats o plans.
-- **🤖 Cuiner IA (Híbrid):** Genera receptes aprofitant el que tens a la nevera. El sistema prioritza receptes guardades i omple els buits amb IA (OpenAI/Gemini).
-- **📦 Gestió d'Inventari:** Controla el teu estoc d'aliments amb caducitats i ubicacions (Rebost, Nevera, Congelador).
-- **🛡️ Seguretat Avançada:** Protecció contra XSS, Rate Limiting, Validació Zod estricta i Logs d'auditoria.
+- **🗳️ Sales de decisió:** crea sales, convida amics i vota (manual o màgic) per decidir plats o plans.
+- **🤖 Cuiner IA (híbrid):** genera receptes amb el que tens a la nevera. El sistema prioritza receptes guardades i omple buits amb IA (OpenAI/Gemini).
+- **📦 Gestió d'inventari:** control d'estoc amb caducitats i ubicacions (rebost, nevera, congelador).
+- **🛡️ Seguretat avançada:** protecció contra XSS, rate limiting, validació Zod estricta i logs d'auditoria.
 
-## 🏗️ Arquitectura Tècnica
+## 🏗️ Arquitectura tècnica
 
-El projecte segueix els principis de **Clean Architecture (DDD)** per assegurar escalabilitat i testabilitat:
+El projecte segueix **Clean Architecture (DDD)** per assegurar escalabilitat i testabilitat:
 
-- **Core (Domain & Use Cases):** Lògica de negoci pura, sense dependències de frameworks.
-- **Adapters:** Implementacions concretes (Supabase, OpenAI, UI).
-- **Ports:** Interfícies que connecten el Core amb els Adapters.
+- **Core (Domain & Use Cases):** lògica de negoci pura, sense dependències de frameworks.
+- **Adapters:** implementacions concretes (Supabase, OpenAI, UI).
+- **Ports:** interfícies que connecten el core amb els adapters.
 
-### Stack Tecnològic
-- **Framework:** Next.js 14 (App Router & Server Actions)
-- **Llenguatge:** TypeScript
-- **Base de Dades & Auth:** Supabase
-- **Testing:** Vitest (Unit & Integration)
-- **Validació:** Zod
-- **Estils:** Tailwind CSS
+## 📚 Documentació
 
-## 🔒 Seguretat (OWASP Compliant)
+- **[Guia d'estructura](guia.md)** — mapa de carpetes i flux d'una dada.
+- **[Arquitectura](arquitectura_assistent_de_decisions_quotidianes.md)** — principi de Clean Architecture.
+- **[Guia de desenvolupament](docs/DEVELOPMENT.md)** — instal·lació, scripts i entorn.
+- **[Contribució](docs/CONTRIBUTING.md)** — procés per treballar al repositori.
+- **[Seguretat](docs/SECURITY.md)** — pràctiques i punts de contacte.
+- **[Auditoria del projecte](docs/PROJECT_AUDIT.md)** — estat actual i deutes pendents.
 
-Aquest projecte implementa mesures de seguretat robustes:
-- **Rate Limiting:** Protecció contra atacs DoS i abús de la IA.
-- **Input Validation:** Tots els inputs passen per esquemes `Zod` estrictes.
-- **Security Logging:** Registre d'intents d'accés no autoritzat i violacions de límits.
-- **RLS (Row Level Security):** Dades aïllades a nivell de base de dades PostgreSQL.
+## 🧰 Requisits
 
-## 🛠️ Instal·lació i Ús
+- Node.js 20+
+- pnpm
+- Supabase project + claus d'accés
 
-1. **Clonar el repositori:**
-   ```bash
-   git clone [https://github.com/](https://github.com/)[TEU_USUARI]/[NOM_DEL_REPO].git
-   cd triatu
-
-   Instal·lar dependències:
-   ```
-
-Bash
-
-pnpm install
-Configurar variables d'entorn: Crea un fitxer .env.local amb les teves claus de Supabase i OpenAI.
-
-4. **Iniciar el servidor:**
-
-Bash
-
-pnpm start
-
-5.  Executar en local:
-
-Bash
-
-pnpm dev
-
-✅ Testing
-El projecte compta amb una suite de tests completa (més de 30 tests) cobrint casos d'ús, seguretat i adaptadors.
-
-Per executar els tests:
-
-Bash
-
-pnpm test
-Per executar en entorn CI (sense watch mode):
-
-Bash
-
-pnpm test:ci
-
-### Com pujar-ho tot
-
-Ara només et queda fer el commit i pujar-ho:
+## 🛠️ Instal·lació ràpida
 
 ```bash
-git add .
-git commit -m "docs: Add README and update CI for release branch"
-git push origin main
+pnpm install
+```
+
+Crea un fitxer `.env.local` (veure `docs/DEVELOPMENT.md`) i arrenca el servidor:
+
+```bash
+pnpm dev
+```
+
+## ✅ Tests
+
+```bash
+pnpm test
+```
+
+Per executar en entorn CI (sense watch):
+
+```bash
+pnpm test:ci
+```
+
+## 📦 Scripts
+
+- `pnpm dev` — entorn de desenvolupament.
+- `pnpm build` — build de producció.
+- `pnpm start` — arrencar build de producció.
+- `pnpm lint` — lint.
+- `pnpm test` — tests.
+
+## 🔒 Seguretat
+
+Veure la guia completa a `docs/SECURITY.md`.
