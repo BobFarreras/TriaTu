@@ -9,6 +9,7 @@ import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { FOOD_PRESETS } from '@/lib/food-presets';
 import { ExpirySafetyService } from '@/core/services/ExpirySafetyService'; // ✅ IMPRESCINDIBLE
+import { EmojiMatcherService } from '@/core/services/EmojiMarcherService'; // ✅ Importar
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
@@ -50,19 +51,31 @@ export async function addItemAction(formData: FormData) {
     if (!user) throw new Error('Unauthorized');
 
     // 2. Recuperem camps clau per a la lògica de seguretat
+
     const name = String(formData.get('name') || 'Producte');
+    let emoji = formData.get('emoji')?.toString() || '📦'; // Emoji que ve del form
+
+    // ✨ ENRIQUIMENT D'EMOJI
+    // Si l'emoji és el genèric o volem assegurar-nos que és el millor:
+    if (emoji === '📦' || emoji === '🛒') {
+      const betterEmoji = EmojiMatcherService.getEmoji(name);
+      if (betterEmoji !== '📦') {
+        emoji = betterEmoji;
+        console.log(`✨ [SERVER] Emoji millorat per "${name}": ${emoji}`);
+      }
+    }
     const location = String(formData.get('location') || 'PANTRY');
     let expiryString = formData.get('expiryDate')?.toString();
 
     // 🛡️ SEGURETAT: Si no arriba data (o és invàlida), la calculem nosaltres
     if (!expiryString || expiryString === 'null' || expiryString === 'undefined' || expiryString === '') {
-       console.log(`🛡️ [SERVER] Data absent. Calculant data segura per: ${name}`);
-       
-       // El servei ens torna "YYYY-MM-DD"
-       const safeDateYMD = ExpirySafetyService.applySafetyRules(name, location, undefined);
-       
-       // La passem a ISO per a Zod i BBDD ("YYYY-MM-DDTHH:mm:ss.sssZ")
-       expiryString = new Date(safeDateYMD).toISOString();
+      console.log(`🛡️ [SERVER] Data absent. Calculant data segura per: ${name}`);
+
+      // El servei ens torna "YYYY-MM-DD"
+      const safeDateYMD = ExpirySafetyService.applySafetyRules(name, location, undefined);
+
+      // La passem a ISO per a Zod i BBDD ("YYYY-MM-DDTHH:mm:ss.sssZ")
+      expiryString = new Date(safeDateYMD).toISOString();
     }
 
     // 🔴 LOG 1: Dades crues
@@ -75,7 +88,7 @@ export async function addItemAction(formData: FormData) {
       unit: formData.get('unit'),
       location: location,
       // Ara expiryString segur que té valor (o el del form, o el calculat)
-      expiryDate: expiryString, 
+      expiryDate: expiryString,
       emoji: formData.get('emoji'),
       // ✅ AFEGIT: Llegim el productId del formData
       productId: formData.get('productId') && formData.get('productId') !== 'null'

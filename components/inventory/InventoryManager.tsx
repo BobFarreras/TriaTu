@@ -1,20 +1,17 @@
+// src/app/(dashboard)/inventory/InventoryManager.tsx
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { isItemExpiringSoon } from '@/lib/inventoryUtils';
 
-// Components Nous/Refactoritzats
+// Components
 import { BulkAddItemForm } from './actions/BulkAddItemForm';
-
 import { InventoryList } from './dashboard/InventoryList';
 import { InventoryHeader } from './dashboard/InventoryHeader';
-
-
-// Scanner Components
 import { CameraScanner } from '../scanner/CameraScanner';
 import { ScannedListEditor } from '../scanner/ScannedListEditor';
 import { AROverlay } from '../scanner/AROverlay';
@@ -31,17 +28,23 @@ interface InventoryManagerProps {
 
 export function InventoryManager({ items }: InventoryManagerProps) {
    const { t } = useLanguage();
+
+   // --- ESTAT: FILTRES I VISUALITZACIÓ ---
    const [filter, setFilter] = useState<DashboardFilter>(null);
    const [showAddForm, setShowAddForm] = useState(false);
-   // ✅ NOU ESTAT: Mode Selecció (controlat des de dalt)
+
+   // --- ESTAT: SELECCIÓ (LIFTED STATE) ---
+   // Elevem l'estat perquè el Header pugui manipular la llista
    const [isSelectionMode, setIsSelectionMode] = useState(false);
-   // ESTATS SCANNER
+   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+   // --- ESTAT: SCANNER ---
    const [showCamera, setShowCamera] = useState(false);
    const [scannedItems, setScannedItems] = useState<ScannedItem[] | null>(null);
    const [capturedImage, setCapturedImage] = useState<string | null>(null);
    const [showImage, setShowImage] = useState(true);
 
-   // CONFIGURACIÓ TOUR
+   // --- CONFIGURACIÓ TOUR (Sense canvis) ---
    const { startTour } = useOnboarding();
    const onboardingSteps: TourStep[] = useMemo(() => [
       { targetId: 'tour-inv-header', title: t.onboarding.inventory.step1_title, description: t.onboarding.inventory.step1_desc },
@@ -56,22 +59,60 @@ export function InventoryManager({ items }: InventoryManagerProps) {
       startTour('inventory', onboardingSteps);
    }, [startTour, onboardingSteps]);
 
-   // LÒGICA FILTRES
-   const filteredItems = items.filter((item) => {
-      if (filter === null) return true;
-      if (filter === 'EXPIRING') return isItemExpiringSoon(item, 3);
-      return item.location === filter;
-   });
+   // --- LOGICA DE NEGOCI: FILTRATGE ---
+   // Memoritzem per evitar recalcúl en cada render si no canvia res
+   const filteredItems = useMemo(() => {
+      return items.filter((item) => {
+         if (filter === null) return true;
+         if (filter === 'EXPIRING') return isItemExpiringSoon(item, 3);
+         return item.location === filter;
+      });
+   }, [items, filter]);
 
-   // TÍTOL DINÀMIC
-   let title = t.inventory.dashboard.title_all;
-   if (filter === 'EXPIRING') {
-      title = t.inventory.dashboard.title_expiring;
-   } else if (filter) {
-      const locationsDict = t.inventory.form.location as Record<string, string>;
-      const locName = locationsDict[filter.toLowerCase()] || filter;
-      title = `${t.inventory.dashboard.filter_prefix} ${locName}`;
-   }
+   // --- LOGICA DE NEGOCI: SELECCIÓ ---
+
+   // 1. Alternar mode selecció
+   const handleToggleSelectionMode = () => {
+      const newMode = !isSelectionMode;
+      setIsSelectionMode(newMode);
+      if (!newMode) {
+         setSelectedIds(new Set()); // Netejar selecció en sortir
+      }
+   };
+
+   // 2. Seleccionar TOT (Requisit Usuari)
+   // Només selecciona els items visibles actualment (filtrats)
+   // ✅ 3. LA FUNCIÓ QUE FALLA: SELECT ALL
+   const handleSelectAll = useCallback(() => {
+      console.log("🟢 CLICK: Select All");
+      console.log("Items filtrats actuals:", filteredItems.length);
+
+      if (filteredItems.length === 0) {
+         console.warn("⚠️ ALERTA: No hi ha items visibles per seleccionar!");
+         return;
+      }
+
+      const newSelection = new Set(selectedIds);
+      const visibleIds = filteredItems.map(i => i.id);
+
+      // Debug dels IDs (comprova que no siguin undefined)
+      console.log("IDs visibles:", visibleIds.slice(0, 3), "...");
+
+      // Comprovem estat actual
+      const allVisibleAreSelected = visibleIds.every(id => newSelection.has(id));
+      console.log("Estan tots seleccionats?", allVisibleAreSelected);
+
+      if (allVisibleAreSelected) {
+         console.log("Acció: Deseleccionar tot");
+         visibleIds.forEach(id => newSelection.delete(id));
+      } else {
+         console.log("Acció: Seleccionar tot");
+         visibleIds.forEach(id => newSelection.add(id));
+      }
+
+      console.log("Nova mida de selecció:", newSelection.size);
+      setSelectedIds(newSelection);
+   }, [filteredItems, selectedIds]);
 
    // --- VISTA 1: EDITOR (MODE CÀMERA) ---
    if (scannedItems && capturedImage) {
@@ -113,7 +154,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
             <TourTrigger tourId="inventory" steps={onboardingSteps} />
          </div>
 
-         {/* 1. SUPER HEADER (Fusionat) */}
+         {/* 1. SUPER HEADER */}
          <div id="tour-inv-header">
             <InventoryHeader
                items={items}
@@ -125,31 +166,39 @@ export function InventoryManager({ items }: InventoryManagerProps) {
                isAddFormVisible={showAddForm}
                // Selecció
                isSelectionMode={isSelectionMode}
-               onToggleSelectionMode={() => setIsSelectionMode(!isSelectionMode)}
+               onToggleSelectionMode={handleToggleSelectionMode}
+               onSelectAll={handleSelectAll} // ✅ Passem la funció
             />
          </div>
 
-         {/* ✅ FULL SCREEN OVERLAY: Això substitueix el div desplegable d'abans */}
-         {/* Fem servir z-50 per tapar-ho tot, inclòs el header i la toolbar */}
+         {/* 2. OVERLAY FORM */}
          <div
             className={`
                fixed inset-0 z-50 bg-slate-950 flex flex-col transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
                ${showAddForm ? 'translate-y-0 opacity-100' : 'translate-y-[110%] opacity-0'}
             `}
          >
-            {/* Només muntem el component quan toca per rendiment */}
             {showAddForm && (
                <BulkAddItemForm onClose={() => setShowAddForm(false)} />
             )}
          </div>
 
-         {/* 3. LLISTA (Rebem el mode selecció des del pare) */}
+         {/* LLISTA */}
          <div className="px-2">
             <InventoryList
                items={filteredItems}
-               // ✅ Passem el control al fill
+
+               // ⚠️ ASSEGURA'T QUE PASSES AQUESTES PROPS
                externalSelectionMode={isSelectionMode}
                onSelectionModeChange={setIsSelectionMode}
+
+               selectedIds={selectedIds}       // <--- CLAU PERQUÈ ES VEGI EL CHECK
+               onToggleItem={(id) => {         // <--- CLAU PERQUÈ EL CLICK INDIVIDUAL FUNCIONI
+                  const newSet = new Set(selectedIds);
+                  if (newSet.has(id)) newSet.delete(id);
+                  else newSet.add(id);
+                  setSelectedIds(newSet);
+               }}
             />
          </div>
 

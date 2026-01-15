@@ -1,5 +1,7 @@
+// src/components/dashboard/InventoryList.tsx
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { InventoryItemCard } from './InventoryItemCard';
@@ -7,32 +9,37 @@ import { deleteBatchItemsAction } from '@/app/actions/inventory';
 
 interface Props {
   items: InventoryItemProps[];
-  // ✅ Noves props per controlar-ho des del Header
-  externalSelectionMode?: boolean; 
-  onSelectionModeChange?: (isActive: boolean) => void;
+  
+  // ✅ PROPS DE CONTROL (State Hoisting)
+  // Ara el pare (InventoryManager) controla l'estat
+  externalSelectionMode: boolean; 
+  onSelectionModeChange: (isActive: boolean) => void;
+  selectedIds: Set<string>;            // <--- Afegit per arreglar l'error TS
+  onToggleItem: (id: string) => void;  // <--- Afegit per arreglar l'error TS
 }
 
-export function InventoryList({ items, externalSelectionMode, onSelectionModeChange }: Props) {
+export function InventoryList({ 
+  items, 
+  externalSelectionMode, 
+  selectedIds, 
+  onToggleItem,
+  onSelectionModeChange // <--- Assegura't que tens totes les props aquí
+}: Props) {
+  
+  // 👇 AFEGEIX AQUEST LOG DE DEBUG
+  console.log("📍 RENDER LIST:", { 
+     totalItems: items.length, 
+     mode: externalSelectionMode, 
+     selectedCount: selectedIds?.size ?? "UNDEFINED" // Si surt undefined, aquí està l'error
+  });
   const { t } = useLanguage();
   
-  // Useu l'estat intern O l'extern (prioritat a l'extern)
-  const isSelectionMode = externalSelectionMode; 
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Només mantenim l'estat local per a l'acció d'esborrar (UI loading state)
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Quan canvia el mode des de fora, netegem la selecció
-  useEffect(() => {
-     if (!externalSelectionMode) setSelectedIds(new Set());
-  }, [externalSelectionMode]);
-
+  // L'acció de toggle ja no modifica un estat local, sinó que avisa al pare
   const handleToggleSelect = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
+    onToggleItem(id);
   };
 
   const handleDeleteSelected = async () => {
@@ -43,9 +50,10 @@ export function InventoryList({ items, externalSelectionMode, onSelectionModeCha
       const idsArray = Array.from(selectedIds);
       await deleteBatchItemsAction(idsArray);
       
-      // Reset després d'esborrar (avisant al pare si cal)
-      if (onSelectionModeChange) onSelectionModeChange(false);
-      setSelectedIds(new Set());
+      // En acabar, sortim del mode selecció.
+      // El pare (InventoryManager) detectarà el canvi i netejarà el Set automàticament.
+      onSelectionModeChange(false);
+      
     } catch (e) {
       console.error(e);
       alert("Error eliminant items");
@@ -65,7 +73,6 @@ export function InventoryList({ items, externalSelectionMode, onSelectionModeCha
 
   return (
     <div className="relative">
-       {/* Ja no cal Toolbar aquí, perquè està al Header general! */}
        
        {/* GRID */}
        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-4 pb-24 pt-2">
@@ -73,8 +80,11 @@ export function InventoryList({ items, externalSelectionMode, onSelectionModeCha
              <InventoryItemCard 
                 key={item.id} 
                 item={item} 
-                isSelectionMode={!!isSelectionMode}
+                // Usem la prop externa directament
+                isSelectionMode={externalSelectionMode}
+                // Comprovem si està al Set que ve del pare
                 isSelected={selectedIds.has(item.id)}
+                // Deleguem l'acció
                 onToggleSelect={handleToggleSelect}
              />
           ))}

@@ -1,5 +1,5 @@
 
-\restrict ruk5rYhQ3fIdcbcYgFY2RNeXJQ9xjP58y6Mm1nTHVeKiNdwSTU3WXG2Vyur7Ipo
+\restrict ceQkotXeRG2wbNGhON8Tb4ijPwO3oCa3KNpJNdL5ExLZBWO6pKF4rEarflDN5RH
 
 
 SET statement_timeout = 0;
@@ -293,7 +293,8 @@ CREATE TABLE IF NOT EXISTS "public"."inventory_items" (
     "location" "text" NOT NULL,
     "expiry_date" timestamp with time zone,
     "added_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "emoji" "text"
+    "emoji" "text",
+    "product_id" "uuid"
 );
 
 
@@ -313,6 +314,25 @@ CREATE TABLE IF NOT EXISTS "public"."preference_profiles" (
 
 
 ALTER TABLE "public"."preference_profiles" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."product_catalog" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "external_id" "text" NOT NULL,
+    "source" "text" NOT NULL,
+    "name" "text" NOT NULL,
+    "image_url" "text",
+    "price" numeric(10,2),
+    "tags" "text"[],
+    "emoji" "text",
+    "nutritional_info" "jsonb",
+    "last_fetched_at" timestamp with time zone DEFAULT "now"(),
+    "quantity_amount" numeric(10,2),
+    "quantity_unit" "text"
+);
+
+
+ALTER TABLE "public"."product_catalog" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."rate_limits" (
@@ -420,6 +440,21 @@ CREATE TABLE IF NOT EXISTS "public"."security_logs" (
 ALTER TABLE "public"."security_logs" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."shopping_list_items" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "quantity" numeric DEFAULT 1 NOT NULL,
+    "unit" "text" DEFAULT 'ut'::"text" NOT NULL,
+    "is_checked" boolean DEFAULT false,
+    "added_at" timestamp with time zone DEFAULT "now"(),
+    "emoji" "text" DEFAULT '📦'::"text"
+);
+
+
+ALTER TABLE "public"."shopping_list_items" OWNER TO "postgres";
+
+
 CREATE OR REPLACE VIEW "public"."user_leaderboard" AS
  SELECT "user_id",
     COALESCE("username", ('Chef '::"text" || "substr"(("user_id")::"text", 1, 4))) AS "display_name",
@@ -480,6 +515,16 @@ ALTER TABLE ONLY "public"."preference_profiles"
 
 
 
+ALTER TABLE ONLY "public"."product_catalog"
+    ADD CONSTRAINT "product_catalog_external_id_source_key" UNIQUE ("external_id", "source");
+
+
+
+ALTER TABLE ONLY "public"."product_catalog"
+    ADD CONSTRAINT "product_catalog_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."rate_limits"
     ADD CONSTRAINT "rate_limits_pkey" PRIMARY KEY ("key");
 
@@ -507,6 +552,11 @@ ALTER TABLE ONLY "public"."saved_recipes"
 
 ALTER TABLE ONLY "public"."security_logs"
     ADD CONSTRAINT "security_logs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."shopping_list_items"
+    ADD CONSTRAINT "shopping_list_items_pkey" PRIMARY KEY ("id");
 
 
 
@@ -554,6 +604,10 @@ CREATE INDEX "idx_saved_recipes_user_id" ON "public"."saved_recipes" USING "btre
 
 
 
+CREATE INDEX "shopping_list_user_idx" ON "public"."shopping_list_items" USING "btree" ("user_id");
+
+
+
 CREATE OR REPLACE VIEW "public"."recipes_with_stats" AS
  SELECT "r"."id",
     "r"."author_id",
@@ -596,6 +650,11 @@ ALTER TABLE ONLY "public"."group_decisions"
 
 
 ALTER TABLE ONLY "public"."inventory_items"
+    ADD CONSTRAINT "inventory_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "public"."product_catalog"("id");
+
+
+
+ALTER TABLE ONLY "public"."inventory_items"
     ADD CONSTRAINT "inventory_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
@@ -632,6 +691,11 @@ ALTER TABLE ONLY "public"."saved_recipes"
 
 ALTER TABLE ONLY "public"."security_logs"
     ADD CONSTRAINT "security_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."shopping_list_items"
+    ADD CONSTRAINT "shopping_list_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -717,11 +781,19 @@ CREATE POLICY "Users can create recipes" ON "public"."community_recipes" FOR INS
 
 
 
+CREATE POLICY "Users can delete from their own shopping list" ON "public"."shopping_list_items" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "user_id"));
+
+
+
 CREATE POLICY "Users can delete their own inventory" ON "public"."inventory_items" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Users can delete their own recipes" ON "public"."saved_recipes" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert into their own shopping list" ON "public"."shopping_list_items" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -749,11 +821,19 @@ CREATE POLICY "Users can update their own inventory" ON "public"."inventory_item
 
 
 
+CREATE POLICY "Users can update their own shopping list" ON "public"."shopping_list_items" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "user_id"));
+
+
+
 CREATE POLICY "Users can view their own inventory" ON "public"."inventory_items" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Users can view their own recipes" ON "public"."saved_recipes" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own shopping list" ON "public"."shopping_list_items" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -810,6 +890,9 @@ ALTER TABLE "public"."saved_recipes" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."security_logs" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."shopping_list_items" ENABLE ROW LEVEL SECURITY;
 
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";
@@ -903,6 +986,12 @@ GRANT ALL ON TABLE "public"."preference_profiles" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."product_catalog" TO "anon";
+GRANT ALL ON TABLE "public"."product_catalog" TO "authenticated";
+GRANT ALL ON TABLE "public"."product_catalog" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."rate_limits" TO "anon";
 GRANT ALL ON TABLE "public"."rate_limits" TO "authenticated";
 GRANT ALL ON TABLE "public"."rate_limits" TO "service_role";
@@ -945,6 +1034,12 @@ GRANT ALL ON TABLE "public"."security_logs" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."shopping_list_items" TO "anon";
+GRANT ALL ON TABLE "public"."shopping_list_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."shopping_list_items" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."user_leaderboard" TO "anon";
 GRANT ALL ON TABLE "public"."user_leaderboard" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_leaderboard" TO "service_role";
@@ -981,6 +1076,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict ruk5rYhQ3fIdcbcYgFY2RNeXJQ9xjP58y6Mm1nTHVeKiNdwSTU3WXG2Vyur7Ipo
+\unrestrict ceQkotXeRG2wbNGhON8Tb4ijPwO3oCa3KNpJNdL5ExLZBWO6pKF4rEarflDN5RH
 
 RESET ALL;

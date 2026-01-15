@@ -4,7 +4,8 @@ import { useRef, useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { addItemAction } from '@/app/actions/inventory';
 import { FOOD_PRESETS, PRESET_CATEGORIES, FoodPreset, FoodCategory } from '@/lib/food-presets';
-import { SmartDatePicker } from './SmartDatePicker';
+import { SmartDatePicker } from '../ui/SmartDatePicker';
+
 
 type UnitType = 'ut' | 'kg' | 'l' | 'g';
 const units: { val: UnitType; icon: string; label: string }[] = [
