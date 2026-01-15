@@ -14,9 +14,15 @@ interface Props {
   update: (d: EditorData) => void;
   inventory: InventoryItemUI[];
   labels: IngredientsLabels;
+  // ✅ Props per al Tour
+  searchInputId?: string;
+  ingredientsListId?: string;
 }
 
-export function IngredientsManager({ data, update, inventory, labels }: Props) {
+export function IngredientsManager({
+  data, update, inventory, labels,
+  searchInputId, ingredientsListId
+}: Props) {
   // 1. Hook de gestió (Assegura't d'haver aplicat el canvi a 'removeIngredient' a dalt!)
   const {
     query, setQuery,
@@ -61,7 +67,7 @@ export function IngredientsManager({ data, update, inventory, labels }: Props) {
       <div className="flex flex-col h-full w-full relative overflow-hidden bg-slate-950">
 
         {/* FILTRES I CERCA (Lògica antiga que t'agrada) */}
-        <div className="shrink-0 z-10 bg-slate-900 border-b border-slate-800">
+        <div id={searchInputId} className="shrink-0 z-10 bg-slate-900 border-b border-slate-800">
           <SearchHeader
             query={query}
             setQuery={setQuery}
@@ -84,7 +90,7 @@ export function IngredientsManager({ data, update, inventory, labels }: Props) {
         </div>
 
         {/* DOCK INFERIOR (Nou disseny + Botó Màgic) */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
+        <div id={ingredientsListId} className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
           <div className="pointer-events-auto relative">
 
             {/* 🏷️ ETIQUETA DE PREU TOTAL (Si n'hi ha) */}

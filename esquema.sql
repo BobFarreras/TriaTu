@@ -1,5 +1,5 @@
 
-\restrict ceQkotXeRG2wbNGhON8Tb4ijPwO3oCa3KNpJNdL5ExLZBWO6pKF4rEarflDN5RH
+\restrict 5WdNMVg13TtJzneL2M1PhyNUDi9FJ4QmfIcrKv2ugJKeQLl4dIqd2STgPW0Y6uv
 
 
 SET statement_timeout = 0;
@@ -418,7 +418,8 @@ CREATE TABLE IF NOT EXISTS "public"."saved_recipes" (
     "likes_count" integer DEFAULT 0,
     "rating_avg" numeric(3,2) DEFAULT 0,
     "rating_count" integer DEFAULT 0,
-    "rating_distribution" "jsonb" DEFAULT '{}'::"jsonb"
+    "rating_distribution" "jsonb" DEFAULT '{}'::"jsonb",
+    "estimated_cost" numeric(10,2) DEFAULT 0
 );
 
 
@@ -581,6 +582,10 @@ CREATE INDEX "idx_group_decisions_room_id" ON "public"."group_decisions" USING "
 
 
 CREATE INDEX "idx_inventory_items_user_id" ON "public"."inventory_items" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_recipes_estimated_cost" ON "public"."saved_recipes" USING "btree" ("estimated_cost");
 
 
 
@@ -1076,6 +1081,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict ceQkotXeRG2wbNGhON8Tb4ijPwO3oCa3KNpJNdL5ExLZBWO6pKF4rEarflDN5RH
+\unrestrict 5WdNMVg13TtJzneL2M1PhyNUDi9FJ4QmfIcrKv2ugJKeQLl4dIqd2STgPW0Y6uv
 
 RESET ALL;

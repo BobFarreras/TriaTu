@@ -13,7 +13,7 @@ export interface FoodPreset {
   category: FoodCategory;
   // ✅ 2. CORRECCIÓ: La UI accepta qualsevol string com a unitat.
   // El pont amb el tipus estricte el farem al component pare.
-  defaultUnit: string; 
+  defaultUnit: string;
   defaultLoc?: StorageLocation;
   // ✅ 3. CORRECCIÓ: Afegim 'step' que faltava
   step: number;
@@ -34,7 +34,7 @@ export interface Ingredient {
   name: string;       // Ex: "Pit de pollastre"
   quantity: number;   // Ex: 500
   unit: string;       // Ex: "g"
-  
+
   // Camps opcionals visuals
   emoji?: string;     // Ex: "🍗" (Si és genèric)
   image?: string; // ✅ AFEGEIX AQUESTA LÍNIA (amb ? perquè és opcional)
@@ -63,6 +63,7 @@ export interface EditorData {
   ingredients: Ingredient[];
   steps: RecipeStep[];
   dietaryTags: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
 export interface IngredientsLabels {

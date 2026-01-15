@@ -22,6 +22,8 @@ export interface RecipeProps {
     createdAt: Date;
     likesCount: number;
     isPublic: boolean;
+    estimatedCost?: number; // ✅ Afegeix això
+    authorName?: string;    // ✅ Afegeix això
     ratingSummary: {
         average: number;
         count: number;
@@ -31,7 +33,7 @@ export interface RecipeProps {
 
 export class Recipe {
     constructor(public readonly props: RecipeProps) {
-        this.validate(); 
+        this.validate();
     }
 
     // Getters
@@ -67,7 +69,7 @@ export class Recipe {
             // 3. INGREDIENT CHECK (BLACKLIST)
             const hasBadIngredient = ingredients.some(ing => ing.includes(restriction));
             if (hasBadIngredient) return false;
-            
+
             // 4. EXPLICIT DANGER TAGS
             if (tags.includes(`contains-${restriction}`)) return false;
 
@@ -91,7 +93,7 @@ export class Recipe {
         }
 
         if (!this.props.steps || this.props.steps.length === 0) {
-             throw new Error("La recepta ha de tenir instruccions (passos).");
+            throw new Error("La recepta ha de tenir instruccions (passos).");
         }
     }
 

@@ -52,7 +52,7 @@ export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: 
               className="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-emerald-500/50 text-emerald-300 px-4 py-2 rounded-full shadow-xl hover:bg-emerald-900/20 hover:scale-105 transition-all active:scale-95 group ring-1 ring-white/10"
             >
               <Sparkles className="w-4 h-4 group-hover:animate-spin-slow text-emerald-400" />
-              <span className="text-xs font-black uppercase tracking-wider">Preus</span>
+              <span className="text-xs font-black uppercase tracking-wider">Calcular</span>
             </button>
           </motion.div>
         )}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { toast } from 'sonner'; 
-import { createRecipeAction } from '@/app/actions/create-recipe';
+import { saveRecipeAction } from '@/app/actions/recipes';
 import { EditorData } from './types';
 import { Dictionary } from '@/lib/i18n/dictionaries';
 
@@ -16,14 +16,14 @@ const DB_TAGS_MAPPING: Record<string, string> = {
   'gluten-free': 'sense gluten',
   'dairy-free': 'sense lactosa',
   'healthy': 'sa',
-  
+
   // Tipus de plat
   'breakfast': 'esmorzar',
   'lunch': 'dinar',
   'dinner': 'sopar',
   'snack': 'snack',
   'dessert': 'postres',
-  
+
   // Característiques
   'quick': 'ràpid',
   'spicy': 'picant',
@@ -59,8 +59,17 @@ export function useRecipeForm(labels: Dictionary['create_recipe'], setActiveTab:
     name: false, ingredients: false, steps: false
   });
 
+  // ✅ FIX TIPATGE: Afegim camps que falten (description, servings) per complir amb EditorData
   const [data, setData] = useState<EditorData>({
-    name: '', prepTimeMinutes: 30, ingredients: [], steps: [], dietaryTags: []
+    name: '',
+    prepTimeMinutes: 30,
+    ingredients: [],
+    steps: [],
+    dietaryTags: [],
+    // Camps opcionals o requerits que faltaven:
+    description: '',
+    servings: 2,
+    difficulty: 'medium'
   });
 
   const closeFeedback = () => setFeedback(prev => ({ ...prev, isOpen: false }));
@@ -103,18 +112,18 @@ export function useRecipeForm(labels: Dictionary['create_recipe'], setActiveTab:
 
     // ✅ 2. PREPARAR DADES: TRADUCCIÓ DE TAGS
     // Abans d'enviar, canviem els tags d'Anglès (UI) a Català (DB)
-    const translatedTags = data.dietaryTags.map(tag => DB_TAGS_MAPPING[tag] || tag);
+   const translatedTags = data.dietaryTags.map(tag => DB_TAGS_MAPPING[tag] || tag);
 
-    // Creem un objecte nou amb els tags traduïts
-    const payload = {
+    const payload: EditorData = {
       ...data,
       dietaryTags: translatedTags
     };
 
-    // GUARDAR AL SERVIDOR
     setLoading(true);
-    // ✅ Enviem el payload traduït en lloc de 'data' directament
-    const result = await createRecipeAction(payload);
+    
+    // ✅ CRIDA A LA NOVA ACCIÓ CENTRALITZADA
+    const result = await saveRecipeAction(payload);
+    
     setLoading(false);
 
     if (result.success) {

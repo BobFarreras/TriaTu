@@ -35,6 +35,8 @@ interface RecipeDBModel {
     rating_avg: number | null;
     rating_count: number | null;
     rating_distribution: Record<string, number> | null;
+    // ✅ AFEGIM LA COLUMNA QUE FALTAVA
+    estimated_cost: number | null; 
 }
 
 interface RatingDBModel {
@@ -285,7 +287,6 @@ export class SupabaseRecipeRepository implements RecipeRepository {
 
         const creationDate = row.created_at ? new Date(row.created_at) : new Date();
 
-        // Ara és segur cridar el constructor, perquè hem assegurat ingredients > 0
         return new Recipe({
             id: row.id,
             authorId: row.user_id,
@@ -298,6 +299,11 @@ export class SupabaseRecipeRepository implements RecipeRepository {
             createdAt: creationDate,
             likesCount: row.likes_count ?? 0,
             isPublic: row.is_public ?? true,
+
+            // ✅ ARA ÉS TIPATGE SEGUR (sense 'any')
+            authorName: row.author_name || "Xef Anònim",
+            estimatedCost: row.estimated_cost || 0, // TypeScript ja no es queixa!
+
             ratingSummary: {
                 average: row.rating_avg ?? 0,
                 count: row.rating_count ?? 0,

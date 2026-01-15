@@ -4,49 +4,55 @@ import { useState, useEffect } from 'react';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { toggleIngredientStockAction } from '@/app/actions/inventory-quick-update';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import { getIngredientEmoji } from '@/lib/utils/emojiUtils';
-import { MissingIngredientDialog, Ingredient } from '@/components/recipes/MissingIngredientDialog'; // ✅ Importem el modal
+import { MissingIngredientDialog, Ingredient as ModalIngredient } from '@/components/recipes/MissingIngredientDialog';
 
+// ✅ EXPORTEM LA INTERFÍCIE i ELIMINEM '[key: string]: unknown'
+export interface IngredientWithMeta {
+    name: string;
+    quantity: number;
+    unit: string;
+    // Camps opcionals
+    id?: string;
+    emoji?: string;
+    image?: string;
+    linkedProductImage?: string;
+    estimatedCost?: number;
+    linkedProductId: string;
+    
+}
 
 interface Props {
-    ingredients: Ingredient[];
+    ingredients: IngredientWithMeta[]; 
     inventory: InventoryItemProps[];
     userId: string;
 }
 
-
 export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
-    const router = useRouter();
+   
     const [localInventory, setLocalInventory] = useState(inventory);
     const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
     const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-    // ✅ Nou estat per gestionar el modal
-    const [missingIngredient, setMissingIngredient] = useState<Ingredient | null>(null);
+    const [missingIngredient, setMissingIngredient] = useState<ModalIngredient | null>(null);
 
-    // Sincronització inicial i quan canvia el servidor
     useEffect(() => {
-        console.log("🔄 [CLIENT] Inventari rebut (props):", inventory.length, "items");
         setLocalInventory(inventory);
     }, [inventory]);
 
-    const handleToggleItem = async (index: number, ing: Ingredient) => {
+    const handleToggleItem = async (index: number, ing: IngredientWithMeta) => {
+        // ... (mateixa lògica de sempre, sense canvis aquí)
         if (loadingItems.has(index)) return;
 
         const isChecking = !checkedItems.has(index);
         const action = isChecking ? 'CONSUME' : 'RESTORE';
 
-        // 🔍 LOG CLIENT 1
-        console.log(`🖱️ [CLIENT CLICK] Item: "${ing.name}" | Acció: ${action}`);
-
         setLoadingItems(prev => { const n = new Set(prev); n.add(index); return n; });
+
+        const currentEmoji = ing.emoji || getIngredientEmoji(ing.name);
 
         const result = await toggleIngredientStockAction(userId, ing.name, ing.quantity, action, ing.unit);
 
         setLoadingItems(prev => { const n = new Set(prev); n.delete(index); return n; });
-
-        // 🔍 LOG CLIENT 2
-        console.log(`📩 [CLIENT RESULT] Success: ${result.success}`, result);
 
         if (result.success && result.newQuantity !== undefined) {
             setCheckedItems(prev => {
@@ -56,12 +62,9 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                 return next;
             });
 
-            // Actualització Optimista / Local
             setLocalInventory(prev => prev.map(item => {
-                // Lògica de matching local
                 if (item.name.toLowerCase().includes(ing.name.toLowerCase()) ||
                     ing.name.toLowerCase().includes(item.name.toLowerCase())) {
-                    console.log(`✅ [CLIENT UPDATE] Actualitzant localment "${item.name}" a ${result.newQuantity}`);
                     return { ...item, quantity: result.newQuantity! };
                 }
                 return item;
@@ -70,50 +73,32 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
             if (isChecking) toast.success(`Restat: ${ing.quantity}${ing.unit}`);
             else toast.info(`Restaurat: ${ing.name}`);
         } else {
-            // ❌ ERROR DETECTAT
             console.warn("⚠️ Stock Error:", result.error);
-
-            // Detectem si és error de falta d'estoc
             const isMissingError = result.error?.includes("No tens") || result.error?.includes("no existeix");
 
-            // Dins de handleToggleItem, quan detectem error:
             if (isMissingError && isChecking) {
-                // ✅ Calculem l'emoji abans de passar-lo al modal
-                const currentEmoji = getIngredientEmoji(ing.name);
-
-                setMissingIngredient({
-                    ...ing,
-                    emoji: currentEmoji // <--- AFEGIM AIXÒ
-                });
+                const modalIng: ModalIngredient = {
+                    name: ing.name,
+                    quantity: ing.quantity,
+                    unit: ing.unit,
+                    emoji: currentEmoji,
+                };
+                setMissingIngredient(modalIng);
             } else {
-                // Altres errors (ex: base de dades caiguda)
                 toast.error(result.error || "Error desconegut");
             }
         }
     };
 
-    const handleFinish = () => {
-        toast.success("✨ Felicitats xef! Inventari actualitzat.");
-        router.push('/inventory');
-    };
-
-    const allChecked = checkedItems.size === ingredients.length && ingredients.length > 0;
-
-
     return (
-
-        <div className="bg-slate-900/50 border-r  border-slate-800 flex flex-col h-full rounded-bl-3xl overflow-hidden">
-            {/* RENDERITZEM EL MODAL */}
+        <div className="bg-slate-900/50 border-r border-slate-800 flex flex-col h-full rounded-bl-3xl overflow-hidden">
             <MissingIngredientDialog
                 isOpen={!!missingIngredient}
                 ingredient={missingIngredient}
                 onClose={() => setMissingIngredient(null)}
-                onSuccess={() => {
-                    // Opcional: Si l'usuari l'ha afegit a l'inventari, podríem tornar a intentar consumir-lo automàticament
-                    // o simplement deixar que l'usuari torni a fer click (més segur).
-                    console.log("Ingredient gestionat correctament");
-                }}
+                onSuccess={() => console.log("Ingredient gestionat")}
             />
+            
             {/* HEADER */}
             <div className="p-3 border-b border-slate-800 bg-slate-900 flex justify-between items-center">
                 <h3 className="font-black text-white flex items-center gap-2 text-xs uppercase tracking-wider">
@@ -124,51 +109,66 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                 </span>
             </div>
 
-            {/* LLISTA COMPACTA */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {/* LLISTA */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
                 {ingredients.map((ing, i) => {
-                    // Lògica de matching per pintar l'estat actual
                     const stockItem = localInventory.find(item =>
                         item.name.toLowerCase().includes(ing.name.toLowerCase()) ||
                         ing.name.toLowerCase().includes(item.name.toLowerCase())
                     );
 
-
                     const isChecked = checkedItems.has(i);
                     const isLoading = loadingItems.has(i);
-                    const emoji = getIngredientEmoji(ing.name);
+                    const emoji = ing.emoji || getIngredientEmoji(ing.name);
+                    const imageUrl = ing.image || ing.linkedProductImage;
+                    const hasImage = !!imageUrl;
+                    const price = ing.estimatedCost;
 
                     return (
                         <div
                             key={i}
                             onClick={() => handleToggleItem(i, ing)}
                             className={`
-                        group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-200 border
-                        ${isChecked
+                                group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-200 border select-none
+                                ${isChecked
                                     ? 'bg-slate-900/50 border-slate-800 opacity-50'
-                                    : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-purple-500/50'
+                                    : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-emerald-500/50'
                                 }
-                    `}
+                            `}
                         >
-                            {/* LOADING */}
+                            {/* LOADING OVERLAY */}
                             {isLoading && (
                                 <div className="absolute inset-0 bg-slate-900/60 z-20 flex items-center justify-center rounded-xl backdrop-blur-[1px]">
                                     <span className="animate-spin text-white text-xs">⏳</span>
                                 </div>
                             )}
 
-                            {/* ESQUERRA */}
+                            {/* ESQUERRA: ICONA + NOM */}
                             <div className="flex items-center gap-3 overflow-hidden">
                                 <div className={`
-                            w-6 h-6 rounded-lg flex items-center justify-center text-sm transition-colors shrink-0
-                            ${isChecked ? 'bg-emerald-600/20 text-emerald-500' : 'bg-slate-900 text-slate-500 group-hover:bg-slate-600'}
-                        `}>
-                                    {isChecked ? '✓' : emoji}
+                                    w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-black/10 transition-colors
+                                    ${isChecked ? 'bg-emerald-900/20' : 'bg-white'}
+                                `}>
+                                    {isChecked ? (
+                                        <span className="text-emerald-500 font-bold">✓</span>
+                                    ) : hasImage ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img src={imageUrl} alt={ing.name} className="w-full h-full object-contain p-0.5" />
+                                    ) : (
+                                        <span className="text-lg leading-none">{emoji}</span>
+                                    )}
                                 </div>
 
-                                <span className={`text-sm truncate font-medium ${isChecked ? 'line-through text-slate-600' : 'text-slate-200'}`}>
-                                    {ing.name}
-                                </span>
+                                <div className="flex flex-col min-w-0">
+                                    <span className={`text-sm truncate font-bold ${isChecked ? 'line-through text-slate-600' : 'text-slate-200'}`}>
+                                        {ing.name}
+                                    </span>
+                                    {price && !isChecked && (
+                                        <span className="text-[9px] font-mono text-emerald-400 leading-none">
+                                            {price.toFixed(2)}€
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
                             {/* DRETA */}
@@ -176,9 +176,7 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                                 <span className="text-xs font-bold text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded-md">
                                     {ing.quantity}{ing.unit}
                                 </span>
-
                                 <span className="text-slate-600 text-[10px] font-light">/</span>
-
                                 {stockItem ? (
                                     <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${stockItem.quantity > 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
                                         {stockItem.quantity}{stockItem.unit}
@@ -192,22 +190,6 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                         </div>
                     );
                 })}
-            </div>
-
-            {/* FOOTER */}
-            <div className="p-2 border-t border-slate-800 bg-slate-950">
-                <button
-                    onClick={handleFinish}
-                    className={`
-                w-full py-2.5 font-bold rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wide
-                ${allChecked
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                        }
-            `}
-                >
-                    {allChecked ? '✅ Finalitzar' : '🚪 Sortir'}
-                </button>
             </div>
         </div>
     );
