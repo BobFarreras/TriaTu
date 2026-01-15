@@ -1,5 +1,6 @@
 'use client';
 
+// ✅ FIX: Corregit 'taxonamy' -> 'taxonomy'
 import { FOOD_TAXONOMY, MainCategory } from '@/lib/taxonamy';
 
 interface Props {
@@ -26,7 +27,10 @@ export function CategoryGrid({ onSelect }: Props) {
                 className={`
                    relative h-32 md:h-40 rounded-3xl overflow-hidden border border-white/5 
                    flex flex-col items-center justify-center gap-2
-                   bg-linear-to-br ${cat.gradient}
+                   
+                   // ✅ FIX: 'bg-gradient-to-br' és la classe estàndard de Tailwind
+                   bg-gradient-to-br ${cat.gradient}
+                   
                    hover:scale-[1.02] active:scale-95 transition-all duration-300
                    shadow-lg hover:shadow-xl group
                    animate-in zoom-in-50 fill-mode-backwards
