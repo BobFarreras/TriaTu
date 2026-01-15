@@ -42,7 +42,7 @@ export async function getRecipeSuggestionsAction(userId: string, energy: number,
     console.log(`   - Preferències: ${preferences}`);
 
     // 3. EXECUTAR EL CAS D'ÚS
-    const useCase = container.getSuggestRecipes(); 
+    const useCase = container.getSuggestRecipes(supabase); 
     
     // Nota: Si vols passar les preferències, hauríem de modificar el Cas d'Ús,
     // però de moment assegurem les restriccions que és el més crític.

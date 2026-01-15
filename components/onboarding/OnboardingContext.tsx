@@ -7,7 +7,7 @@ export interface TourStep {
   title: string;
   description: string;
   position?: 'top' | 'bottom' | 'left' | 'right';
-  requiredTab?: 'ingredients' | 'steps';
+  requiredTab?: 'ingredients' | 'steps' | 'meta';
 }
 
 interface OnboardingContextType {

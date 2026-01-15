@@ -6,7 +6,7 @@ import { Reorder, AnimatePresence } from 'framer-motion';
 import { Trash2, GripVertical, ListChecks } from 'lucide-react';
 import { RefObject } from 'react';
 // Necessitem els presets per recuperar l'emoji original
-import { FOOD_PRESETS } from "@/lib/food-presets"; 
+import { FOOD_PRESETS } from "@/lib/foot-presets"; 
 
 // ✅ COMPONENT MÀGIC MILLORAT: Ara sap pintar Quantitats i Emojis
 function HighlightedContent({ content, ingredients }: { content: string, ingredients: Ingredient[] }) {

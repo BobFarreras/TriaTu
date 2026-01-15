@@ -1,24 +1,20 @@
 import { useState, useMemo } from 'react';
-// ✅ CANVI 1: Importem TOTS els tipus de la UI, no de la llibreria
 import { EditorData, Ingredient, FoodPreset } from '../editor/types';
-import { FOOD_PRESETS } from "@/lib/food-presets";
+import { FOOD_PRESETS } from "@/lib/foot-presets";
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export function useIngredientsManager(data: EditorData, update: (d: EditorData) => void) {
   const { t } = useLanguage();
 
   const [query, setQuery] = useState('');
-  // ✅ CANVI 2: 'selectedCategory' ara és string (perquè pot ser "🥦 Verdura")
   const [selectedCategory, setSelectedCategory] = useState<string | 'ALL'>('ALL');
   
   const [activeItem, setActiveItem] = useState<{name: string, emoji: string, unit: string} | null>(null);
   const [qty, setQty] = useState(1);
 
   // 1. TRADUCCIÓ
-  // ✅ CANVI 3: Tipem explícitament el retorn com a FoodPreset[] (el de la UI)
   const translatedPresets = useMemo<FoodPreset[]>(() => {
     return FOOD_PRESETS.map(preset => {
-      // Cast segur per accedir al diccionari
       const itemTranslations = t.food?.items as Record<string, string> | undefined;
       const translatedName = itemTranslations?.[preset.id] || preset.name;
 
@@ -29,9 +25,7 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
         ...preset,
         name: translatedName,
         category: translatedCategory, 
-        // TypeScript es queixava de defaultUnit, ens assegurem que sigui string
         defaultUnit: preset.defaultUnit as string,
-        // Afegim step si no hi és (encara que a food-presets n'hi hauria d'haver)
         step: preset.step || 1 
       };
     });
@@ -56,14 +50,9 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
     }
   };
 
-  // ✅ CANVI 4: La funció accepta el FoodPreset de la UI (traduït)
-  // Ja no fem servir 'typeof FOOD_PRESETS[0]' perquè això forçava el tipus estricte
   const quickAdd = (preset: FoodPreset) => {
     const existingIndex = data.ingredients.findIndex(i => i.name === preset.name);
-    
-    // Si la unitat ve com a string genèric, el switch funciona igual
     const step = getIncrementStep(preset.defaultUnit);
-    
     const newIngredients: Ingredient[] = [...data.ingredients];
 
     if (existingIndex >= 0) {
@@ -89,10 +78,11 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
     }
   };
 
-  const removeIngredient = (index: number) => {
+  // ✅ CORRECCIÓ CLAU: Ara acceptem 'id' (string) en lloc de 'index' (number)
+  const removeIngredient = (id: string) => {
     update({
       ...data,
-      ingredients: data.ingredients.filter((_, i) => i !== index)
+      ingredients: data.ingredients.filter((item) => item.id !== id)
     });
   };
 
@@ -143,6 +133,6 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
     openSelection,
     closeSelection,
     confirmAdd,
-    removeIngredient
+    removeIngredient // ✅ Ara ja és compatible amb (id: string)
   };
 }

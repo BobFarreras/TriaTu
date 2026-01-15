@@ -13,12 +13,12 @@ export default async function CreateRecipePage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-     redirect('/auth/login');
+    redirect('/auth/login');
   }
 
   // ❌ ABANS (Això donaria error ara):
   // const inventoryRepo = new SupabaseInventoryRepository();
-  
+
   // ✅ ARA (Correcte amb Injecció de Dependències):
   const getUserInventory = container.getGetUserInventory(supabase);
   const inventoryEntities = await getUserInventory.execute(user.id);
@@ -36,7 +36,8 @@ export default async function CreateRecipePage() {
     <OnboardingProvider>
       <OnboardingOverlay />
 
-      <div className="h-[calc(100vh-(--spacing(16)))] lg:h-screen">
+
+      <div className="h-dvh overflow-hidden flex flex-col"> {/* 100dvh és millor per mòbils */}
         <RecipeEditor userInventory={plainInventory} />
       </div>
 

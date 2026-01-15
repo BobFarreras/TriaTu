@@ -1,6 +1,6 @@
 import { ScannedItem } from "@/core/domain/types/ScannedItem";
 import { StorageLocation } from "@/core/domain/entities/StorageLocation";
-import { FOOD_PRESETS } from "@/lib/food-presets"; 
+import { FOOD_PRESETS } from "@/lib/foot-presets"; 
 
 // ✅ DTO: Definim què esperem rebre de la IA (JSON cru)
 // Tot és opcional (?) perquè no podem confiar cegament en la IA.

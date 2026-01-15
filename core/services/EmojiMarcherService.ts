@@ -1,4 +1,4 @@
-import { FOOD_PRESETS, FoodPreset } from '@/lib/food-presets';
+import { FOOD_PRESETS, FoodPreset } from '@/lib/foot-presets';
 
 export class EmojiMatcherService {
   

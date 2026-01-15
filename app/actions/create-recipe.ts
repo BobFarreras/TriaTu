@@ -3,8 +3,7 @@
 import { createClient } from '@/adapters/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-// 1. DTO (Data Transfer Object)
-// Ha de coincidir amb el que envia el 'RecipeEditor' (UI)
+// --- 5. CREAR RECEPTA MANUAL (EDITOR) ---
 interface CreateRecipeInput {
   name: string;
   prepTimeMinutes: number;
@@ -12,13 +11,18 @@ interface CreateRecipeInput {
     name: string;
     quantity: number;
     unit: string;
+    // ✅ CAMPS NOUS OPCIONALS PER BONPREU
+    linkedProductId?: string;
+    linkedProductImage?: string;
+    referencePrice?: number;
+    estimatedCost?: number;
+    emoji?: string;
   }[];
-  // ✅ CORRECCIÓ: Acceptem l'estructura rica de la UI
-  steps: { id: string; content: string }[]; 
+  steps: { id: string; content: string }[];
   dietaryTags: string[];
 }
 
-type CreateRecipeResult = 
+type CreateRecipeResult =
   | { success: true; recipeId: string }
   | { success: false; error: string };
 
@@ -35,41 +39,40 @@ export async function createRecipeAction(input: CreateRecipeInput): Promise<Crea
     const stepsForDb = input.steps.map(step => step.content);
 
     const newRecipe = {
-      // id: crypto.randomUUID(), // Supabase sol generar-ho, però si ho vols manual està bé
       user_id: user.id,
       name: input.name,
       prep_time_minutes: Number(input.prepTimeMinutes),
+      // ✅ Aquí passem l'objecte ingredient sencer amb els nous camps (linkedProduct...)
       ingredients: input.ingredients,
-      steps: stepsForDb, // ✅ Guardem només el contingut net
+      steps: stepsForDb,
       tags: [],
       dietary_tags: input.dietaryTags,
-      // created_at normalment ho gestiona la DB (default now()), però si ho passes explícitament:
       created_at: new Date().toISOString(),
       is_public: true,
       likes_count: 0
     };
 
     const { data: insertedData, error } = await supabase
-        .from('saved_recipes')
-        .insert(newRecipe)
-        .select('id') // Important: retornar l'ID generat
-        .single();
+      .from('saved_recipes')
+      .insert(newRecipe)
+      .select('id') // Important: retornar l'ID generat
+      .single();
 
     if (error) throw new Error(error.message);
 
     revalidatePath('/community');
-    
+
     // Assegurem que retornem l'ID correcte (o el que hem generat nosaltres)
     return { success: true, recipeId: insertedData?.id || 'new' };
 
   } catch (error: unknown) {
     console.error("Error creating recipe:", error);
-    
+
     let errorMessage = "Error desconegut creant la recepta.";
     if (error instanceof Error) {
-        errorMessage = error.message;
+      errorMessage = error.message;
     } else if (typeof error === "string") {
-        errorMessage = error;
+      errorMessage = error;
     }
 
     return { success: false, error: errorMessage };

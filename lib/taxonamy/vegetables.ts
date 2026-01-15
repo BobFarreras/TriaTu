@@ -11,44 +11,35 @@ export const VEGETABLES_CATEGORY: MainCategory = {
       id: 'potato',
       label: 'Patates',
       emoji: '🥔',
-      query: ['Patates', 'Patata', 'Patates malla', 'Patata granel'],
-      // ✅ MUST: Si no diu "Patat...", fora. Això treu molts snacks amb noms creatius.
-      mustContain: ['Patata', 'Patates'], 
-      // 🧹 NETEJA: Hem tret marques. Ens centrem en PRODUCTES PROCESSATS.
+      query: ['Patates', 'Patata', 'Patates mini en bossa'],
+      // Exclusions MOLT importants per netejar la llista
       exclude: [
-        'xips', 'fregides', 'bravas', 'congelades', 'truita', 
-        'gnocchi', 'snack', 'pelades', 'tonyina', 'farcellets', 
-        'preparada', 'microones', 'deluxe', 'puré', 'bastonets',
-        'Ceba', 'All' // Evitem "Patata i Ceba" si busquem només patata? Opcional.
+        'xips', 'fregides', 'bravas', 'congelades', 'truita',
+        'gnocchi', 'snack', 'pelades', 'tonyina', 'farcellets',
+        'preparada', 'microones', 'deluxe', 'puré', 'lay\'s',
+        'pringles', 'ruffles', 'doritos', 'cheetos', 'Ceba', 'SANTA ANA', 'fregir', 'TERRA I TAST', 'TERESA'
       ]
     },
     {
       id: 'onion',
       label: 'Cebes',
       emoji: '🧅',
-      query: ['Ceba', 'Cebes'], // Simplifiquem la query
-      mustContain: ['Ceba'],    // Forcem que sigui ceba
-      exclude: [
-        'fregida', 'cruixent', 'congelada', 'caramel', 'pot', 
-        'en pols', 'sopa', 'truita', 'sofregit'
-      ]
+      query: ['Ceba seca', 'Ceba figueres', 'Ceba morada', 'Ceba dolça'],
+      exclude: ['fregida', 'cruixent', 'congelada', 'caramel', 'pot', 'en pols', 'LENOR', 'PIERNAS GRANADA']
     },
     {
       id: 'garlic',
       label: 'Alls',
       emoji: '🧄',
-      query: ['Alls', 'All'],
-      mustContain: ['All'],
-      // Aquí el "mustContain" ens protegeix de coses com "Salsa Allioli" si la query fos massa àmplia
-      exclude: ['talls', 'picada', 'salsa', 'oli', 'maionesa', 'botifarra']
+      query: 'Alls secs', // ✅ SOLUCIÓ: "Secs" elimina "Talls de pernil"
+      exclude: ['talls', 'picada', 'salsa', 'oli']
     },
     {
       id: 'carrot',
       label: 'Pastanaga',
       emoji: '🥕',
-      query: ['Pastanaga', 'Pastanages'],
-      mustContain: ['Pastanag'], // Cobreix singular i plural
-      exclude: ['ratllada', 'brot', 'pastís', 'suc', 'crema', 'pèsols', 'ensaladilla'] 
+      query: ['Pastanaga', 'Pastanages', 'fresca'],
+      exclude: ['ratllada', 'brot', 'pastís', 'suc', 'Burger', 'Barreja', 'PAGO', 'HIPP'] // Evitem pastanaga ratllada o sucs
     },
 
     // --- AMANIDA ---
@@ -56,33 +47,29 @@ export const VEGETABLES_CATEGORY: MainCategory = {
       id: 'lettuce',
       label: 'Enciam',
       emoji: '🥬',
-      query: ['Enciam', 'Cabdells'],
-      mustContain: ['Enciam', 'Cabdell'],
-      exclude: ['bossa'] // Opcional, si vols només la peça sencera
+      query: 'Enciam fresc',
+      exclude: ['bossa'] // Si vols evitar les bosses preparades, sinó treu-ho
     },
     {
       id: 'tomato',
       label: 'Tomàquet',
       emoji: '🍅',
-      query: ['Tomàquet amanida', 'Tomàquet branca', 'Tomàquet pera'],
-      mustContain: ['Tomàquet'],
-      exclude: ['fregit', 'triturat', 'salsa', 'sec', 'ratllat', 'conserva', 'suc']
+      query: 'Tomàquet amanida', // Més específic que "Tomàquet" (que treu fregit)
+      exclude: ['fregit', 'triturat', 'salsa', 'sec']
     },
     {
       id: 'tomato_cherry',
       label: 'Cherry',
       emoji: '🍅',
       query: 'Tomàquet cherry',
-      mustContain: ['Cherry'], // Molt específic
-      exclude: ['confitat', 'sec']
+      exclude: ['confitat']
     },
     {
       id: 'cucumber',
       label: 'Cogombre',
       emoji: '🥒',
       query: 'Cogombre',
-      mustContain: ['Cogombre'],
-      exclude: ['vinagre', 'adobats', 'agredolç']
+      exclude: ['in vinagre', 'adobats'] // Evitem els de pot
     },
 
     // --- CUINAR ---
@@ -91,69 +78,91 @@ export const VEGETABLES_CATEGORY: MainCategory = {
       label: 'Carbassó',
       emoji: '🥒',
       query: 'Carbassó',
-      mustContain: ['Carbassó'],
-      exclude: ['crema', 'puré', 'fregit', 'truita']
+      exclude: ['crema', 'puré', 'fregit']
     },
     {
       id: 'eggplant',
       label: 'Albergínia',
       emoji: '🍆',
       query: 'Albergínia',
-      mustContain: ['Albergínia'],
-      exclude: ['farcida', 'arrebossada', 'crema', 'hummus']
+      exclude: ['farcida', 'arrebossada', 'crema']
     },
-    
-    // --- 🌶️ PEBROTS ---
+    // --- 🌶️ PEBROTS MILLORATS ---
     {
       id: 'pepper_red',
       label: 'Pebrot Vermell',
       emoji: '🌶️',
-      query: ['Pebrot vermell', 'Pebrot tricolor', 'Pebrot groc', 'Pebrot California'],
-      mustContain: ['Pebrot'],
+      // ESTRATÈGIA: 
+      // 1. "Pebrot vermell": El clàssic.
+      // 2. "Pebrot tricolor": Molt important, sovint és l'única manera de comprar-ne.
+      // 3. "Pebrot California": És la varietat tècnica del vermell gruixut.
+      query: ['Pebrot vermell', 'Pebrot tricolor', 'Pebrot groc'],
+
+      // EXCLUSIONS:
+      // "Piquillo" i "Nyora" solen sortir com a vermells però són conserves o secs.
+      // "Escalivat" és el gran enemic aquí.
       exclude: [
-        'escalivat', 'farcit', 'conserva', 'melmelada', 'bitxo', 
-        'pot', 'llauna', 'tires', 'piquillo', 'nyora', 'fregit', 'cuit', 'verd', 'mólt'
+        'escalivat', 'farcit', 'conserva', 'melmelada', 'bitxo',
+        'pot', 'llauna', 'tires', 'piquillo', 'nyora', 'fregit', 'cuit', 'verd', 'Pebre'
       ]
     },
     {
       id: 'pepper_green',
       label: 'Pebrot Verd/Italià',
       emoji: '🫑',
+      // ESTRATÈGIA:
+      // 1. "Pebrot verd": El de carn gruixuda.
+      // 2. "Pebrot italià": El llarg i prim (el més venut).
+      // 3. "Pebrot Padrón": Els petits per fregir.
       query: ['Pebrot verd', 'Pebrot italià', 'Pebrot Padrón'],
-      mustContain: ['Pebrot'],
-      exclude: ['fregit', 'conserva', 'vinagre', 'bitxo', 'guindilla', 'vermell']
-    },
 
-    // --- BOLETS ---
+      exclude: ['fregit', 'conserva', 'vinagre', 'bitxo', 'guindilla', 'IFA']
+    },
     {
       id: 'mushrooms',
       label: 'Bolets',
       emoji: '🍄',
-      query: ['Xampinyó', 'Portobello', 'Gírgola', 'Shiitake', 'Bolets variats', 'Moixernó'],
-      // ✅ Aquesta és la clau per als bolets: han de tenir el nom de l'espècie
-      mustContain: ['Xampinyó', 'Portobello', 'Gírgola', 'Shiitake', 'Bolet', 'Moixernó'],
+      // ESTRATÈGIA: Busquem les espècies concretes, no la paraula genèrica "Bolet"
+      query: [
+        'Xampinyó',       // El blanc típic
+        'Portobello',     // El marró (molt comú)
+        'Gírgola',        // La plana (Oyster)
+        'Shiitake',       // L'asiàtic fresc
+        'Bolets variats', // Les safates de barreja fresca
+        'Mochardon'       // Moixernó (a vegades fresc, a vegades sec, l'exclude farà la feina)
+      ],
+
+      // FILTRE ANTI-REBOST:
       exclude: [
-        'conserva', 'pot', 'llauna', 'sec', 'deshidratat', 
-        'crema', 'brou', 'congelat', 'risotto', 'arròs', 
-        'fideus', 'confitat', 'saltat', 'burger', 'sopa'
+        'conserva',       // Adéu llaunes
+        'pot',            // Adéu vidre
+        'llauna',
+        'sec',            // Adéu bolets deshidratats
+        'deshidratat',
+        'crema',          // Adéu sopes
+        'brou',
+        'congelat',       // Adéu bosses de congelat
+        'risotto',        // Adéu plats preparats
+        'arròs',
+        'fideus',
+        'confitat',
+        'saltat',
+        'Burger'       // Sol ser congelat
       ]
     },
     {
       id: 'spinach',
       label: 'Espinacs',
       emoji: '🍃',
-      query: 'Espinacs',
-      mustContain: ['Espinacs'],
-      // Aquí eliminem pizzes, crestes, etc.
-      exclude: ['congelat', 'crema', 'bossa', 'ravioli', 'pizza', 'cresta', 'catalana']
+      query: 'Espinacs frescos',
+      exclude: ['congelat', 'crema', 'bossa', 'TERRA I TAST', 'Raviolis', 'PETRAS']
     },
     {
       id: 'pumpkin',
       label: 'Carbassa',
       emoji: '🎃',
-      query: ['Carbassa', 'Carbassa cacauet'],
-      mustContain: ['Carbass'],
-      exclude: ['crema', 'cabell', 'pipes', 'llavors', 'pastís']
+      query: 'Carbassa',
+      exclude: ['crema', 'cabell', 'pipes'] // Evitem crema de carbassa o cabell d'àngel
     },
   ]
 };

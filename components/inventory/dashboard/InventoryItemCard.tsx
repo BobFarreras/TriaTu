@@ -2,7 +2,7 @@
 import { ConsumeButton } from '../actions/ConsumeButton';
 import { isItemExpired, isItemExpiringSoon } from '@/lib/inventoryUtils';
 import { EditItemModal } from '../actions/EditItemModal';
-import { FOOD_PRESETS } from '@/lib/food-presets';
+import { FOOD_PRESETS } from '@/lib/foot-presets';
 import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';

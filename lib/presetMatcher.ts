@@ -1,4 +1,4 @@
-import { FOOD_PRESETS} from './food-presets'; // Assegura't que la ruta és bona
+import { FOOD_PRESETS} from './foot-presets'; // Assegura't que la ruta és bona
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 
 export function enrichWithPreset(item: ScannedItem): ScannedItem {

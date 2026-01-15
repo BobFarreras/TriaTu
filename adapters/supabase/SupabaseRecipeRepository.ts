@@ -6,11 +6,17 @@ import { createClient } from '@/adapters/supabase/server'; // Comprova la teva r
 
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
 
-// --- TIPUS INTERNS DE INFRAESTRUCTURA ---
+// ✅ 1. ACTUALITZAR EL TIPUS INTERN DEL JSON
 interface IngredientJSON {
     name: string;
     quantity: number;
     unit: string;
+    // Camps opcionals nous per enllaç amb Bonpreu
+    emoji?: string;
+    linkedProductId?: string;
+    linkedProductImage?: string;
+    referencePrice?: number;
+    estimatedCost?: number;
 }
 
 interface RecipeDBModel {
@@ -40,7 +46,7 @@ interface RatingDBModel {
 
 export class SupabaseRecipeRepository implements RecipeRepository {
 
-async save(recipe: Recipe): Promise<void> {
+    async save(recipe: Recipe): Promise<void> {
         const supabase = await createClient();
 
         // ✅ DEBUG LOG 3: Què arriba al Repositori just abans de guardar?
@@ -61,23 +67,23 @@ async save(recipe: Recipe): Promise<void> {
             dietary_tags: recipe.dietaryTags,
             prep_time_minutes: recipe.prepTimeMinutes,
             created_at: recipe.createdAt.toISOString(),
-            
+
             // 🔥 MODIFICACIÓ CLAU: Forcem el valor al row per descartar problemes de l'entitat
             // Si vols estar 100% segur que es guarda true, posa 'true' directament aquí.
             // Si posem (recipe.isPublic ?? true), i recipe.isPublic és false, es guardarà false.
             is_public: true,
-            
+
             author_name: 'Usuari Comunitat',
             likes_count: recipe.likesCount
         };
 
         // ✅ DEBUG LOG 4: Què enviem exactament a Supabase?
-        console.log('🛑 [DEBUG 4] Payload cap a Supabase:', { 
-            is_public: row.is_public 
+        console.log('🛑 [DEBUG 4] Payload cap a Supabase:', {
+            is_public: row.is_public
         });
 
         const { error } = await supabase.from('saved_recipes').upsert(row);
-        
+
         if (error) {
             console.error("❌ [Repo] Error guardant:", error);
             throw new Error(`Error database: ${error.message}`);
@@ -169,7 +175,7 @@ async save(recipe: Recipe): Promise<void> {
         const validRecipes = data.reduce((acc: Recipe[], row) => {
             try {
                 acc.push(this.mapToDomain(row as unknown as RecipeDBModel));
-            } catch (e) { console.log(e)}
+            } catch (e) { console.log(e) }
             return acc;
         }, []);
 
@@ -248,19 +254,25 @@ async save(recipe: Recipe): Promise<void> {
     private mapToDomain(row: RecipeDBModel): Recipe {
         const rawIngredients = Array.isArray(row.ingredients) ? row.ingredients : [];
 
-        // 1. SANEJAR INGREDIENTS
+        // 1. SANEJAR I MAPPEJAR INGREDIENTS
         const validIngredients = rawIngredients
             .map((i) => ({
                 name: i.name ? String(i.name).trim() : "Sense nom",
                 quantity: Number(i.quantity),
                 unit: i.unit ? String(i.unit) : "ut",
+
+                // ✅ RECUPEREM ELS NOUS CAMPS
+                // Si existeixen al JSON, els passem al domini. Si no, undefined.
+                emoji: i.emoji,
+                linkedProductId: i.linkedProductId,
+                linkedProductImage: i.linkedProductImage,
+                referencePrice: i.referencePrice ? Number(i.referencePrice) : undefined,
+                estimatedCost: i.estimatedCost ? Number(i.estimatedCost) : undefined
             }))
             .filter((i) => i.name.length > 0 && i.quantity > 0);
 
-        // 2. COMPROVACIÓ CRÍTICA ABANS DE CREAR L'ENTITAT
-        // Si després de filtrar ens quedem sense ingredients, l'entitat petaria.
-        // Aquí detectem el problema abans, llancem error, i el catch del reduce (a dalt) l'atraparà.
         if (validIngredients.length === 0) {
+            // Nota: Podries ser més lax aquí si vols permetre receptes sense ingredients temporalment
             throw new Error(`Recepta sense ingredients vàlids (Originals: ${rawIngredients.length})`);
         }
 
