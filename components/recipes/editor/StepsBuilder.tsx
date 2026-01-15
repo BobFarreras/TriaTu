@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react';
-import { EditorData, StepsLabels } from './types';
+import { EditorData, StepsLabels, RecipeStep } from './types';
 import { useStepsManager } from './steps/useStepsManager';
 import { StepsInput } from './steps/StepsInput';
 import { StepsList } from './steps/StepsList';
@@ -18,17 +18,22 @@ export function StepsBuilder({ data, update, labels }: Props) {
   const {
     currentStepText,
     setCurrentStepText,
+    editingId,
+    startEditing,
+    cancelEditing,
+    saveStep,
     textareaRef,
     listEndRef,
-    addStep,
     removeStep,
     handleReorder
   } = useStepsManager(data, update);
 
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
 
-  const handleAddStep = () => {
-    addStep();
+  // Wrapper per canviar de vista automàticament al mòbil quan editem
+  const handleEditClick = (step: RecipeStep) => {
+      startEditing(step);
+      setMobileView('edit'); // 👈 Màgia UX
   };
 
   return (
@@ -58,7 +63,7 @@ export function StepsBuilder({ data, update, labels }: Props) {
           </button>
       </div>
 
-      {/* INPUT + CONTEXT (Sense ID aquí, està a dins) */}
+      {/* INPUT + CONTEXT */}
       <div className={`
           flex-col h-full overflow-hidden
           ${mobileView === 'preview' ? 'hidden lg:flex' : 'flex'}
@@ -67,7 +72,9 @@ export function StepsBuilder({ data, update, labels }: Props) {
             data={data}
             currentText={currentStepText}
             onChangeText={setCurrentStepText}
-            onAdd={handleAddStep}
+            onSave={saveStep} // Canviat de onAdd a onSave
+            onCancel={cancelEditing} // Nova prop
+            isEditing={!!editingId}  // Nova prop
             textareaRef={textareaRef}
             labels={labels}
           />
@@ -83,6 +90,8 @@ export function StepsBuilder({ data, update, labels }: Props) {
             ingredients={data.ingredients} 
             onReorder={handleReorder}
             onRemove={removeStep}
+            onEdit={handleEditClick} // ✅ Passem la funció d'editar
+            editingId={editingId}    // ✅ Passem l'ID actiu per marcar-lo visualment
             listEndRef={listEndRef}
             labels={labels}
           />
