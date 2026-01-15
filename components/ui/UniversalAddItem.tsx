@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FOOD_PRESETS } from '@/lib/food-presets'; // La teva llista de presets
+import { FOOD_PRESETS } from '@/lib/foot-presets'; // La teva llista de presets
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {

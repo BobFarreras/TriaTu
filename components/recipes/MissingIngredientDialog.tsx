@@ -1,17 +1,22 @@
-// ARXIU: src/components/recipes/MissingIngredientDialog.tsx
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { addToShoppingListAction } from '@/app/actions/shopping-list-actions';
-import { quickAddInventoryAction } from '@/app/actions/inventory';
+import { quickAddInventoryAction } from '@/app/actions/inventory'; // Aquesta és la que farem servir
 import { toast } from 'sonner';
 
+// ✅ INTERFÍCIE ACTUALITZADA (Ingredient Ric)
 export interface Ingredient {
   name: string;
   quantity: number;
   unit: string;
-  emoji?: string; // ✅ Assegurem que pot tenir emoji
+  emoji?: string;
+  // Nous camps opcionals
+  image?: string;
+  linkedProductImage?: string;
+  linkedProductId?: string; // ID de producte de Bonpreu
+  estimatedCost?: number;
 }
 
 interface Props {
@@ -26,15 +31,22 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
 
   if (!isOpen || !ingredient) return null;
 
+  // Lògica per mostrar imatge o emoji
+  const imageUrl = ingredient.image || ingredient.linkedProductImage;
+  const hasImage = !!imageUrl;
+
   const handleAddToList = async () => {
     setLoading('list');
 
-    // ✅ FIX: Afegim el 4t argument (ingredient.emoji)
+    // ✅ Passem totes les dades rellevants
     const result = await addToShoppingListAction(
       ingredient.name,
       ingredient.quantity,
       ingredient.unit,
-      ingredient.emoji // <--- AQUESTA ÉS LA PEÇA QUE FALTAVA
+      ingredient.emoji,
+      ingredient.linkedProductId,   // ✅ ID
+      ingredient.linkedProductImage,// ✅ Imatge (IMPORTANT!)
+      ingredient.estimatedCost      // ✅ Preu
     );
 
     if (result.success) {
@@ -48,12 +60,14 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
 
   const handleAddToInventory = async () => {
     setLoading('inventory');
-    // ✅ PASSEM L'EMOJI A L'ACCIÓ
+
+    // ✅ CRIDEM A L'ACCIÓ RÀPIDA AMB DADES RIQUES
     const result = await quickAddInventoryAction(
       ingredient.name,
       ingredient.quantity,
       ingredient.unit,
-      ingredient.emoji // <--- AQUI
+      ingredient.emoji,
+      ingredient.linkedProductId // ✅ Passem l'ID del producte si existeix
     );
 
     if (result.success) {
@@ -69,9 +83,7 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
   return (
     <AnimatePresence>
       {isOpen && (
-        // ✅ CORRECCIÓ Z-INDEX: Pugem a z-[100] per superar qualsevol sticky header
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
@@ -84,14 +96,21 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden"
           >
-            {/* ... Contingut visual (igual que abans) ... */}
-            <div className="bg-linear-to-r from-purple-900/40 to-slate-900 p-6 text-center border-b border-slate-800">
-              <div className="text-4xl mb-3">{ingredient.emoji || '⚠️'}</div> {/* Mostrem l'emoji també aquí */}
+            {/* CAPÇALERA AMB IMATGE O EMOJI */}
+            <div className="bg-gradient-to-r from-purple-900/40 to-slate-900 p-6 text-center border-b border-slate-800">
+              <div className="mb-3 flex justify-center">
+                {hasImage ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={imageUrl} alt={ingredient.name} className="w-16 h-16 object-contain bg-white rounded-xl p-1 shadow-lg" />
+                ) : (
+                  <div className="text-4xl">{ingredient.emoji || '⚠️'}</div>
+                )}
+              </div>
               <h2 className="text-xl font-bold text-white">Et falta ingredient!</h2>
-
+              <p className="text-slate-400 text-sm mt-1">{ingredient.name}</p>
             </div>
 
-            {/* ... Botons (igual que abans) ... */}
+            {/* BOTONS D'ACCIÓ */}
             <div className="p-6 space-y-3">
               <p className="text-xs uppercase tracking-wider text-slate-500 font-bold mb-4">Què vols fer?</p>
 
@@ -116,10 +135,7 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
                 className="w-full flex items-center justify-between p-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50 transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  {/* Usem l'emoji de l'ingredient o la caixa */}
-                  <span className="text-2xl bg-slate-900 p-2 rounded-lg group-hover:scale-110 transition-transform">
-                    {ingredient.emoji || '📦'}
-                  </span>
+                  <span className="text-2xl bg-slate-900 p-2 rounded-lg group-hover:scale-110 transition-transform">📦</span>
                   <div className="text-left">
                     <div className="font-bold text-slate-200">Ja en tinc (Afegir stock)</div>
                     <div className="text-xs text-slate-400">L'afegeix al rebost immediatament</div>
@@ -129,7 +145,6 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
               </button>
             </div>
 
-            {/* Footer */}
             <div className="p-4 bg-slate-950 border-t border-slate-800 text-center">
               <button onClick={onClose} className="text-sm text-slate-500 hover:text-white transition-colors">
                 Cancel·lar operació

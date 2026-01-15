@@ -258,27 +258,24 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
   }
 
 }
-// ✅ MODIFICAT: Afegim paràmetre 'emoji' (opcional)
+
+
+// ✅ Acceptem 'productId' com a 5è argument opcional
 export async function quickAddInventoryAction(
-  name: string,
-  quantity: number,
-  unit: string,
-  emoji?: string // <--- NOU PARÀMETRE
+    name: string, 
+    quantity: number, 
+    unit: string, 
+    emoji?: string,
+    productId?: string
 ) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
+    if (!user) throw new Error("Unauthorized");
 
-    // 1. Lògica intel·ligent per l'emoji
-    // Si ve del front, l'usem. Si no, busquem a presets. Si no, default.
-    let finalEmoji = emoji;
-    if (!finalEmoji) {
-      const preset = FOOD_PRESETS.find(p => p.name.toLowerCase() === name.toLowerCase());
-      finalEmoji = preset?.emoji || '📦';
-    }
+    const expiryYMD = ExpirySafetyService.applySafetyRules(name, 'PANTRY', undefined);
+    const expiryDate = new Date(expiryYMD);
 
-    const expiryDate = calculateExpiryDate(name, finalEmoji);
     const useCase = container.getAddItem(supabase);
 
     await useCase.execute({
@@ -286,19 +283,21 @@ export async function quickAddInventoryAction(
       name: name,
       quantity: quantity,
       unit: unit,
-      location: StorageLocation.PANTRY,
+      // ✅ FIX: Fem servir l'Enum en lloc de l'string 'PANTRY'
+      // Si el teu enum es diu diferent (ex: StorageLocation.Rebost), canvia-ho.
+      location: StorageLocation.PANTRY, 
       expiryDate: expiryDate,
-      emoji: finalEmoji, // ✅ Usem l'emoji correcte
+      emoji: emoji || '📦',
       addedAt: new Date(),
-      productId: null
+      productId: productId || null
     });
 
     revalidatePath('/inventory');
-    revalidatePath('/recipes');
     return { success: true };
 
-  } catch (error: unknown) {
-    return { success: false, error: getErrorMessage(error) };
+  } catch (error) {
+    console.error("Error quick adding to inventory:", error);
+    return { success: false, error: "Error afegint a l'inventari." };
   }
 }
 

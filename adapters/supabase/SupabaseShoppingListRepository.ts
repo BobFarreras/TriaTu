@@ -14,6 +14,9 @@ interface ShoppingListItemRow {
   is_checked: boolean;
   added_at?: string;
   emoji?: string; // ✅ NOU
+  product_id?: string;
+  product_image?: string;
+  estimated_cost?: number
 }
 
 export class SupabaseShoppingListRepository implements ShoppingListRepository {
@@ -33,6 +36,11 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
   }
 
   async upsertItem(item: ShoppingListItem): Promise<void> {
+    console.log("💾 [REPO] Saving to DB:", {
+      name: item.props.name,
+      productId: item.props.productId,
+      image: item.props.productImage
+    });
     const { data: existing } = await this.supabase
       .from('shopping_list_items')
       .select('*')
@@ -65,7 +73,11 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
           quantity: item.props.quantity,
           unit: item.props.unit,
           is_checked: item.props.isChecked,
-          emoji: item.props.emoji // ✅ Actualitzem l'emoji
+          emoji: item.props.emoji ,// ✅ Actualitzem l'emoji
+          product_id: item.props.productId,
+          product_image: item.props.productImage,
+          estimated_cost: item.props.estimatedCost
+
 
         });
 
@@ -110,7 +122,10 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
       quantity: Number(raw.quantity),
       unit: raw.unit,
       isChecked: raw.is_checked,
-      emoji: raw.emoji // ✅ Recuperem l'emoji
+      emoji: raw.emoji, // ✅ Recuperem l'emoji
+      productId: raw.product_id,
+      productImage: raw.product_image,
+      estimatedCost: raw.estimated_cost
     });
   }
 }

@@ -8,13 +8,27 @@ export interface ShoppingListItemProps {
   unit: string;
   isChecked: boolean;
   emoji?: string; // ✅ NOU
+  productId?: string, // ✅ AFEGIT AL CONSTRUCTOR
+  productImage?: string, // ✅ AFEGIT AL CONSTRUCTOR
+  estimatedCost?: number // ✅ AFEGIT AL CONSTRUCTOR
 }
 
 export class ShoppingListItem {
   constructor(public readonly props: ShoppingListItemProps) { }
 
   // Factory per crear nous items nets
-  public static create(userId: string, name: string, quantity: number, unit: string, emoji?: string): ShoppingListItem {
+  static create(
+    userId: string,
+    name: string,
+    quantity: number,
+    unit: string,
+    emoji?: string,
+    isChecked: boolean = false,
+    // ✅ NOUS PARÀMETRES
+    productId?: string,
+    productImage?: string,
+    estimatedCost?: number
+  ): ShoppingListItem {
     if (quantity <= 0) throw new Error("La quantitat ha de ser positiva");
     if (!name.trim()) throw new Error("El nom no pot estar buit");
 
@@ -24,8 +38,11 @@ export class ShoppingListItem {
       name,
       quantity,
       unit,
-      isChecked: false,
-      emoji: emoji || '📦' // ✅ Default si no en té
+      isChecked,
+      emoji,
+      productId,
+      productImage,
+      estimatedCost
     });
   }
 

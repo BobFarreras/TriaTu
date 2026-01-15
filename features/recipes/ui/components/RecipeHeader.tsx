@@ -10,7 +10,7 @@ interface Props {
   authorName?: string;    // ✅ Nou camp
 }
 
-const getEmoji = (name: string) => {
+export const getEmoji = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('pizza')) return '🍕';
   if (n.includes('pasta')) return '🍝';
