@@ -14,6 +14,7 @@ import { TourTrigger } from '@/components/onboarding/TourTrigger';
 import { useRecipeForm } from './useRecipeForm';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { useRouter } from 'next/navigation';
+import { BackButton } from '@/components/ui/BackButton';
 
 interface Props {
   userInventory: InventoryItemUI[];
@@ -62,7 +63,7 @@ export function RecipeEditor({ userInventory }: Props) {
     ...(t.create_recipe.steps as unknown as Record<string, string>),
     title: "Passos"
   } as StepsLabels;
-  
+
   // Sincronització de pestanyes amb el Tour
   useEffect(() => {
     if (!isActive) return;
@@ -100,7 +101,9 @@ export function RecipeEditor({ userInventory }: Props) {
       {/* HEADER */}
       <div className="shrink-0 px-4 py-3 bg-slate-950 flex items-center justify-between border-b border-slate-900">
         <button onClick={handleExit} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
-          <ArrowLeft size={20} />
+
+          <BackButton />
+
         </button>
         <h1 className="text-slate-200 font-bold text-lg cursor-pointer" onClick={() => setActiveTab('meta')}>
           {data.name || "Nova Recepta"}

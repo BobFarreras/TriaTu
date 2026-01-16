@@ -24,6 +24,7 @@ export default async function RecipePage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 text-white pb-20">
+      
         {/* Eliminem el container i padding d'aquí per tenir control total a la View */}
         <RecipeDetailView 
             recipe={recipe.props} 

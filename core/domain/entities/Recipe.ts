@@ -8,6 +8,7 @@ export interface Ingredient {
     name: string;
     quantity: number;
     unit: string;
+    emoji?: string;
 }
 
 export interface RecipeProps {
@@ -29,6 +30,8 @@ export interface RecipeProps {
         count: number;
         distribution: Record<number, number>;
     };
+    isAiGenerated?: boolean; // ✅ NOU
+    isFavorite?: boolean; // ✅ NOU: Per saber si el cor ha d'estar vermell
 }
 
 export class Recipe {
@@ -49,7 +52,8 @@ export class Recipe {
     get likesCount() { return this.props.likesCount; }
     get isPublic() { return this.props.isPublic; }
     get ratingSummary() { return this.props.ratingSummary; }
-
+    get isAiGenerated() { return this.props.isAiGenerated; }
+    get isFavorite() { return this.props.isFavorite ?? false; }
     // 🧠 LÒGICA ACTUALITZADA PER SUPORTAR TAGS "SMART"
     isSafeFor(restrictions: DietaryRestriction[]): boolean {
         if (!restrictions || restrictions.length === 0) return true;

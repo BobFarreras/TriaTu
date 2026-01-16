@@ -34,24 +34,25 @@ export default async function ShoppingListPage() {
   // Mapping
   const plainItems = mapItemsToViewModel(items);
   const plainHistory = mapHistoryToViewModel(history);
-  
+
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 pb-32">
       <div className="max-w-2xl mx-auto space-y-6">
-        
+
         <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-                📝 Compra Activa
-            </h1>
-            <BackButton href="/" />
+          <BackButton href="/" />
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            📝 Compra Activa
+          </h1>
+
         </div>
 
         {/* ✅ 2. ESTRUCTURA CORRECTA D'ONBOARDING */}
         <OnboardingProvider>
-            {/* L'Overlay ha d'estar DINS del provider però AL COSTAT del contingut */}
-            <OnboardingOverlay /> 
-            
-            <ShoppingListManager initialItems={plainItems} history={plainHistory} />
+          {/* L'Overlay ha d'estar DINS del provider però AL COSTAT del contingut */}
+          <OnboardingOverlay />
+
+          <ShoppingListManager initialItems={plainItems} history={plainHistory} />
         </OnboardingProvider>
 
       </div>
@@ -63,24 +64,24 @@ export default async function ShoppingListPage() {
 
 function mapItemsToViewModel(items: ShoppingListItem[]): ShoppingItemUI[] {
   return items.map((i) => ({
-      id: i.props.id,
-      name: i.props.name,
-      quantity: i.props.quantity,
-      unit: i.props.unit,
-      isChecked: i.props.isChecked,
-      emoji: i.props.emoji,
-      productId: i.props.productId ?? undefined,
-      productImage: i.props.productImage ?? undefined,
-      estimatedCost: i.props.estimatedCost ?? undefined
+    id: i.props.id,
+    name: i.props.name,
+    quantity: i.props.quantity,
+    unit: i.props.unit,
+    isChecked: i.props.isChecked,
+    emoji: i.props.emoji,
+    productId: i.props.productId ?? undefined,
+    productImage: i.props.productImage ?? undefined,
+    estimatedCost: i.props.estimatedCost ?? undefined
   }));
 }
 
 function mapHistoryToViewModel(history: ShoppingSession[]): HistorySession[] {
   return history.map((h) => ({
-      id: h.props.id,
-      createdAt: h.props.createdAt,
-      totalCost: h.props.totalCost,
-      itemCount: h.props.itemCount,
-      itemsSnapshot: h.props.itemsSnapshot 
+    id: h.props.id,
+    createdAt: h.props.createdAt,
+    totalCost: h.props.totalCost,
+    itemCount: h.props.itemCount,
+    itemsSnapshot: h.props.itemsSnapshot
   }));
 }

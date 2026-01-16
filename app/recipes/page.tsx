@@ -13,7 +13,6 @@ interface PageProps {
 
 export default async function CommunityPage(props: PageProps) {
   const searchParams = await props.searchParams;
-
   const supabase = await createClient();
   const repo = new SupabaseRecipeRepository();
   const searchUseCase = new SearchRecipes(repo);
@@ -21,49 +20,39 @@ export default async function CommunityPage(props: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id;
 
+  const mode = typeof searchParams.mode === 'string' ? searchParams.mode : 'ALL';
   const query = typeof searchParams.q === 'string' ? searchParams.q : '';
   const filterType = typeof searchParams.filter === 'string' ? searchParams.filter : 'ALL';
   const page = typeof searchParams.page === 'string' ? parseInt(searchParams.page) : 1;
-  
   const ITEMS_PER_PAGE = 8;
 
-  // DEBUG
-  console.log(`\n🛑 [DEBUG FILTER] Filtre: "${filterType}" | Pàgina: ${page}`);
-
+  // --- LÒGICA DE FILTRES ---
   const tags: string[] = [];
   let maxTime: number | undefined = undefined;
 
-  // ✅ FILTRES ACTUALITZATS (Coincideixen amb la columna dietary_tags)
+  // ⚠️ IMPORTANT: Assegura't que aquests strings són els mateixos que es guarden quan crees una recepta
   if (filterType === 'VEGGIE') tags.push('vegetarià');
   if (filterType === 'VEGAN') tags.push('vegà');
   if (filterType === 'GLUTEN_FREE') tags.push('sense gluten');
   if (filterType === 'DAIRY_FREE') tags.push('sense lactosa');
-  if (filterType === 'DESSERT') tags.push('postres'); 
-  
-  if (filterType === 'FAST') {
-      maxTime = 20;
-  }
+  if (filterType === 'DESSERT') tags.push('postres');
 
-  console.log(`🛑 [DEBUG TAGS] Buscant tags:`, tags);
+  if (filterType === 'FAST') maxTime = 20;
 
+  // --- EXECUCIÓ ---
   const { recipes, total } = await searchUseCase.execute({
     searchTerm: query,
     tags: tags,
     maxTimeMinutes: maxTime,
     limit: ITEMS_PER_PAGE,
-    offset: (page - 1) * ITEMS_PER_PAGE
+    offset: (page - 1) * ITEMS_PER_PAGE,
+    userId: userId,
+    filterMode: mode as 'ALL' | 'MINE' | 'FAVORITES'
   });
-
-  console.log(`✅ [DEBUG RESULT] Trobades: ${total}`);
-  
-  // ✅ FIX: Eliminat 'any'. Usem toPrimitives() per accedir a les dades de forma segura.
-  if (recipes.length > 0) {
-      const firstRecipeData = recipes[0].toPrimitives(); 
-      console.log(`   --> Primera: "${firstRecipeData.name}"`);
-  }
 
   const plainRecipes = recipes.map(recipe => recipe.toPrimitives());
 
+  // Recollir ratings si cal
   let userRatings: Record<string, number> = {};
   if (userId && recipes.length > 0) {
     const recipeIds = recipes.map(r => r.id);
@@ -73,11 +62,16 @@ export default async function CommunityPage(props: PageProps) {
   return (
     <main className="container mx-auto px-4 py-6">
       <div className="flex flex-row justify-between items-start mb-6 gap-4">
-        <CommunityHeader /> 
         <BackButton />
+        <CommunityHeader />
+
       </div>
 
-      <FilterBar currentFilter={filterType} currentSearch={query} />
+      <FilterBar
+        currentFilter={filterType}
+        currentSearch={query}
+        currentMode={mode}
+      />
 
       <div className="mt-6">
         <RecipeFeed
@@ -88,7 +82,7 @@ export default async function CommunityPage(props: PageProps) {
           currentPage={page}
         />
       </div>
-      
+
       <CreateRecipeButton />
     </main>
   );

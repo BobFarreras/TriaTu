@@ -3,8 +3,8 @@
 import { createClient } from '@/adapters/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { EditorData } from '@/components/recipes/editor/types';
-
-type ActionResponse = 
+import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
+type ActionResponse =
   | { success: true; recipeId: string }
   | { success: false; error: string };
 
@@ -24,20 +24,20 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
   try {
     // 2. OBTENIR AUTOR REAL
     let authorName = "Xef Anònim";
-    
+
     // Intentem obtenir el nom del perfil
     const { data: profile } = await supabase
       .from('preference_profiles') // ✅ Canviat a la teva taula de perfils correcta
       .select('username')
       .eq('user_id', user.id)
       .single();
-      
+
     if (profile?.username) authorName = profile.username;
     else if (user.user_metadata?.full_name) authorName = user.user_metadata.full_name;
 
     // 3. CÀLCUL DE PREU ESTIMAT
     const totalCost = data.ingredients.reduce((acc, ing) => {
-      const itemWithCost = ing as unknown as IngredientWithCost; 
+      const itemWithCost = ing as unknown as IngredientWithCost;
       const cost = parseFloat(String(itemWithCost.estimatedCost || 0));
       return acc + (isNaN(cost) ? 0 : cost);
     }, 0);
@@ -46,8 +46,8 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
     // ✅ NO fem JSON.stringify manualment, el client de Supabase ho gestiona per columnes jsonb
     // ✅ Mantenim els IDs dels passos per poder reordenar després
     const stepsData = data.steps.map(s => ({
-        id: s.id || crypto.randomUUID(),
-        content: s.content || "" 
+      id: s.id || crypto.randomUUID(),
+      content: s.content || ""
     }));
 
     // 5. CONSTRUIR OBJECTE DB
@@ -56,11 +56,11 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
       name: data.name,
       author_name: authorName,
       prep_time_minutes: Number(data.prepTimeMinutes) || 0,
-      
+
       // ✅ Passem els arrays directament (Supabase els convertirà a JSONB)
-      ingredients: data.ingredients, 
-      steps: stepsData, 
-      
+      ingredients: data.ingredients,
+      steps: stepsData,
+
       dietary_tags: data.dietaryTags || [],
       estimated_cost: totalCost,
       is_public: true,
@@ -78,8 +78,8 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
       .single();
 
     if (error) {
-        console.error("Supabase Error:", error);
-        throw new Error(error.message);
+      console.error("Supabase Error:", error);
+      throw new Error(error.message);
     }
 
     // 7. RETORN
@@ -91,5 +91,26 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
     let errorMessage = "Error desconegut al servidor.";
     if (error instanceof Error) errorMessage = error.message;
     return { success: false, error: errorMessage };
+  }
+}
+export async function toggleFavoriteAction(recipeId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const repo = new SupabaseRecipeRepository();
+
+  try {
+    const isFav = await repo.toggleFavorite(user.id, recipeId);
+
+    // Revalidem per actualitzar la UI
+    revalidatePath('/recipes');
+    revalidatePath(`/recipes/${recipeId}`);
+
+    return { success: true, isFavorite: isFav };
+  } catch (error) {
+    console.log("Error updating favorite:", error)
+    return { success: false, error: "Error updating favorite" };
   }
 }

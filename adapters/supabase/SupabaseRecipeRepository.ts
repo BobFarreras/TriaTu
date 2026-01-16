@@ -1,17 +1,15 @@
-// ARXIU: adapters/supabase/SupabaseRecipeRepository.ts
 import { RecipeRepository, RecipeFilter } from '@/core/ports/RecipeRepository';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { Rating } from '@/core/domain/entities/Rating';
-import { createClient } from '@/adapters/supabase/server'; // Comprova la teva ruta d'importació
-
+import { createClient } from '@/adapters/supabase/server';
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
 
-// ✅ 1. ACTUALITZAR EL TIPUS INTERN DEL JSON
+// --- INTERFÍCIES ---
+
 interface IngredientJSON {
     name: string;
     quantity: number;
     unit: string;
-    // Camps opcionals nous per enllaç amb Bonpreu
     emoji?: string;
     linkedProductId?: string;
     linkedProductImage?: string;
@@ -35,8 +33,8 @@ interface RecipeDBModel {
     rating_avg: number | null;
     rating_count: number | null;
     rating_distribution: Record<string, number> | null;
-    // ✅ AFEGIM LA COLUMNA QUE FALTAVA
-    estimated_cost: number | null; 
+    estimated_cost: number | null;
+    is_ai_generated: boolean;
 }
 
 interface RatingDBModel {
@@ -44,6 +42,12 @@ interface RatingDBModel {
     value: number;
     user_id: string;
     created_at: string;
+}
+
+// ✅ 1. AQUESTA ÉS LA CLAU: El tipus complet amb els JOINs
+interface RecipeWithJoins extends RecipeDBModel {
+    preference_profiles: { username: string } | null;
+    recipe_favorites: { user_id: string }[];
 }
 
 export class SupabaseRecipeRepository implements RecipeRepository {
@@ -94,16 +98,36 @@ export class SupabaseRecipeRepository implements RecipeRepository {
         }
     }
 
+    // --- SEARCH (Lectura Principal) ---
     async search(filter: RecipeFilter): Promise<{ recipes: Recipe[]; total: number }> {
         const supabase = await createClient();
-        let query = supabase
-            .from('saved_recipes')
-            .select('*', { count: 'exact' })
-            .eq('is_public', true);
 
+        // Query amb JOINs
+        let query = supabase.from('saved_recipes').select(`
+            *,
+            preference_profiles!user_id ( username ),
+            recipe_favorites!left ( user_id )
+        `, { count: 'exact' });
+
+        // A) MINE
+        if (filter.filterMode === 'MINE' && filter.userId) {
+            query = query
+                .eq('user_id', filter.userId)
+                .eq('is_ai_generated', false);
+        }
+        // B) FAVORITES
+        else if (filter.filterMode === 'FAVORITES' && filter.userId) {
+            query = query.not('recipe_favorites', 'is', null)
+                .eq('recipe_favorites.user_id', filter.userId);
+        }
+        // C) ALL (Comunitat)
+        else {
+            query = query.eq('is_public', true);
+        }
+
+        // Filtres extra
         if (filter.searchTerm) query = query.ilike('name', `%${filter.searchTerm}%`);
         if (filter.maxTimeMinutes) query = query.lte('prep_time_minutes', filter.maxTimeMinutes);
-        if (filter.minRating) query = query.gte('rating_avg', filter.minRating);
         if (filter.tags && filter.tags.length > 0) query = query.contains('dietary_tags', filter.tags);
 
         const limit = filter.limit || 10;
@@ -114,75 +138,122 @@ export class SupabaseRecipeRepository implements RecipeRepository {
             .range(offset, offset + limit - 1);
 
         if (error) {
-            console.error("Error cercant receptes:", error);
+            console.error("❌ Error cercant:", error);
             return { recipes: [], total: 0 };
         }
 
+        // ✅ Casting correcte a RecipeWithJoins
+        const rows = data as unknown as RecipeWithJoins[];
+
         return {
-            recipes: data.map((row) => this.mapToDomain(row as unknown as RecipeDBModel)),
+            recipes: rows.map((row) => this.mapToDomain(row)),
             total: count || 0
         };
     }
 
+    // --- FINDBYID (Lectura Detall) ---
     async findById(id: string): Promise<Recipe | null> {
         const supabase = await createClient();
+
+        // ✅ CORRECCIÓ: Afegim els JOINs aquí també!
         const { data, error } = await supabase
             .from('saved_recipes')
-            .select('*')
+            .select(`
+                *,
+                preference_profiles!user_id ( username ),
+                recipe_favorites!left ( user_id )
+            `)
             .eq('id', id)
             .maybeSingle();
 
         if (error || !data) return null;
-        return this.mapToDomain(data as unknown as RecipeDBModel);
+
+        // ✅ Casting a RecipeWithJoins (ara sí que té les propietats)
+        return this.mapToDomain(data as unknown as RecipeWithJoins);
     }
 
-    // ✅ MILLORA DE ROBUSTESA 1: findAllByUser
+    // --- FINDALLBYUSER (Lectura Perfil) ---
     async findAllByUser(userId: string): Promise<Recipe[]> {
         const supabase = await createClient();
+
+        // ✅ CORRECCIÓ: Afegim els JOINs
         const { data, error } = await supabase
             .from("saved_recipes")
-            .select("*")
+            .select(`
+                *,
+                preference_profiles!user_id ( username ),
+                recipe_favorites!left ( user_id )
+            `)
             .eq("user_id", userId);
 
         if (error) {
             console.error("Error fetching recipes:", error);
-            throw new Error("Error fetching recipes from DB");
+            throw new Error("Error DB");
         }
         if (!data) return [];
 
-        // Utilitzem reduce per descartar receptes que no compleixin les regles de negoci
-        return data.reduce((validRecipes: Recipe[], row) => {
+        const rows = data as unknown as RecipeWithJoins[];
+
+        return rows.reduce((validRecipes: Recipe[], row) => {
             try {
-                const recipe = this.mapToDomain(row as unknown as RecipeDBModel);
-                validRecipes.push(recipe);
+                validRecipes.push(this.mapToDomain(row));
             } catch (e) {
-                // Si mapToDomain falla (ex: 0 ingredients vàlids), ignorem aquesta recepta
-                console.warn(`⚠️ [RecipeRepo] Recepta corrupta ignorada (ID: ${row.id}):`, e);
+                console.warn(`Ignorant recepta corrupta ${row.id}: ${e}`);
             }
             return validRecipes;
         }, []);
     }
 
-    // ✅ MILLORA DE ROBUSTESA 3: findRandom
+    // --- FINDRANDOM (Suggeriments) ---
     async findRandom(count: number, _restrictions: DietaryRestriction[]): Promise<Recipe[]> {
         const supabase = await createClient();
+
+        // ✅ CORRECCIÓ: Afegim els JOINs
         const { data } = await supabase
             .from('saved_recipes')
-            .select('*')
+            .select(`
+                *,
+                preference_profiles!user_id ( username ),
+                recipe_favorites!left ( user_id )
+            `)
             .eq('is_public', true)
-            .limit(50); // Agafem més de les necessàries per si algunes estan corruptes
+            .limit(50);
 
         if (!data) return [];
 
-        const validRecipes = data.reduce((acc: Recipe[], row) => {
+        const rows = data as unknown as RecipeWithJoins[];
+
+        const validRecipes = rows.reduce((acc: Recipe[], row) => {
             try {
-                acc.push(this.mapToDomain(row as unknown as RecipeDBModel));
-            } catch (e) { console.log(e) }
+                acc.push(this.mapToDomain(row));
+            } catch (e) {console.warn(`Ignorant recepta corrupta ${e}`)};
             return acc;
         }, []);
 
-        const shuffled = validRecipes.sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, count);
+        return validRecipes.sort(() => 0.5 - Math.random()).slice(0, count);
+    }
+
+  
+
+    // --- RATING / FAVORITES (Accions) ---
+
+    async toggleFavorite(userId: string, recipeId: string): Promise<boolean> {
+        const supabase = await createClient();
+
+        const { data } = await supabase
+            .from('recipe_favorites')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('recipe_id', recipeId)
+            .maybeSingle();
+
+        if (data) {
+            await supabase.from('recipe_favorites').delete().eq('user_id', userId).eq('recipe_id', recipeId);
+            return false;
+        } else {
+            await supabase.from('recipe_favorites').insert({ user_id: userId, recipe_id: recipeId });
+            return true;
+        }
     }
 
     async delete(id: string): Promise<void> {
@@ -252,57 +323,57 @@ export class SupabaseRecipeRepository implements RecipeRepository {
         return map;
     }
 
-    // ✅ MILLORA DE ROBUSTESA 4: mapToDomain (El filtre final)
-    private mapToDomain(row: RecipeDBModel): Recipe {
+    // --- MAPPER (El filtre final) ---
+
+    // ✅ Reben RecipeWithJoins, així que TypeScript està content
+    private mapToDomain(row: RecipeWithJoins): Recipe {
         const rawIngredients = Array.isArray(row.ingredients) ? row.ingredients : [];
 
-        // 1. SANEJAR I MAPPEJAR INGREDIENTS
         const validIngredients = rawIngredients
             .map((i) => ({
                 name: i.name ? String(i.name).trim() : "Sense nom",
                 quantity: Number(i.quantity),
                 unit: i.unit ? String(i.unit) : "ut",
-
-                // ✅ RECUPEREM ELS NOUS CAMPS
-                // Si existeixen al JSON, els passem al domini. Si no, undefined.
                 emoji: i.emoji,
                 linkedProductId: i.linkedProductId,
                 linkedProductImage: i.linkedProductImage,
-                referencePrice: i.referencePrice ? Number(i.referencePrice) : undefined,
                 estimatedCost: i.estimatedCost ? Number(i.estimatedCost) : undefined
             }))
             .filter((i) => i.name.length > 0 && i.quantity > 0);
 
-        if (validIngredients.length === 0) {
-            // Nota: Podries ser més lax aquí si vols permetre receptes sense ingredients temporalment
-            throw new Error(`Recepta sense ingredients vàlids (Originals: ${rawIngredients.length})`);
+        // ✅ RECUPEREM EL NOM CORRECTAMENT
+        let authorName = "Xef Anònim";
+        if (row.is_ai_generated) {
+            authorName = "✨ Chef IA";
+        } else {
+            // Ara TypeScript sap que preference_profiles existeix a RecipeWithJoins
+            authorName = row.preference_profiles?.username || row.author_name || "Xef Anònim";
         }
+
+        const creationDate = row.created_at ? new Date(row.created_at) : new Date();
+        const isFavorite = row.recipe_favorites && row.recipe_favorites.length > 0;
 
         const rawDist = row.rating_distribution || {};
         const distribution: Record<number, number> = {};
-        Object.entries(rawDist).forEach(([k, v]) => {
-            const key = Number(k);
-            if (!isNaN(key)) distribution[key] = Number(v);
-        });
-
-        const creationDate = row.created_at ? new Date(row.created_at) : new Date();
+        Object.entries(rawDist).forEach(([k, v]) => distribution[Number(k)] = Number(v));
 
         return new Recipe({
             id: row.id,
             authorId: row.user_id,
             name: row.name || "Recepta sense títol",
             ingredients: validIngredients,
-            steps: row.steps || [],
-            tags: row.tags || [],
+            steps: Array.isArray(row.steps) ? row.steps : [],
+            tags: Array.isArray(row.tags) ? row.tags : [],
             dietaryTags: row.dietary_tags || [],
             prepTimeMinutes: row.prep_time_minutes || 0,
             createdAt: creationDate,
             likesCount: row.likes_count ?? 0,
             isPublic: row.is_public ?? true,
 
-            // ✅ ARA ÉS TIPATGE SEGUR (sense 'any')
-            authorName: row.author_name || "Xef Anònim",
-            estimatedCost: row.estimated_cost || 0, // TypeScript ja no es queixa!
+            authorName: authorName,
+            estimatedCost: row.estimated_cost || 0,
+            isAiGenerated: row.is_ai_generated,
+            isFavorite: isFavorite,
 
             ratingSummary: {
                 average: row.rating_avg ?? 0,

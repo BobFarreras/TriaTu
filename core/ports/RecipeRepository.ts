@@ -9,23 +9,25 @@ export interface RecipeFilter {
     tags?: string[];
     limit?: number;
     offset?: number;
+    userId?: string;
+    filterMode?: 'ALL' | 'MINE' | 'FAVORITES';
 }
 
 export interface RecipeRepository {
     save(recipe: Recipe): Promise<void>;
     search(filter: RecipeFilter): Promise<{ recipes: Recipe[]; total: number }>;
     findById(id: string): Promise<Recipe | null>;
-    
+
     // ✅ IMPRESCINDIBLE per SuggestRecipes
     findAllByUser(userId: string): Promise<Recipe[]>;
-    
+
     findRandom(count: number, restrictions: DietaryRestriction[]): Promise<Recipe[]>;
     delete(id: string): Promise<void>;
-    
+
     // ✅ IMPRESCINDIBLE per RateRecipe (addRating estava faltant a la interfície)
     rate(rating: Rating): Promise<void>;
     addRating(recipeId: string, rating: Rating): Promise<void>;
-    
+
     getUserRatingForRecipe(userId: string, recipeId: string): Promise<Rating | null>;
     getUserRatingsMap(userId: string, recipeIds: string[]): Promise<Record<string, number>>;
 }

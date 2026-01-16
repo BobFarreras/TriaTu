@@ -1,20 +1,29 @@
+// ARXIU: src/components/recipes/FilterBar.tsx
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { motion } from 'framer-motion';
-import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Hook
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
-export function FilterBar({ currentFilter, currentSearch }: { currentFilter: string, currentSearch: string }) {
-  const { t } = useLanguage(); // ✅
+interface Props {
+  currentFilter: string;
+  currentSearch: string;
+  currentMode: string; // 'ALL' | 'MINE' | 'FAVORITES'
+}
+
+export function FilterBar({ currentFilter, currentSearch, currentMode = 'ALL' }: Props) {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Actualitza paràmetres mantenint els altres
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
+    if (value && value !== 'ALL') params.set(key, value);
     else params.delete(key);
-    params.set('page', '1');
+    
+    params.set('page', '1'); // Reset paginació
     router.push(`?${params.toString()}`);
   };
 
@@ -22,7 +31,18 @@ export function FilterBar({ currentFilter, currentSearch }: { currentFilter: str
     updateParam('q', term);
   }, 300);
 
-  // ✅ Traduïm els labels fent servir el 't'
+  const handleModeChange = (mode: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (mode === 'ALL') params.delete('mode');
+    else params.set('mode', mode);
+    
+    // Si canviem de mode, potser volem netejar els filtres de tags? 
+    // De moment els mantenim per si vols buscar "Les meves receptes Veganes"
+    
+    params.set('page', '1');
+    router.push(`?${params.toString()}`);
+  };
+
   const filters = [
     { id: 'ALL', label: t.community.filters.all, icon: '🌍' },
     { id: 'FAST', label: t.community.filters.fast, icon: '⚡' },
@@ -34,44 +54,63 @@ export function FilterBar({ currentFilter, currentSearch }: { currentFilter: str
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 justify-between items-center bg-slate-900/80 backdrop-blur-xl p-2 pr-4 rounded-[2rem] border border-slate-800 shadow-xl sticky top-4 z-40">
-      
-      {/* FILTRES ANIMATS */}
-      <div className="flex p-1 bg-black/20 rounded-full overflow-x-auto max-w-full no-scrollbar mask-linear-fade">
-        {filters.map((f) => {
-          const isActive = currentFilter === f.id;
-          return (
-            <button
-              key={f.id}
-              onClick={() => updateParam('filter', f.id)}
-              className={`relative px-5 py-2.5 rounded-full text-sm font-bold transition-colors whitespace-nowrap z-10 ${isActive ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="activeFilter"
-                  className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full -z-10 shadow-lg shadow-purple-500/30"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              <span className="mr-2">{f.icon}</span>
-              {f.label}
-            </button>
-          );
-        })}
+    <div className="flex flex-col gap-4 sticky top-4 z-40">
+        
+      {/* 1. BARRA DE MODES (Pestanyes Superiors) */}
+      <div className="flex p-1 bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800 w-full sm:w-fit self-start shadow-lg">
+         <button 
+            onClick={() => handleModeChange('ALL')}
+            className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all ${currentMode === 'ALL' ? 'bg-slate-800 text-white shadow ring-1 ring-slate-700' : 'text-slate-500 hover:text-slate-300'}`}
+         >
+            🌍 Comunitat
+         </button>
+         <button 
+            onClick={() => handleModeChange('FAVORITES')}
+            className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all ${currentMode === 'FAVORITES' ? 'bg-slate-800 text-purple-400 shadow ring-1 ring-purple-900/50' : 'text-slate-500 hover:text-slate-300'}`}
+         >
+            ❤️ Favorits
+         </button>
+         <button 
+            onClick={() => handleModeChange('MINE')}
+            className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all ${currentMode === 'MINE' ? 'bg-slate-800 text-emerald-400 shadow ring-1 ring-emerald-900/50' : 'text-slate-500 hover:text-slate-300'}`}
+         >
+            👨‍🍳 Les Meves
+         </button>
       </div>
-      
-      {/* CERCA */}
-      <div className="relative w-full lg:w-auto min-w-[300px] group">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-lg">
-            🔍
-        </div>
-        <input 
-          type="text" 
-          placeholder={t.community.search_placeholder} // ✅ Traduït
-          defaultValue={currentSearch}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="w-full bg-black/40 border border-slate-800 rounded-full pl-12 pr-6 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-inner"
-        />
+
+      {/* 2. BARRA DE FILTRES I CERCA (Això és el que faltava!) */}
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-center bg-slate-900/80 backdrop-blur-xl p-2 pr-2 rounded-[2rem] border border-slate-800 shadow-xl">
+         
+         {/* LLISTA DE BOTONS (TAGS) */}
+         <div className="flex p-1 w-full lg:w-auto overflow-x-auto no-scrollbar mask-linear-fade gap-1">
+            {filters.map((f) => {
+                const isActive = currentFilter === f.id || (f.id === 'ALL' && !currentFilter);
+                return (
+                    <button
+                        key={f.id}
+                        onClick={() => updateParam('filter', f.id)}
+                        className={`relative px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2
+                            ${isActive ? 'bg-slate-100 text-slate-900 shadow-lg scale-105' : 'text-slate-400 hover:text-white hover:bg-white/5'}
+                        `}
+                    >
+                        <span>{f.icon}</span>
+                        {f.label}
+                    </button>
+                );
+            })}
+         </div>
+
+         {/* INPUT DE CERCA */}
+         <div className="relative w-full lg:w-auto min-w-[250px] group">
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-base grayscale opacity-50">🔍</div>
+            <input 
+                type="text" 
+                placeholder={t.community.search_placeholder}
+                defaultValue={currentSearch}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full bg-black/40 border border-slate-700/50 rounded-full pl-10 pr-6 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-inner"
+            />
+         </div>
       </div>
     </div>
   );
