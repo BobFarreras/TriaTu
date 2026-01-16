@@ -36,6 +36,9 @@ export function InventoryManager({ items }: InventoryManagerProps) {
   // --- ESTAT: SELECCIÓ (LIFTED STATE) ---
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  // ✅ FIX: Estat per rastrejar canvis en les props (Pattern: Derived State from Props)
+  const [prevItems, setPrevItems] = useState(items);
 
   // --- ESTAT: SCANNER ---
   const [showCamera, setShowCamera] = useState(false);
@@ -46,19 +49,12 @@ export function InventoryManager({ items }: InventoryManagerProps) {
   // --- CONFIGURACIÓ TOUR ---
   const { startTour } = useOnboarding();
 
-  /* REFACTOR ONBOARDING:
-     Hem ajustat els IDs per coincidir amb l'arquitectura actual.
-     Els IDs 'tour-inv-scan' i 'tour-inv-add' s'han de passar al Header.
-     Si 'tour-inv-stats' ja no existeix visualment com a target independent, 
-     el podem treure o apuntar al Header general.
-  */
   const onboardingSteps: TourStep[] = useMemo(() => [
     { 
       targetId: 'tour-inv-header', 
       title: t.onboarding.inventory.step1_title, 
       description: t.onboarding.inventory.step1_desc 
     },
-    // Si els filtres estan dins del header, apuntem al header o a un ID específic si el Header l'exposa
     { 
       targetId: 'tour-inv-filters', 
       title: t.onboarding.inventory.step2_title, 
@@ -82,12 +78,42 @@ export function InventoryManager({ items }: InventoryManagerProps) {
   ], [t]);
 
   useEffect(() => {
-    // Petit delay per assegurar que el DOM està muntat abans d'iniciar el tour
     const timer = setTimeout(() => {
         startTour('inventory', onboardingSteps);
     }, 500);
     return () => clearTimeout(timer);
   }, [startTour, onboardingSteps]);
+
+  // ---------------------------------------------------------
+  // ✅ FIX: SINCRONITZACIÓ D'ESTAT DURANT EL RENDER
+  // ---------------------------------------------------------
+  // En lloc d'un useEffect, verifiquem si els items han canviat respecte
+  // al render anterior. Si és així, ajustem la selecció immediatament.
+  if (items !== prevItems) {
+    setPrevItems(items); // Actualitzem la referència per al futur
+
+    // Només si tenim selecció activa, comprovem la integritat
+    if (selectedIds.size > 0) {
+        const currentItemIds = new Set(items.map(i => i.id));
+        
+        // Filtrem els IDs que ja no existeixen (perquè s'han eliminat)
+        const validSelectionArray = Array.from(selectedIds).filter(id => currentItemIds.has(id));
+
+        // Si hi ha discrepància, actualitzem l'estat ARA MATEIX
+        if (validSelectionArray.length !== selectedIds.size) {
+            const newSet = new Set(validSelectionArray);
+            setSelectedIds(newSet);
+            
+            // Si hem buidat la llista, sortim del mode selecció
+            if (newSet.size === 0) {
+                setIsSelectionMode(false);
+            }
+            // ⚠️ Nota arquitectònica: Quan crides setState dins del render,
+            // React interromp el render actual i en comença un de nou immediatament.
+            // Això és més eficient i net que un useEffect per a sincronització de dades.
+        }
+    }
+  }
 
   // --- LOGICA DE NEGOCI: FILTRATGE ---
   const filteredItems = useMemo(() => {
@@ -97,6 +123,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
       return item.location === filter;
     });
   }, [items, filter]);
+
 
   // --- LOGICA DE NEGOCI: SELECCIÓ ---
   const handleToggleSelectionMode = useCallback(() => {
@@ -160,15 +187,8 @@ export function InventoryManager({ items }: InventoryManagerProps) {
     <div className="min-h-screen bg-slate-950 pb-20 relative">
 
       {/* 1. SUPER HEADER */}
-      {/* ID 'tour-inv-header' pel pas 1. 
-          Passem IDs específics ('scanBtnId', 'addBtnId') perquè el Header els assigni internament als botons DOM reals.
-          Això respecta l'encapsulació: el Header decideix on posar l'ID, el Manager només diu quin ID és.
-      */}
       <div id="tour-inv-header" className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md pt-4 pb-2">
         <InventoryHeader
-
-        // ✅ INJECTEM EL TOUR AQUÍ
-           // El Header el col·locarà al seu lloc, però el Manager controla la configuració
            extraActions={
               <TourTrigger tourId="inventory" steps={onboardingSteps} />
            }
@@ -186,7 +206,7 @@ export function InventoryManager({ items }: InventoryManagerProps) {
           onToggleSelectionMode={handleToggleSelectionMode}
           onSelectAll={handleSelectAll}
 
-          // Props per al Tour (Assegura't que InventoryHeader les implementa)
+          // Props per al Tour
           scanBtnId="tour-inv-scan"
           addBtnId="tour-inv-add"
           filterContainerId="tour-inv-filters"
@@ -206,7 +226,6 @@ export function InventoryManager({ items }: InventoryManagerProps) {
       </div>
 
       {/* 3. LLISTA D'ITEMS */}
-      {/* Embolcallem la llista amb l'ID que espera el tour */}
       <div id="tour-inv-list" className="px-2 mt-4">
         <InventoryList
           items={filteredItems}
