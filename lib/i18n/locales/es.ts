@@ -922,6 +922,22 @@ export const es = {
 
       step_action_title: "El Botón de la Verdad 🔴",
       step_action_desc: "Cuando todos hayan añadido sus opciones, pulsa este botón y la IA decidirá al ganador."
+    },
+    shopping: {
+      step_welcome_title: "👋 Bienvenido a la Compra Inteligente",
+      step_welcome_desc: "Este asistente conecta tu despensa con el catálogo real del supermercado.",
+
+      step_tabs_title: "📜 Historial y Lista",
+      step_tabs_desc: "Navega entre tu lista activa y los tickets de compras pasadas.",
+
+      step_stats_title: "💰 Control de Presupuesto",
+      step_stats_desc: "Mira en tiempo real cuánto te costará todo y cuánto llevas gastado en el carro.",
+
+      step_add_title: "🔎 Buscador de Catálogo",
+      step_add_desc: "Pulsa aquí para buscar productos reales con foto y precio actualizado.",
+
+      step_finish_title: "🏁 Finalizar y Guardar",
+      step_finish_desc: "Al terminar, moveremos los productos a tu inventario (calculando caducidad) y guardaremos el ticket."
     }
 
 

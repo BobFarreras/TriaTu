@@ -4,7 +4,12 @@ import { container } from '@/services/container';
 import { redirect } from 'next/navigation';
 import { BackButton } from '@/components/ui/BackButton';
 import { ShoppingListManager } from '@/components/shopping/ShoppingListManager';
-// ✅ Importem els tipus de DOMINI per evitar 'any'
+
+// ✅ 1. IMPORTAR TOTS DOS: Provider (Lògica) i Overlay (Visual)
+import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
+import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay'; // <--- AQUEST FALTAVA
+
+// Imports de domini i mappers
 import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
 import { ShoppingSession } from '@/core/domain/entities/ShoppingSession';
 import { ShoppingItemUI } from '@/components/shopping/ShoppingListItem';
@@ -16,18 +21,17 @@ export default async function ShoppingListPage() {
 
   if (!user) redirect('/auth/login');
 
-  // 1. Dependency Injection
+  // Dependency Injection
   const getShoppingList = container.getGetShoppingList(supabase);
   const getHistory = container.getGetShoppingHistory(supabase);
 
-  // 2. Data Fetching (Parallel)
+  // Data Fetching
   const [items, history] = await Promise.all([
     getShoppingList.execute(user.id),
     getHistory.execute(user.id)
   ]);
 
-  // 3. Mapping (Separation of Concerns)
-  // Ara 'plainItems' i 'plainHistory' tenen tipus estrictes, no 'any'
+  // Mapping
   const plainItems = mapItemsToViewModel(items);
   const plainHistory = mapHistoryToViewModel(history);
   
@@ -42,14 +46,20 @@ export default async function ShoppingListPage() {
             <BackButton href="/" />
         </div>
 
-        <ShoppingListManager initialItems={plainItems} history={plainHistory} />
+        {/* ✅ 2. ESTRUCTURA CORRECTA D'ONBOARDING */}
+        <OnboardingProvider>
+            {/* L'Overlay ha d'estar DINS del provider però AL COSTAT del contingut */}
+            <OnboardingOverlay /> 
+            
+            <ShoppingListManager initialItems={plainItems} history={plainHistory} />
+        </OnboardingProvider>
 
       </div>
     </main>
   );
 }
 
-// === PRESENTATION MAPPERS (Helpers per netejar el component) ===
+// === PRESENTATION MAPPERS ===
 
 function mapItemsToViewModel(items: ShoppingListItem[]): ShoppingItemUI[] {
   return items.map((i) => ({
@@ -71,7 +81,6 @@ function mapHistoryToViewModel(history: ShoppingSession[]): HistorySession[] {
       createdAt: h.props.createdAt,
       totalCost: h.props.totalCost,
       itemCount: h.props.itemCount,
-      // TypeScript ja sap que itemsSnapshot és SnapshotItem[] gràcies al domini
       itemsSnapshot: h.props.itemsSnapshot 
   }));
 }

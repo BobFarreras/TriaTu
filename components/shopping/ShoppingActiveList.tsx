@@ -12,15 +12,16 @@ interface Props {
     onFinish: () => void;
     isCompleting: boolean;
     cartTotal: number;
+    finishButtonId?: string; // ✅ Prop opcional
 }
 
-export function ShoppingActiveList({ items, onToggle, onFinish, isCompleting, cartTotal }: Props) {
+export function ShoppingActiveList({ items, onToggle, onFinish, isCompleting, cartTotal, finishButtonId }: Props) {
     const checkedCount = items.filter(i => i.isChecked).length;
 
     return (
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-            
-           
+
+
             {/* Llista */}
             <div className="space-y-2 pb-32">
                 <AnimatePresence mode='popLayout'>
@@ -41,6 +42,7 @@ export function ShoppingActiveList({ items, onToggle, onFinish, isCompleting, ca
             <AnimatePresence>
                 {checkedCount > 0 && (
                     <motion.div
+                        id={finishButtonId} // ✅ AQUI ÉS ON VA L'ID
                         initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
                         className="fixed bottom-6 left-0 right-0 px-4 flex justify-center z-40"
                     >

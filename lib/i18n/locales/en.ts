@@ -923,6 +923,22 @@ export const en = {
 
       step_action_title: "The Button of Truth 🔴",
       step_action_desc: "Once everyone has added their options, press this button and the AI will choose the winner!"
+    },
+    shopping: {
+      step_welcome_title: "👋 Welcome to Smart Shopping",
+      step_welcome_desc: "This assistant connects your pantry with the real supermarket catalog.",
+
+      step_tabs_title: "📜 History & List",
+      step_tabs_desc: "Switch between your active list and past receipts.",
+
+      step_stats_title: "💰 Budget Control",
+      step_stats_desc: "See in real-time the total cost and what's currently in your cart.",
+
+      step_add_title: "🔎 Catalog Search",
+      step_add_desc: "Click here to search for real products with photos and updated prices.",
+
+      step_finish_title: "🏁 Finish & Save",
+      step_finish_desc: "When done, we'll move items to inventory (calculating expiry) and save the receipt."
     }
 
 

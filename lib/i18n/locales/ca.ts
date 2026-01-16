@@ -681,7 +681,7 @@ export const ca = {
       add_title: "Afegir nou aliment",
       name_placeholder: "Què afegim al revost?",
       quantity_label: "Quantitat",
-      product_placeholder:"Escriu 'Llet' o tria categoria...",
+      product_placeholder: "Escriu 'Llet' o tria categoria...",
       location: {
         fridge: "Nevera",
         pantry: "Revost",
@@ -790,9 +790,9 @@ export const ca = {
       ingredients_missing_desc: "No es pot cuinar sense menjar! Afegeix almenys un ingredient.",
       steps_missing: "Falten els Passos",
       steps_missing_desc: "Explica'ns com es fa la recepta, pas a pas.",
-      missing_prefix: "Falten", 
-      
-     
+      missing_prefix: "Falten",
+
+
     },
 
 
@@ -941,6 +941,22 @@ export const ca = {
       step_action_title: "El Botó de la Veritat 🔴",
       step_action_desc: "Quan tothom hagi posat les seves opcions, prem aquest botó i la IA decidirà el guanyador!"
 
+    },
+    shopping: {
+      step_welcome_title: "👋 Benvingut a la Compra Intel·ligent",
+      step_welcome_desc: "Aquest assistent connecta el teu rebost amb el catàleg real del supermercat.",
+
+      step_tabs_title: "📜 Historial i Llista",
+      step_tabs_desc: "Navega entre la teva llista activa i els tiquets de compres passades.",
+
+      step_stats_title: "💰 Control de Pressupost",
+      step_stats_desc: "Mira en temps real quan et costarà tot i quant portes gastat al carret.",
+
+      step_add_title: "🔎 Cercador de Catàleg",
+      step_add_desc: "Prem aquí per buscar productes reals amb foto i preu actualitzat.",
+
+      step_finish_title: "🏁 Finalitzar i Guardar",
+      step_finish_desc: "En acabar, mourem els productes al teu inventari (calculant la caducitat) i guardarem el tiquet."
     }
   },
   errors: {
