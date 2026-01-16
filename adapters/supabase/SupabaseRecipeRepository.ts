@@ -226,14 +226,14 @@ export class SupabaseRecipeRepository implements RecipeRepository {
         const validRecipes = rows.reduce((acc: Recipe[], row) => {
             try {
                 acc.push(this.mapToDomain(row));
-            } catch (e) {console.warn(`Ignorant recepta corrupta ${e}`)};
+            } catch (e) { console.warn(`Ignorant recepta corrupta ${e}`) };
             return acc;
         }, []);
 
         return validRecipes.sort(() => 0.5 - Math.random()).slice(0, count);
     }
 
-  
+
 
     // --- RATING / FAVORITES (Accions) ---
 
@@ -356,13 +356,29 @@ export class SupabaseRecipeRepository implements RecipeRepository {
         const rawDist = row.rating_distribution || {};
         const distribution: Record<number, number> = {};
         Object.entries(rawDist).forEach(([k, v]) => distribution[Number(k)] = Number(v));
+        // ✅ CORRECCIÓ CRÍTICA: Normalització de Steps
+        // La BD pot tenir strings ["Pas 1"] o objectes [{ "content": "Pas 1" }]
+        // Hem de garantir que al Domini sempre arribin strings plans.
+        // ✅ FIX: Fem servir 'unknown' en lloc de 'any' i fem type narrowing
+        const normalizedSteps = (Array.isArray(row.steps) ? row.steps : []).map((step: unknown) => {
+            // 1. Si és un string normal ("Tallar ceba"), el retornem
+            if (typeof step === 'string') return step;
 
+            // 2. Si és un objecte ({ id: "...", content: "..." }), extraiem el contingut
+            if (typeof step === 'object' && step !== null && 'content' in step) {
+                // Forcem el casting perquè ja hem comprovat que és un objecte
+                return String((step as { content: string }).content || "");
+            }
+
+            // 3. Si no és res conegut, retornem string buit
+            return "";
+        });
         return new Recipe({
             id: row.id,
             authorId: row.user_id,
             name: row.name || "Recepta sense títol",
             ingredients: validIngredients,
-            steps: Array.isArray(row.steps) ? row.steps : [],
+            steps: normalizedSteps, // ✅ Ara segur que són string[]
             tags: Array.isArray(row.tags) ? row.tags : [],
             dietaryTags: row.dietary_tags || [],
             prepTimeMinutes: row.prep_time_minutes || 0,

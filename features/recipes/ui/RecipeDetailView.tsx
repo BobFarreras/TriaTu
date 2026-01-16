@@ -1,13 +1,15 @@
 'use client';
 
+import Link from 'next/link'; // ✅ Necessari per al botó d'editar
 import { RecipeProps } from '@/core/domain/entities/Recipe';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { RecipeHeader, getEmoji } from './components/RecipeHeader';
 import { IngredientsPanel, IngredientWithMeta } from './components/IngredientsPanel';
 import { StepsPanel } from './components/StepsPanel';
 import { motion } from 'framer-motion';
-import { BackButton } from '@/components/ui/BackButton'; // Assegura't de tenir aquest component
-import { Clock, Euro } from 'lucide-react';
+import { BackButton } from '@/components/ui/BackButton';
+import { Clock, Euro, Edit } from 'lucide-react';
+import { FavoriteButton } from '@/components/recipes/FavoriteButton'; // ✅ Importem el botó
 
 interface ExtendedRecipeProps extends Omit<RecipeProps, 'ingredients'> {
   ingredients: IngredientWithMeta[];
@@ -24,38 +26,58 @@ interface Props {
 export function RecipeDetailView({ recipe, inventory, userId }: Props) {
   const extendedRecipe = recipe as unknown as ExtendedRecipeProps;
   const cost = extendedRecipe.estimatedCost || 0;
-  // ✅ Calculem l'emoji aquí per fer-lo servir al mòbil
   const emoji = getEmoji(recipe.name);
+
+  // ✅ Comprovem si l'usuari és l'autor per mostrar el botó d'editar
+  const isAuthor = recipe.authorId === userId;
+
   return (
     <div className="flex flex-col gap-6">
 
-     {/* --- 📱 MOBILE STICKY HEADER --- */}
+      {/* --- 📱 MOBILE STICKY HEADER --- */}
       <div className="lg:hidden sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 p-3 shadow-xl">
         <div className="flex items-center gap-3">
             <div className="shrink-0">
                 <BackButton href="/recipes" className="bg-slate-800 text-white p-2 rounded-full" label="" />
             </div>
             
-            {/* ✅ EMOJI AL MÒBIL */}
-            <div className="text-2xl shrink-0 leading-none pb-1">
-                {emoji}
-            </div>
-            
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <h1 className="text-base font-black text-white truncate leading-tight">
-                    {recipe.name}
-                </h1>
+            {/* EMOJI + TÍTOL */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center mr-2">
+                <div className="flex items-center gap-2">
+                    <span className="text-xl leading-none">{emoji}</span>
+                    <h1 className="text-sm font-black text-white truncate leading-tight">
+                        {recipe.name}
+                    </h1>
+                </div>
+                {/* Metadades petites */}
                 <div className="flex items-center gap-3 text-[10px] text-slate-400 font-mono mt-0.5">
                     {recipe.prepTimeMinutes > 0 && (
                         <span className="flex items-center gap-1"><Clock size={10} /> {recipe.prepTimeMinutes}m</span>
                     )}
                     {cost > 0 && (
                         <span className="flex items-center gap-1 text-emerald-400"><Euro size={10} /> {cost.toFixed(2)}€</span>
-                        
-                    
                     )}
-                   
                 </div>
+            </div>
+
+            {/* ✅ ACCIONS MÒBIL (Dreta) */}
+            <div className="flex items-center gap-2 shrink-0">
+                {/* Botó Favorit */}
+                <FavoriteButton 
+                    recipeId={recipe.id} 
+                    initialIsFavorite={!!recipe.isFavorite}
+                    className="w-8 h-8 bg-slate-800 border border-slate-700" 
+                />
+                
+                {/* Botó Editar (Només Autor) */}
+                {isAuthor && (
+                    <Link 
+                        href={`/recipes/${recipe.id}/edit`}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600 hover:text-white transition-colors"
+                    >
+                        <Edit size={14} />
+                    </Link>
+                )}
             </div>
         </div>
       </div>
@@ -63,20 +85,40 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
       {/* CONTAINER PRINCIPAL */}
       <div className="container mx-auto px-4 max-w-6xl">
 
-          {/* --- 💻 DESKTOP HEADER (Flex Row ara) --- */}
-          <div className="hidden lg:flex items-start gap-4 mb-8 relative">
-             {/* BOTÓ ENRERE A L'ESQUERRA */}
-             <div className="shrink-0 mt-4 z-10">
+          {/* --- 💻 DESKTOP HEADER --- */}
+          <div className="hidden lg:flex items-start gap-4 mb-8 relative pt-6">
+             
+             {/* BARRA D'EINES ESQUERRA */}
+             <div className="shrink-0 flex flex-col gap-3 sticky top-8 z-10">
                 <BackButton 
                     href="/recipes" 
                     label="Tornar" 
                     className="bg-slate-900/50 hover:bg-slate-800 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl transition-all" 
                 />
+                
+                {/* ✅ GRUP D'ACCIONS DESKTOP */}
+                <div className="flex items-center gap-2 mt-2">
+                    <FavoriteButton 
+                        recipeId={recipe.id} 
+                        initialIsFavorite={!!recipe.isFavorite}
+                        className="w-10 h-10 bg-slate-900 border border-slate-700 hover:border-rose-500/50"
+                    />
+                    
+                    {isAuthor && (
+                        <Link 
+                            href={`/recipes/${recipe.id}/edit`}
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-900 text-slate-400 hover:bg-purple-600 hover:text-white transition-all border border-slate-700 hover:border-purple-500"
+                            title="Editar Recepta"
+                        >
+                            <Edit size={18} />
+                        </Link>
+                    )}
+                </div>
              </div>
 
              {/* HEADER CENTRAL */}
              <motion.div 
-                className="flex-1"
+                className="flex-1 ml-4"
                 initial={{ opacity: 0, y: -20 }} 
                 animate={{ opacity: 1, y: 0 }}
              >
@@ -91,9 +133,8 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
           </div>
 
           {/* GRID PRINCIPAL */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start pb-20">
             
-  
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}

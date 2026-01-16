@@ -4,11 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { toast } from 'sonner'; 
 import { saveRecipeAction } from '@/app/actions/recipes';
-import { EditorData } from './types';
+import { EditorData } from './types'; // ✅ Usamos solo el tipo correcto
 import { Dictionary } from '@/lib/i18n/dictionaries';
 
 // ✅ 1. AFEGIM EL MAPA DE TRADUCCIÓ (Anglès UI -> Català DB)
-// Això assegura que a la DB es guardin en l'idioma que els filtres esperen.
 const DB_TAGS_MAPPING: Record<string, string> = {
   // Dietes
   'vegan': 'vegà',
@@ -45,7 +44,12 @@ type FeedbackState = {
   message: string;
 };
 
-export function useRecipeForm(labels: Dictionary['create_recipe'], setActiveTab: (tab: 'ingredients' | 'steps') => void) {
+// ✅ Modifiquem la signatura per acceptar 'initialData' (Opcional)
+export function useRecipeForm(
+    labels: Dictionary['create_recipe'], 
+    setActiveTab: (tab: 'ingredients' | 'steps') => void,
+    initialData?: EditorData // ✅ Paràmetre nou per a edició
+) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -59,14 +63,14 @@ export function useRecipeForm(labels: Dictionary['create_recipe'], setActiveTab:
     name: false, ingredients: false, steps: false
   });
 
-  // ✅ FIX TIPATGE: Afegim camps que falten (description, servings) per complir amb EditorData
-  const [data, setData] = useState<EditorData>({
+  // ✅ INICIALITZACIÓ DE L'ESTAT (Create vs Edit)
+  // Si tenim initialData (Edició), l'ussem. Si no, valors per defecte (Creació).
+  const [data, setData] = useState<EditorData>(initialData || {
     name: '',
     prepTimeMinutes: 30,
     ingredients: [],
     steps: [],
     dietaryTags: [],
-    // Camps opcionals o requerits que faltaven:
     description: '',
     servings: 2,
     difficulty: 'medium'
@@ -111,8 +115,7 @@ export function useRecipeForm(labels: Dictionary['create_recipe'], setActiveTab:
     }
 
     // ✅ 2. PREPARAR DADES: TRADUCCIÓ DE TAGS
-    // Abans d'enviar, canviem els tags d'Anglès (UI) a Català (DB)
-   const translatedTags = data.dietaryTags.map(tag => DB_TAGS_MAPPING[tag] || tag);
+    const translatedTags = data.dietaryTags.map(tag => DB_TAGS_MAPPING[tag] || tag);
 
     const payload: EditorData = {
       ...data,
@@ -122,6 +125,8 @@ export function useRecipeForm(labels: Dictionary['create_recipe'], setActiveTab:
     setLoading(true);
     
     // ✅ CRIDA A LA NOVA ACCIÓ CENTRALITZADA
+    // Si estem editant, assegura't que l'acció (saveRecipeAction) gestioni l'Update si rep un ID,
+    // o crea una updateRecipeAction separada. Per ara mantenim la lògica original.
     const result = await saveRecipeAction(payload);
     
     setLoading(false);

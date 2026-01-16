@@ -1,9 +1,12 @@
+// ARXIU: app/actions/recipes.ts
 'use server'
 
 import { createClient } from '@/adapters/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { EditorData } from '@/components/recipes/editor/types';
+// ✅ FIX: Importem el repositori que faltava
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
+
 type ActionResponse =
   | { success: true; recipeId: string }
   | { success: false; error: string };
@@ -24,10 +27,8 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
   try {
     // 2. OBTENIR AUTOR REAL
     let authorName = "Xef Anònim";
-
-    // Intentem obtenir el nom del perfil
     const { data: profile } = await supabase
-      .from('preference_profiles') // ✅ Canviat a la teva taula de perfils correcta
+      .from('preference_profiles')
       .select('username')
       .eq('user_id', user.id)
       .single();
@@ -42,9 +43,7 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
       return acc + (isNaN(cost) ? 0 : cost);
     }, 0);
 
-    // 4. PREPARAR DADES (Coherència amb el teu Schema JSONB)
-    // ✅ NO fem JSON.stringify manualment, el client de Supabase ho gestiona per columnes jsonb
-    // ✅ Mantenim els IDs dels passos per poder reordenar després
+    // 4. PREPARAR DADES
     const stepsData = data.steps.map(s => ({
       id: s.id || crypto.randomUUID(),
       content: s.content || ""
@@ -56,35 +55,64 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
       name: data.name,
       author_name: authorName,
       prep_time_minutes: Number(data.prepTimeMinutes) || 0,
-
-      // ✅ Passem els arrays directament (Supabase els convertirà a JSONB)
       ingredients: data.ingredients,
       steps: stepsData,
-
       dietary_tags: data.dietaryTags || [],
       estimated_cost: totalCost,
       is_public: true,
-      updated_at: new Date().toISOString() // Ara sí que existeix la columna!
+      updated_at: new Date().toISOString()
     };
 
-    // 6. UPSERT
-    const query = supabase.from('saved_recipes');
+    const table = supabase.from('saved_recipes');
+    
+    // ✅ FIX: Tipatge explícit per resultData per evitar l'error "possibly null"
+    let resultData: { id: string } | null = null;
+    let resultError = null;
 
-    // Si data.id existeix i no és 'new', podríem fer update afegint l'id al payload
-    // Per ara fem insert bàsic que crea un ID nou si no li passem
-    const { data: inserted, error } = await query
-      .insert(recipePayload)
-      .select('id')
-      .single();
+    // 6. LÒGICA INSERT vs UPDATE
+    if (data.id) {
+        // --- UPDATE ---
+        // Verificació de propietat
+        const { data: existing } = await table.select('user_id').eq('id', data.id).single();
+        
+        if (!existing || existing.user_id !== user.id) {
+            return { success: false, error: "No tens permís per editar aquesta recepta." };
+        }
 
-    if (error) {
-      console.error("Supabase Error:", error);
-      throw new Error(error.message);
+        const { data: updated, error } = await table
+            .update(recipePayload)
+            .eq('id', data.id)
+            .select('id')
+            .single();
+            
+        resultData = updated;
+        resultError = error;
+    } else {
+        // --- INSERT ---
+        const { data: inserted, error } = await table
+            .insert(recipePayload)
+            .select('id')
+            .single();
+            
+        resultData = inserted;
+        resultError = error;
+    }
+
+    if (resultError) {
+      console.error("Supabase Error:", resultError);
+      throw new Error(resultError.message);
+    }
+
+    // ✅ FIX: Comprovació final de nul·litat
+    if (!resultData) {
+        throw new Error("No s'han retornat dades de la base de dades.");
     }
 
     // 7. RETORN
     revalidatePath('/recipes');
-    return { success: true, recipeId: inserted.id };
+    if (data.id) revalidatePath(`/recipes/${data.id}`);
+    
+    return { success: true, recipeId: resultData.id };
 
   } catch (error: unknown) {
     console.error("Error saving recipe:", error);
@@ -93,18 +121,20 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
     return { success: false, error: errorMessage };
   }
 }
+
+// Acció per Favorits (Necessita el Repositori)
 export async function toggleFavoriteAction(recipeId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { success: false, error: "Unauthorized" };
 
+  // Ara sí que tenim l'import a dalt
   const repo = new SupabaseRecipeRepository();
 
   try {
     const isFav = await repo.toggleFavorite(user.id, recipeId);
 
-    // Revalidem per actualitzar la UI
     revalidatePath('/recipes');
     revalidatePath(`/recipes/${recipeId}`);
 

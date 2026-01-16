@@ -56,10 +56,11 @@ export interface RecipeStep {
 }
 
 export interface EditorData {
+  id?: string; // ✅ FIX: Afegim l'ID opcional per suportar l'Edició
   name: string;
-  description: string; // ✅ Afegim description que sol ser útil
+  description: string;
   prepTimeMinutes: number;
-  servings: number;    // ✅ Afegim servings (Racions)
+  servings: number;
   ingredients: Ingredient[];
   steps: RecipeStep[];
   dietaryTags: string[];
