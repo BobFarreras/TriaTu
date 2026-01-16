@@ -3,7 +3,12 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { redirect } from 'next/navigation';
 import { BackButton } from '@/components/ui/BackButton';
-import { ShoppingListManager } from '@/components/shopping/ShoppingListManager'; // Component Client
+import { ShoppingListManager } from '@/components/shopping/ShoppingListManager';
+// ✅ Importem els tipus de DOMINI per evitar 'any'
+import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
+import { ShoppingSession } from '@/core/domain/entities/ShoppingSession';
+import { ShoppingItemUI } from '@/components/shopping/ShoppingListItem';
+import { HistorySession } from '@/components/shopping/ShoppingHistory';
 
 export default async function ShoppingListPage() {
   const supabase = await createClient();
@@ -11,18 +16,20 @@ export default async function ShoppingListPage() {
 
   if (!user) redirect('/auth/login');
 
+  // 1. Dependency Injection
   const getShoppingList = container.getGetShoppingList(supabase);
-  const items = await getShoppingList.execute(user.id);
+  const getHistory = container.getGetShoppingHistory(supabase);
 
-  // Serialitzem per passar a Client Component
-  const plainItems = items.map(i => ({
-      id: i.props.id,
-      name: i.props.name,
-      quantity: i.props.quantity,
-      unit: i.props.unit,
-      isChecked: i.props.isChecked,
-      emoji: i.props.emoji
-  }));
+  // 2. Data Fetching (Parallel)
+  const [items, history] = await Promise.all([
+    getShoppingList.execute(user.id),
+    getHistory.execute(user.id)
+  ]);
+
+  // 3. Mapping (Separation of Concerns)
+  // Ara 'plainItems' i 'plainHistory' tenen tipus estrictes, no 'any'
+  const plainItems = mapItemsToViewModel(items);
+  const plainHistory = mapHistoryToViewModel(history);
   
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 pb-32">
@@ -35,10 +42,36 @@ export default async function ShoppingListPage() {
             <BackButton href="/" />
         </div>
 
-        {/* Deleguem la lògica d'interacció a un Client Component */}
-        <ShoppingListManager initialItems={plainItems} />
+        <ShoppingListManager initialItems={plainItems} history={plainHistory} />
 
       </div>
     </main>
   );
+}
+
+// === PRESENTATION MAPPERS (Helpers per netejar el component) ===
+
+function mapItemsToViewModel(items: ShoppingListItem[]): ShoppingItemUI[] {
+  return items.map((i) => ({
+      id: i.props.id,
+      name: i.props.name,
+      quantity: i.props.quantity,
+      unit: i.props.unit,
+      isChecked: i.props.isChecked,
+      emoji: i.props.emoji,
+      productId: i.props.productId ?? undefined,
+      productImage: i.props.productImage ?? undefined,
+      estimatedCost: i.props.estimatedCost ?? undefined
+  }));
+}
+
+function mapHistoryToViewModel(history: ShoppingSession[]): HistorySession[] {
+  return history.map((h) => ({
+      id: h.props.id,
+      createdAt: h.props.createdAt,
+      totalCost: h.props.totalCost,
+      itemCount: h.props.itemCount,
+      // TypeScript ja sap que itemsSnapshot és SnapshotItem[] gràcies al domini
+      itemsSnapshot: h.props.itemsSnapshot 
+  }));
 }

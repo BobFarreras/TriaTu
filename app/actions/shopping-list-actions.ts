@@ -14,7 +14,10 @@ const AddItemSchema = z.object({
   productImage: z.string().optional().nullable(),
   estimatedCost: z.number().optional().nullable()
 });
-
+// ✅ Schema per validació massiva
+const BatchItemSchema = z.object({
+  items: z.array(AddItemSchema)
+});
 // 1. ADD ITEM
 export async function addToShoppingListAction(
     name: string, 
@@ -93,5 +96,39 @@ export async function completeShoppingSessionAction() {
   } catch (error) {
     console.error("Error completing shopping session:", error);
     return { success: false, error: "Error finalitzant la compra" };
+  }
+}
+export async function addBatchToShoppingListAction(items: z.infer<typeof AddItemSchema>[]) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Validar dades
+    const validation = BatchItemSchema.safeParse({ items });
+    if (!validation.success) return { success: false, error: "Dades invàlides" };
+
+    const useCase = container.getAddToShoppingList(supabase);
+
+    // Executar en paral·lel (o podries fer un loop sequencial si vols garantir ordre)
+    await Promise.all(items.map(item => 
+      useCase.execute(
+        user.id,
+        item.name,
+        item.quantity,
+        item.unit,
+        item.emoji,
+        item.productId || undefined,
+        item.productImage || undefined,
+        item.estimatedCost || undefined
+      )
+    ));
+
+    revalidatePath('/shopping-list');
+    return { success: true };
+
+  } catch (error) {
+    console.error("Error adding batch:", error);
+    return { success: false, error: "Error guardant productes" };
   }
 }

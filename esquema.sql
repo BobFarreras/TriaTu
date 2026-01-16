@@ -1,5 +1,5 @@
 
-\restrict 5WdNMVg13TtJzneL2M1PhyNUDi9FJ4QmfIcrKv2ugJKeQLl4dIqd2STgPW0Y6uv
+\restrict s4v2lFkaZmiuyi61Gi7vgdG8fPN3CAgLcC3eircfWGbNrF2ttGGxAj9UXvCxOAG
 
 
 SET statement_timeout = 0;
@@ -419,7 +419,8 @@ CREATE TABLE IF NOT EXISTS "public"."saved_recipes" (
     "rating_avg" numeric(3,2) DEFAULT 0,
     "rating_count" integer DEFAULT 0,
     "rating_distribution" "jsonb" DEFAULT '{}'::"jsonb",
-    "estimated_cost" numeric(10,2) DEFAULT 0
+    "estimated_cost" numeric(10,2) DEFAULT 0,
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
@@ -449,7 +450,10 @@ CREATE TABLE IF NOT EXISTS "public"."shopping_list_items" (
     "unit" "text" DEFAULT 'ut'::"text" NOT NULL,
     "is_checked" boolean DEFAULT false,
     "added_at" timestamp with time zone DEFAULT "now"(),
-    "emoji" "text" DEFAULT '📦'::"text"
+    "emoji" "text" DEFAULT '📦'::"text",
+    "product_id" "text",
+    "product_image" "text",
+    "estimated_cost" numeric(10,2)
 );
 
 
@@ -628,6 +632,10 @@ CREATE OR REPLACE VIEW "public"."recipes_with_stats" AS
    FROM ("public"."community_recipes" "r"
      LEFT JOIN "public"."recipe_ratings" "rt" ON (("r"."id" = "rt"."recipe_id")))
   GROUP BY "r"."id";
+
+
+
+CREATE OR REPLACE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."saved_recipes" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
 
 
 
@@ -1081,6 +1089,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict 5WdNMVg13TtJzneL2M1PhyNUDi9FJ4QmfIcrKv2ugJKeQLl4dIqd2STgPW0Y6uv
+\unrestrict s4v2lFkaZmiuyi61Gi7vgdG8fPN3CAgLcC3eircfWGbNrF2ttGGxAj9UXvCxOAG
 
 RESET ALL;

@@ -3,6 +3,7 @@
 import { ShoppingListRepository } from '@/core/ports/ShoppingListRepository';
 import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { ShoppingSession, SnapshotItem } from '@/core/domain/entities/ShoppingSession';
 
 // Definim una interfície per a la fila de la DB (DTO)
 interface ShoppingListItemRow {
@@ -18,7 +19,15 @@ interface ShoppingListItemRow {
   product_image?: string;
   estimated_cost?: number
 }
-
+// ✅ 1. Definim la forma exacta de la fila a la BD (snake_case)
+interface ShoppingSessionRow {
+    id: string;
+    user_id: string;
+    created_at: string;
+    total_cost: number;
+    item_count: number;
+    items_snapshot: SnapshotItem[]; // Supabase ja converteix JSONB a objecte JS
+}
 export class SupabaseShoppingListRepository implements ShoppingListRepository {
   constructor(private supabase: SupabaseClient) { }
 
@@ -73,7 +82,7 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
           quantity: item.props.quantity,
           unit: item.props.unit,
           is_checked: item.props.isChecked,
-          emoji: item.props.emoji ,// ✅ Actualitzem l'emoji
+          emoji: item.props.emoji,// ✅ Actualitzem l'emoji
           product_id: item.props.productId,
           product_image: item.props.productImage,
           estimated_cost: item.props.estimatedCost
@@ -127,5 +136,44 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
       productImage: raw.product_image,
       estimatedCost: raw.estimated_cost
     });
+  }
+  // Dins de SupabaseShoppingListRepository.ts
+
+  async saveSession(session: ShoppingSession): Promise<void> {
+    const { error } = await this.supabase
+      .from('shopping_sessions')
+      .insert({
+        id: session.props.id,
+        user_id: session.props.userId,
+        created_at: session.props.createdAt.toISOString(),
+        total_cost: session.props.totalCost,
+        item_count: session.props.itemCount,
+        items_snapshot: session.props.itemsSnapshot
+      });
+    if (error) throw new Error(error.message);
+  }
+
+  async getHistory(userId: string): Promise<ShoppingSession[]> {
+    // Utilitzem generics o casting segur, però evitem 'any'
+    const { data, error } = await this.supabase
+      .from('shopping_sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    // ✅ 2. Casting segur a la nostra interfície 'ShoppingSessionRow'
+    // Això diu a TS: "Confia en mi, la BD retorna això" sense usar 'any'
+    const rows = data as unknown as ShoppingSessionRow[];
+
+    return rows.map((row) => new ShoppingSession({
+      id: row.id,
+      userId: row.user_id,
+      createdAt: new Date(row.created_at),
+      totalCost: row.total_cost,
+      itemCount: row.item_count,
+      itemsSnapshot: row.items_snapshot
+    }));
   }
 }

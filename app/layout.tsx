@@ -84,7 +84,7 @@ export default function RootLayout({
           <DecisionProvider>
             {children}
             {/* ✅ AFEGEIX AIXÒ AL FINAL DEL BODY */}
-            <Toaster position="top-center" richColors />
+            <Toaster position="bottom-right" richColors />
           </DecisionProvider>
         </LanguageProvider>
       </body>

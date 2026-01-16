@@ -64,7 +64,7 @@ import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspirati
 import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingList';
 import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
 import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
-
+import { GetShoppingHistory } from '@/core/application/shopping-list/GetShoppingHistory';
 
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
 const foodKnowledgeService = new FoodKnowledgeService();
@@ -129,12 +129,12 @@ export const container = {
       recipeMatcher
     );
   },
-  
+
   getInventoryRepo: (client: SupabaseClient) =>
     new SupabaseInventoryRepository(client),
 
   // ✅ NOU: Use Case per buscar i guardar productes (Cache)
-  getSearchAndCacheProducts: (client: SupabaseClient) => 
+  getSearchAndCacheProducts: (client: SupabaseClient) =>
     new SearchAndCacheProducts(
       bonpreuAdapter,
       new SupabaseProductCatalogRepository(client)
@@ -156,7 +156,7 @@ export const container = {
   getUpdateUserProfile: () => new UpdateUserProfile(userProfileRepo),
   getAddCandidate: () => new AddCandidate(candidateRepo),
   getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
-  
+
   // === RECIPES ===
   getRecipeRepository: (): RecipeRepository => recipeRepo,
   getSaveGeneratedRecipe: () => new SaveGeneratedRecipe(recipeRepo),
@@ -171,6 +171,9 @@ export const container = {
 
   getGetShoppingList: (client: SupabaseClient) =>
     new GetShoppingList(new SupabaseShoppingListRepository(client)),
+  // ✅ AFEGIR AQUESTA LÍNIA
+  getGetShoppingHistory: (client: SupabaseClient) =>
+    new GetShoppingHistory(new SupabaseShoppingListRepository(client)),
 
   getCompleteShoppingSession: (client: SupabaseClient) =>
     new CompleteShoppingSession(
@@ -180,4 +183,6 @@ export const container = {
 
   getShoppingListRepo: (client: SupabaseClient) =>
     new SupabaseShoppingListRepository(client)
+
+
 };

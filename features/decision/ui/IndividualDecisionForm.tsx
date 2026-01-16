@@ -16,7 +16,7 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
     const { t } = useLanguage();
     const logic = useDecision();
     const isFate = logic.mode === 'FATE';
-    const [isMobileExpanded, setIsMobileExpanded] = useState(true);
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
     // 1. DADES DEL TOUR
     const { isActive: isTourActive, currentStepIndex, nextStep } = useOnboarding();

@@ -6,9 +6,10 @@ import { toggleIngredientStockAction } from '@/app/actions/inventory-quick-updat
 import { toast } from 'sonner';
 import { getIngredientEmoji } from '@/lib/utils/emojiUtils';
 import { MissingIngredientDialog, Ingredient as ModalIngredient } from '@/components/recipes/MissingIngredientDialog';
-import { ChevronDown } from 'lucide-react'; // ✅ Importar icones
+import { ChevronDown } from 'lucide-react'; 
 import { AnimatePresence, motion } from 'framer-motion';
-// ✅ EXPORTEM LA INTERFÍCIE i ELIMINEM '[key: string]: unknown'
+
+// ✅ INTERFÍCIE CORRECTA (Sense index signature [key: string]: unknown)
 export interface IngredientWithMeta {
     name: string;
     quantity: number;
@@ -17,10 +18,10 @@ export interface IngredientWithMeta {
     id?: string;
     emoji?: string;
     image?: string;
+    // Camps de producte ric
     linkedProductImage?: string;
     estimatedCost?: number;
-    linkedProductId: string;
-
+    linkedProductId?: string; // ✅ Opcional perquè potser no existeix
 }
 
 interface Props {
@@ -35,14 +36,14 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
     const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
     const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
     const [missingIngredient, setMissingIngredient] = useState<ModalIngredient | null>(null);
-    // ✅ ESTAT PLEGABLE (Per defecte obert)
+    
     const [isExpanded, setIsExpanded] = useState(true);
+
     useEffect(() => {
         setLocalInventory(inventory);
     }, [inventory]);
 
     const handleToggleItem = async (index: number, ing: IngredientWithMeta) => {
-        // ... (mateixa lògica de sempre, sense canvis aquí)
         if (loadingItems.has(index)) return;
 
         const isChecking = !checkedItems.has(index);
@@ -79,22 +80,20 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
             const isMissingError = result.error?.includes("No tens") || result.error?.includes("no existeix");
 
             if (isMissingError && isChecking) {
-                // ❌ ABANS (Aquí es perdia tot):
-                // const modalIng = { name: ing.name, quantity: ing.quantity, unit: ing.unit, emoji: currentEmoji };
-
-                // ✅ ARA (Passem TOTES les dades):
+                
+                // ✅ CORRECCIÓ: Eliminem 'as any' perquè la interfície ja ho suporta
                 const modalIng: ModalIngredient = {
                     name: ing.name,
                     quantity: ing.quantity,
                     unit: ing.unit,
                     emoji: currentEmoji,
-                    // 🔥 AFEGIM AIXÒ PER NO PERDRE EL PRODUCTE:
-                    linkedProductId: (ing as any).linkedProductId,
-                    linkedProductImage: (ing as any).linkedProductImage || ing.image,
+                    // Accés directe i tipat
+                    linkedProductId: ing.linkedProductId || '', // Valor per defecte si és undefined
+                    linkedProductImage: ing.linkedProductImage || ing.image,
                     estimatedCost: ing.estimatedCost
                 };
 
-                console.log("🛠️ [CLIENT] Obrint modal amb:", modalIng); // Log per verificar
+                console.log("🛠️ [CLIENT] Obrint modal amb:", modalIng);
                 setMissingIngredient(modalIng);
             } else {
                 toast.error(result.error || "Error desconegut");
@@ -125,7 +124,6 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                     </span>
                 </div>
 
-                {/* ICONA ROTATÒRIA */}
                 <ChevronDown
                     className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
                     size={20}
@@ -160,12 +158,12 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                                         key={i}
                                         onClick={() => handleToggleItem(i, ing)}
                                         className={`
-                                group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-200 border select-none
-                                ${isChecked
-                                                ? 'bg-slate-900/50 border-slate-800 opacity-50'
-                                                : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-emerald-500/50'
-                                            }
-                            `}
+                                        group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-200 border select-none
+                                        ${isChecked
+                                            ? 'bg-slate-900/50 border-slate-800 opacity-50'
+                                            : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-emerald-500/50'
+                                        }
+                                    `}
                                     >
                                         {/* LOADING OVERLAY */}
                                         {isLoading && (
@@ -177,9 +175,9 @@ export function IngredientsPanel({ ingredients, inventory, userId }: Props) {
                                         {/* ESQUERRA: ICONA + NOM */}
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             <div className={`
-                                    w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-black/10 transition-colors
-                                    ${isChecked ? 'bg-emerald-900/20' : 'bg-white'}
-                                `}>
+                                        w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-black/10 transition-colors
+                                        ${isChecked ? 'bg-emerald-900/20' : 'bg-white'}
+                                    `}>
                                                 {isChecked ? (
                                                     <span className="text-emerald-500 font-bold">✓</span>
                                                 ) : hasImage ? (
