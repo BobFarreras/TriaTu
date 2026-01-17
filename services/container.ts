@@ -9,7 +9,6 @@ import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepo
 import { SupabaseRankingRepository } from '@/adapters/supabase/SupabaseRankingRepository';
 import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
 import { SupabaseShoppingListRepository } from '@/adapters/supabase/SupabaseShoppingListRepository';
-// ✅ NOU: Import del repositori del catàleg
 import { SupabaseProductCatalogRepository } from '@/adapters/supabase/SupabaseProductCatalogRepository';
 
 // ADAPTERS - EXTERNAL (AI & SCRAPERS)
@@ -19,7 +18,6 @@ import { FallbackImageRecognizer } from '@/adapters/strategies/FallbackImageReco
 import { GeminiRecipeGenerator } from '@/adapters/gemini/GeminiRecipeGenerator';
 import { OpenAIRecipeGenerator } from '@/adapters/openai/OpenAIRecipeGenerator';
 import { FallbackRecipeGenerator } from '@/adapters/strategies/FallbackRecipeGenerator';
-// ✅ NOU: Import de l'adapter de Bonpreu
 import { BonpreuAdapter } from '@/adapters/external/BonpreuAdapter';
 
 // DOMAIN SERVICES
@@ -28,11 +26,14 @@ import { BasicGroupResolver } from '@/services/decision/BasicGroupResolver';
 import { FoodKnowledgeService } from '@/core/domain/services/FoodKnowledgeService';
 import { RecipeMatcher } from '@/core/domain/services/RecipeMatcher';
 
+// ✅ NOU SERVICE HÍBRID
+import { GenerateMenuService } from '@/core//services/GenerateMenuService';
+
 // PORTS
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
 import { RecipeRepository } from '@/core/ports/RecipeRepository';
 
-// USE CASES
+// USE CASES - DECISION & ROOMS
 import { MakeIndividualDecision } from '@/core/usecases/decision/MakeIndividualDecision';
 import { CreateDecisionRoom } from '@/core/usecases/rooms/CreateDecisionRoom';
 import { JoinDecisionRoom } from '@/core/usecases/rooms/JoinDecisionRoom';
@@ -53,14 +54,14 @@ import { GetUserInventory } from '@/core/usecases/inventory/GetUserInventory';
 import { UpdateItem } from '@/core/usecases/inventory/UpdateItem';
 import { DeleteItem } from '@/core/usecases/inventory/DeleteItem';
 import { CookRecipe } from '@/core/usecases/inventory/CookRecipe';
-import { SuggestRecipes } from '@/core/usecases/inventory/SuggestRecipes';
-// ✅ NOU: Import del Use Case de cerca de productes
 import { SearchAndCacheProducts } from '@/core/usecases/inventory/SearchAndCacheProducts';
 
-// USE CASES - RECIPES & SHOPPING
+// USE CASES - RECIPES
 import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe';
 import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
 import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration';
+
+// USE CASES - SHOPPING
 import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingList';
 import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
 import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
@@ -76,7 +77,6 @@ const geminiAdapter = new GeminiImageRecognizer();
 const openAIAdapter = new OpenAIImageRecognizer();
 const robustRecognizer = new FallbackImageRecognizer(geminiAdapter, openAIAdapter);
 
-// ✅ NOU: Instància global de l'adapter de Bonpreu (no té estat d'usuari)
 const bonpreuAdapter = new BonpreuAdapter();
 
 // Lazy Singleton per al generador de receptes (AI)
@@ -90,7 +90,7 @@ const getRecipeGenerator = (): RecipeGenerator => {
   return recipeGeneratorInstance;
 };
 
-// Repositoris que no depenen del client (però compte amb RLS en el futur)
+// Repositoris que no depenen del client
 const decisionRepo = new SupabaseDecisionRepository();
 const roomRepo = new SupabaseDecisionRoomRepository();
 const candidateRepo = new SupabaseCandidateRepository();
@@ -120,20 +120,9 @@ export const container = {
   getCookRecipe: (client: SupabaseClient) =>
     new CookRecipe(new SupabaseInventoryRepository(client), recipeMatcher),
 
-  // Mode Xef: Inventari + IA
-  getSuggestRecipes: (client: SupabaseClient) => {
-    return new SuggestRecipes(
-      new SupabaseInventoryRepository(client),
-      recipeRepo,
-      getRecipeGenerator(),
-      recipeMatcher
-    );
-  },
-
   getInventoryRepo: (client: SupabaseClient) =>
     new SupabaseInventoryRepository(client),
 
-  // ✅ NOU: Use Case per buscar i guardar productes (Cache)
   getSearchAndCacheProducts: (client: SupabaseClient) =>
     new SearchAndCacheProducts(
       bonpreuAdapter,
@@ -157,8 +146,17 @@ export const container = {
   getAddCandidate: () => new AddCandidate(candidateRepo),
   getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
 
-  // === RECIPES ===
+  // === RECIPES & GENERATION ===
   getRecipeRepository: (): RecipeRepository => recipeRepo,
+  
+  // ✅ NOU: El servei estrella d'avui (Híbrid)
+  getGenerateMenuService: (client: SupabaseClient) => 
+    new GenerateMenuService(
+      new SupabaseInventoryRepository(client),
+      recipeRepo,
+      getRecipeGenerator()
+    ),
+
   getSaveGeneratedRecipe: () => new SaveGeneratedRecipe(recipeRepo),
   getGetRecipe: () => new GetRecipe(recipeRepo),
   getGetRandomInspiration: () => new GetRandomInspiration(recipeRepo),
@@ -171,7 +169,7 @@ export const container = {
 
   getGetShoppingList: (client: SupabaseClient) =>
     new GetShoppingList(new SupabaseShoppingListRepository(client)),
-  // ✅ AFEGIR AQUESTA LÍNIA
+
   getGetShoppingHistory: (client: SupabaseClient) =>
     new GetShoppingHistory(new SupabaseShoppingListRepository(client)),
 
@@ -183,6 +181,4 @@ export const container = {
 
   getShoppingListRepo: (client: SupabaseClient) =>
     new SupabaseShoppingListRepository(client)
-
-
 };

@@ -12,7 +12,12 @@ export interface RecipeFilter {
     userId?: string;
     filterMode?: 'ALL' | 'MINE' | 'FAVORITES';
 }
-
+// Definim el criteri de cerca avançada
+export interface MatchCriteria {
+    userId: string;
+    limit: number;
+    // Podries afegir més coses aquí si cal (tags, etc.)
+}
 export interface RecipeRepository {
     save(recipe: Recipe): Promise<void>;
     search(filter: RecipeFilter): Promise<{ recipes: Recipe[]; total: number }>;
@@ -30,4 +35,5 @@ export interface RecipeRepository {
 
     getUserRatingForRecipe(userId: string, recipeId: string): Promise<Rating | null>;
     getUserRatingsMap(userId: string, recipeIds: string[]): Promise<Record<string, number>>;
+    findMatches(criteria: MatchCriteria): Promise<Recipe[]>;
 }

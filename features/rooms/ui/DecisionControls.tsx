@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 // ✅ 1. IMPORT CORRECTE: Importem només l'acció unificada des de decision-actions
-import { makeGroupDecisionAction } from '@/app/actions/decision-actions';
+import { makeGroupDecisionAction } from '@/app/actions/room-actions';
 import { addCandidateAction, toggleVotingModeAction, removeCandidateAction } from '@/app/actions/candidate-actions';
 import { Button } from '@/components/ui/Button';
 import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';

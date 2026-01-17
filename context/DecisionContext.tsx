@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { Recipe, RecipeProps } from '@/core/domain/entities/Recipe';
-import { generateRecipeFromDecisionAction } from '@/app/actions/decision-cooking'; 
+import { generateMenuAction } from '@/app/actions/recipe-actions';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { toast } from 'sonner';
 
@@ -92,10 +92,10 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
             likesCount: props.likesCount || 0,
             isPublic: !!props.isPublic,
             createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
-            ratingSummary: { 
-                average: props.ratingSummary?.average || 0, 
-                count: props.ratingSummary?.count || 0, 
-                distribution: props.ratingSummary?.distribution || {} 
+            ratingSummary: {
+                average: props.ratingSummary?.average || 0,
+                count: props.ratingSummary?.count || 0,
+                distribution: props.ratingSummary?.distribution || {}
             },
             dietaryTags: props.dietaryTags || [],
             ingredients: (Array.isArray(props.ingredients) ? props.ingredients : []).map((ing) => ({
@@ -112,7 +112,15 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
         setState(prev => ({ ...prev, isPending: true, error: null, recipes: [] }));
 
         try {
-            const result = await generateRecipeFromDecisionAction(userId, dishName, locale);
+            // Per això (afegint els paràmetres nous que l'acció espera):
+            const result = await generateMenuAction(
+                userId,
+                dishName,
+                state.mode, // 'FATE' o 'CHEF'
+                state.energy,
+                state.time,
+                locale
+            );
 
             if (result.success && result.recipes) {
                 const recipeInstances = result.recipes.map(props => {
@@ -142,23 +150,23 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
             }
         } catch (err: unknown) {
             // 🛑 CANVI CLAU: NO fem console.error(err) per evitar la pantalla vermella de Next.js
-            
+
             let errorMessage = "Error desconegut";
             if (err instanceof Error) errorMessage = err.message;
             else if (typeof err === 'string') errorMessage = err;
 
             // Detectem si és un error de límit (Rate Limit)
-            const isLimitError = errorMessage.toLowerCase().includes('límit') || 
-                                 errorMessage.toLowerCase().includes('limit');
+            const isLimitError = errorMessage.toLowerCase().includes('límit') ||
+                errorMessage.toLowerCase().includes('limit');
 
             if (isLimitError) {
                 // Warning suau a la consola
                 console.warn("⏳ Rate Limit Hit:", errorMessage);
-                
+
                 // Feedback visual a l'usuari
-                toast.warning("⏳ Límit Assolit", { 
+                toast.warning("⏳ Límit Assolit", {
                     description: "Has generat massa menús per aquesta hora. Torna-hi més tard!",
-                    duration: 5000 
+                    duration: 5000
                 });
             } else {
                 // Error genèric
@@ -166,10 +174,10 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
                 toast.error("Error al forn", { description: errorMessage });
             }
 
-            setState(prev => ({ 
-                ...prev, 
-                isPending: false, 
-                error: errorMessage 
+            setState(prev => ({
+                ...prev,
+                isPending: false,
+                error: errorMessage
             }));
         }
     }, [locale]);

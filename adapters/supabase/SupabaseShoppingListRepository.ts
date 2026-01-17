@@ -1,5 +1,3 @@
-// ARXIU: adapters/supabase/SupabaseShoppingListRepository.ts
-
 import { ShoppingListRepository } from '@/core/ports/ShoppingListRepository';
 import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -14,21 +12,23 @@ interface ShoppingListItemRow {
   unit: string;
   is_checked: boolean;
   added_at?: string;
-  emoji?: string; // ✅ NOU
+  emoji?: string;
   product_id?: string;
   product_image?: string;
   estimated_cost?: number
 }
-// ✅ 1. Definim la forma exacta de la fila a la BD (snake_case)
+
 interface ShoppingSessionRow {
     id: string;
     user_id: string;
     created_at: string;
     total_cost: number;
     item_count: number;
-    items_snapshot: SnapshotItem[]; // Supabase ja converteix JSONB a objecte JS
+    items_snapshot: SnapshotItem[]; 
 }
+
 export class SupabaseShoppingListRepository implements ShoppingListRepository {
+  // Injectem el client (essencial per testejar amb mocks)
   constructor(private supabase: SupabaseClient) { }
 
   async findAll(userId: string): Promise<ShoppingListItem[]> {
@@ -40,25 +40,22 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
 
     if (error) throw new Error(`Error fetching shopping list: ${error.message}`);
 
-    // Casting segur perquè sabem l'esquema de Supabase
     return (data as unknown as ShoppingListItemRow[]).map(this.mapToDomain);
   }
 
   async upsertItem(item: ShoppingListItem): Promise<void> {
-    console.log("💾 [REPO] Saving to DB:", {
-      name: item.props.name,
-      productId: item.props.productId,
-      image: item.props.productImage
-    });
-    const { data: existing } = await this.supabase
+    // 1. Busquem si existeix utilitzant maybeSingle() per evitar errors si no hi és
+    const { data: existing, error: fetchError } = await this.supabase
       .from('shopping_list_items')
       .select('*')
       .eq('user_id', item.props.userId)
       .ilike('name', item.props.name)
-      .single();
+      .maybeSingle(); // ✅ CANVI CRÍTIC: .single() peta si és null, .maybeSingle() no.
+
+    if (fetchError) throw new Error(fetchError.message);
 
     if (existing) {
-      // Tipem l'objecte existent
+      // UPDATE logic
       const existingItem = existing as unknown as ShoppingListItemRow;
       const newQuantity = Number(existingItem.quantity) + item.props.quantity;
 
@@ -66,14 +63,14 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
         .from('shopping_list_items')
         .update({
           quantity: newQuantity,
-          is_checked: false,
+          is_checked: false, // Reactivem l'item si en comprem més
         })
         .eq('id', existingItem.id);
 
       if (error) throw error;
 
     } else {
-      console.log("💾 [REPO] Inserting:", item.props.emoji); // LOG
+      // INSERT logic
       const { error } = await this.supabase
         .from('shopping_list_items')
         .insert({
@@ -82,12 +79,10 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
           quantity: item.props.quantity,
           unit: item.props.unit,
           is_checked: item.props.isChecked,
-          emoji: item.props.emoji,// ✅ Actualitzem l'emoji
+          emoji: item.props.emoji,
           product_id: item.props.productId,
           product_image: item.props.productImage,
           estimated_cost: item.props.estimatedCost
-
-
         });
 
       if (error) throw error;
@@ -102,7 +97,7 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
 
     if (error) throw error;
   }
-  // ✅ Implementació Toggle
+
   async toggleCheck(itemId: string, isChecked: boolean): Promise<void> {
     const { error } = await this.supabase
       .from('shopping_list_items')
@@ -112,7 +107,6 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
     if (error) throw new Error(error.message);
   }
 
-  // ✅ Implementació DeleteMany
   async deleteMany(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
     const { error } = await this.supabase
@@ -122,22 +116,6 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
 
     if (error) throw new Error(error.message);
   }
-  // ✅ CORRECCIÓ: Substituïm 'any' per la interfície Row
-  private mapToDomain(raw: ShoppingListItemRow): ShoppingListItem {
-    return new ShoppingListItem({
-      id: raw.id,
-      userId: raw.user_id,
-      name: raw.name,
-      quantity: Number(raw.quantity),
-      unit: raw.unit,
-      isChecked: raw.is_checked,
-      emoji: raw.emoji, // ✅ Recuperem l'emoji
-      productId: raw.product_id,
-      productImage: raw.product_image,
-      estimatedCost: raw.estimated_cost
-    });
-  }
-  // Dins de SupabaseShoppingListRepository.ts
 
   async saveSession(session: ShoppingSession): Promise<void> {
     const { error } = await this.supabase
@@ -154,7 +132,6 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
   }
 
   async getHistory(userId: string): Promise<ShoppingSession[]> {
-    // Utilitzem generics o casting segur, però evitem 'any'
     const { data, error } = await this.supabase
       .from('shopping_sessions')
       .select('*')
@@ -163,8 +140,6 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
 
     if (error) throw new Error(error.message);
 
-    // ✅ 2. Casting segur a la nostra interfície 'ShoppingSessionRow'
-    // Això diu a TS: "Confia en mi, la BD retorna això" sense usar 'any'
     const rows = data as unknown as ShoppingSessionRow[];
 
     return rows.map((row) => new ShoppingSession({
@@ -175,5 +150,20 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
       itemCount: row.item_count,
       itemsSnapshot: row.items_snapshot
     }));
+  }
+
+  private mapToDomain(raw: ShoppingListItemRow): ShoppingListItem {
+    return new ShoppingListItem({
+      id: raw.id,
+      userId: raw.user_id,
+      name: raw.name,
+      quantity: Number(raw.quantity),
+      unit: raw.unit,
+      isChecked: raw.is_checked,
+      emoji: raw.emoji,
+      productId: raw.product_id,
+      productImage: raw.product_image,
+      estimatedCost: raw.estimated_cost
+    });
   }
 }

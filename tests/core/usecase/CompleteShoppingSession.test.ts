@@ -7,16 +7,16 @@ import { InventoryItem } from '@/core/domain/entities/InventoryItem'; // ✅ 1. 
 
 describe('CompleteShoppingSession Use Case', () => {
     it('hauria de moure els items checkejats a l\'inventari i esborrar-los de la llista', async () => {
-        // Mocks tipats (sense 'any')
+        // Mocks tipats
         const mockShoppingRepo = {
             findAll: vi.fn().mockResolvedValue([
-                // Item 1: Marcat (S'ha de moure)
                 { props: { id: '1', name: 'Pomes', quantity: 2, unit: 'kg', isChecked: true } },
-                // Item 2: No marcat (S'ha de quedar)
                 { props: { id: '2', name: 'Aigua', quantity: 6, unit: 'l', isChecked: false } },
             ]),
             deleteMany: vi.fn().mockResolvedValue(undefined),
-        } as unknown as ShoppingListRepository; 
+            // ✅ AFEGIT: El mètode que faltava i feia petar el test
+            saveSession: vi.fn().mockResolvedValue(undefined), 
+        } as unknown as ShoppingListRepository;
         
         const mockInventoryRepo = {
             saveBatch: vi.fn().mockResolvedValue(undefined),

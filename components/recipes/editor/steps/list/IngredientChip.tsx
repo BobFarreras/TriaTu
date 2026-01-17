@@ -1,7 +1,7 @@
 'use client';
 
 import { Ingredient } from '../../types'; // Ajusta la ruta segons on tinguis types
-import { FOOD_PRESETS } from "@/lib/foot-presets";
+import { FOOD_PRESETS } from "@/lib/food-presets";
 
 interface Props {
   name: string;

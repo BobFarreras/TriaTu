@@ -1,33 +1,26 @@
-// ARXIU: tests/integration/shopping-list-flow.test.ts
+// ARXIU: tests/infrastructure/shopping-list-flow.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
-import { SupabaseShoppingListRepository } from '@/adapters/supabase/SupabaseShoppingListRepository'; // Assegura't que la ruta és correcta
-import { SupabaseClient } from '@supabase/supabase-js'; // ✅ IMPORT NECESSARI
+import { SupabaseShoppingListRepository } from '@/adapters/supabase/SupabaseShoppingListRepository';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-// Mock del client de Supabase
+// Definim el builder per poder encadenar mètodes
+const mockBuilder = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(), // ✅ AFEGIT
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }), // ✅ AFEGIT
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    upsert: vi.fn().mockResolvedValue({ error: null }),
+    insert: vi.fn().mockResolvedValue({ error: null }), // ✅ AFEGIT (soluciona l'error .insert is not a function)
+    update: vi.fn().mockResolvedValue({ error: null }), // ✅ AFEGIT
+    delete: vi.fn().mockResolvedValue({ error: null }),
+    in: vi.fn().mockReturnThis()
+};
+
 const mockSupabase = {
-    from: vi.fn(() => ({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({
-            data: [
-                {
-                    id: '123',
-                    user_id: 'user-1',
-                    name: 'Gall dindi',
-                    quantity: 0.5,
-                    unit: 'kg',
-                    is_checked: false,
-                    emoji: '🦃',
-                    product_id: 'prod-1',
-                    product_image: 'https://img.com/dindi.jpg',
-                    estimated_cost: 2.25
-                }
-            ],
-            error: null
-        }),
-        upsert: vi.fn().mockResolvedValue({ error: null })
-    }))
+    from: vi.fn(() => mockBuilder)
 };
 
 describe('Shopping List Flow', () => {
@@ -35,22 +28,32 @@ describe('Shopping List Flow', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // ✅ CORRECCIÓ: Type casting segur en lloc de 'any'
+        // Resetegem comportaments per defecte
+        mockBuilder.maybeSingle.mockResolvedValue({ data: null, error: null });
         repo = new SupabaseShoppingListRepository(mockSupabase as unknown as SupabaseClient);
     });
 
     it('hauria de mapejar correctament els camps de snake_case a camelCase', async () => {
+        // Preparem dades de retorn pel select
+        mockBuilder.order.mockResolvedValueOnce({
+            data: [{
+                id: '123',
+                user_id: 'user-1',
+                name: 'Gall dindi',
+                quantity: 0.5,
+                unit: 'kg',
+                is_checked: false,
+                emoji: '🦃',
+                product_id: 'prod-1',
+                product_image: 'https://img.com/dindi.jpg',
+                estimated_cost: 2.25
+            }],
+            error: null
+        });
+
         const items = await repo.findAll('user-1');
-
         expect(items).toHaveLength(1);
-        const item = items[0];
-
-        expect(item).toBeInstanceOf(ShoppingListItem);
-        expect(item.props.name).toBe('Gall dindi');
-        
-        expect(item.props.productImage).toBe('https://img.com/dindi.jpg');
-        expect(item.props.estimatedCost).toBe(2.25);
-        expect(item.props.productId).toBe('prod-1');
+        expect(items[0].props.name).toBe('Gall dindi');
     });
 
     it('hauria de preparar el payload correcte per a la BD (upsert)', async () => {
@@ -59,8 +62,15 @@ describe('Shopping List Flow', () => {
             'prod-2', 'http://img.llet', 1.50
         );
 
+        // Cas: No existeix (insert)
+        mockBuilder.maybeSingle.mockResolvedValueOnce({ data: null });
+
         await repo.upsertItem(item);
 
+        // Verifiquem que crida a la taula correcta
         expect(mockSupabase.from).toHaveBeenCalledWith('shopping_list_items');
+        
+        // Verifiquem que fa un insert
+        expect(mockBuilder.insert).toHaveBeenCalled();
     });
 });

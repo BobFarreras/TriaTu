@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { 
-  AddCandidateSchema, 
-  GenerateRecipeSchema, 
-  InventoryItemSchema 
+import {
+  AddCandidateSchema,
+  GenerateRecipeSchema,
+  InventoryItemSchema
 } from '@/core/application/schemas/inputSchemas';
 
 describe('🛡️ SECURITY: Input Validation Schemas', () => {
@@ -15,7 +15,7 @@ describe('🛡️ SECURITY: Input Validation Schemas', () => {
         userId: '123e4567-e89b-12d3-a456-426614174000',
         content: 'Hola <script>alert("Hacked")</script>'
       };
-      
+
       const result = AddCandidateSchema.safeParse(maliciousPayload);
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -29,7 +29,7 @@ describe('🛡️ SECURITY: Input Validation Schemas', () => {
         userId: '123e4567-e89b-12d3-a456-426614174000',
         content: 'Look at this <img src=x onerror=alert(1)>'
       };
-      
+
       const result = AddCandidateSchema.safeParse(maliciousPayload);
       expect(result.success).toBe(false);
     });
@@ -54,7 +54,7 @@ describe('🛡️ SECURITY: Input Validation Schemas', () => {
         dishName: longText,
         lang: 'ca'
       });
-      
+
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toContain('500');
@@ -76,13 +76,15 @@ describe('🛡️ SECURITY: Input Validation Schemas', () => {
     });
 
     it('hauria de bloquejar noms excessivament llargs', () => {
-        const result = InventoryItemSchema.safeParse({
-          userId: '123e4567-e89b-12d3-a456-426614174000',
-          name: 'Patates'.repeat(20), // Massa llarg
-          quantity: 1,
-          unit: 'kg'
-        });
-        expect(result.success).toBe(false);
+      const result = InventoryItemSchema.safeParse({
+        userId: '123e4567-e89b-12d3-a456-426614174000',
+        // ✅ CANVI: 'Patates' (7 chars) * 20 = 140 chars. 
+        // Si el límit és 200, això passava. Posem * 100 per fer 700 chars i forçar l'error.
+        name: 'Patates'.repeat(100),
+        quantity: 1,
+        unit: 'kg'
       });
+      expect(result.success).toBe(false);
+    });
   });
 });

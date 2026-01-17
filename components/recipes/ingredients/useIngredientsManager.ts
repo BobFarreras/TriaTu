@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { EditorData, Ingredient, FoodPreset } from '../editor/types';
-import { FOOD_PRESETS } from "@/lib/foot-presets";
+import { FOOD_PRESETS } from "@/lib/food-presets";
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export function useIngredientsManager(data: EditorData, update: (d: EditorData) => void) {

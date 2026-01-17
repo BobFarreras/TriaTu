@@ -1,4 +1,4 @@
-import { RecipeRepository, RecipeFilter } from '@/core/ports/RecipeRepository';
+import { RecipeRepository, RecipeFilter, MatchCriteria } from '@/core/ports/RecipeRepository';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { Rating } from '@/core/domain/entities/Rating';
 import { createClient } from '@/adapters/supabase/server';
@@ -7,6 +7,7 @@ import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestricti
 // --- INTERFÍCIES ---
 
 interface IngredientJSON {
+    id: string;
     name: string;
     quantity: number;
     unit: string;
@@ -55,38 +56,32 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     async save(recipe: Recipe): Promise<void> {
         const supabase = await createClient();
 
-        // ✅ DEBUG LOG 3: Què arriba al Repositori just abans de guardar?
-        console.log('💾 [DEBUG 3] REPO.save() - Rebent objecte:', {
-            id: recipe.id,
-            name: recipe.name,
-            isPublicProp: recipe.isPublic, // Mirem la propietat de l'entitat
-            props: recipe // Mirem tot l'objecte per si de cas
-        });
+        // Mapeig explícit per assegurar que ID i Emoji es guarden
+        const ingredientsPayload = recipe.ingredients.map(i => ({
+            id: i.id,
+            name: i.name,
+            quantity: i.quantity,
+            unit: i.unit,
+            emoji: i.emoji || '🥘'
+        }));
 
         const row = {
             id: recipe.id,
             user_id: recipe.authorId,
             name: recipe.name,
-            ingredients: recipe.ingredients,
+            ingredients: ingredientsPayload,
             steps: recipe.steps,
             tags: recipe.tags,
             dietary_tags: recipe.dietaryTags,
             prep_time_minutes: recipe.prepTimeMinutes,
             created_at: recipe.createdAt.toISOString(),
-
-            // 🔥 MODIFICACIÓ CLAU: Forcem el valor al row per descartar problemes de l'entitat
-            // Si vols estar 100% segur que es guarda true, posa 'true' directament aquí.
-            // Si posem (recipe.isPublic ?? true), i recipe.isPublic és false, es guardarà false.
-            is_public: true,
-
-            author_name: 'Usuari Comunitat',
-            likes_count: recipe.likesCount
+            updated_at: new Date().toISOString(),
+            is_public: recipe.isPublic,
+            is_ai_generated: recipe.isAiGenerated,
+            estimated_cost: recipe.estimatedCost,
+            likes_count: recipe.likesCount,
+            author_name: recipe.authorName || 'Usuari'
         };
-
-        // ✅ DEBUG LOG 4: Què enviem exactament a Supabase?
-        console.log('🛑 [DEBUG 4] Payload cap a Supabase:', {
-            is_public: row.is_public
-        });
 
         const { error } = await supabase.from('saved_recipes').upsert(row);
 
@@ -331,6 +326,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
 
         const validIngredients = rawIngredients
             .map((i) => ({
+                id: i.id,
                 name: i.name ? String(i.name).trim() : "Sense nom",
                 quantity: Number(i.quantity),
                 unit: i.unit ? String(i.unit) : "ut",
@@ -397,5 +393,45 @@ export class SupabaseRecipeRepository implements RecipeRepository {
                 distribution
             }
         });
+    }
+    // ✅ IMPLEMENTACIÓ HÍBRIDA
+    async findMatches(criteria: MatchCriteria): Promise<Recipe[]> {
+        const supabase = await createClient();
+
+        // Estratègia "Candidate Pool": 
+        // Recuperem un grup gran de receptes potencials (les meves + públiques recents)
+        // I després el servei filtrarà les que realment encaixen amb l'inventari/al·lèrgies.
+
+        const { data, error } = await supabase
+            .from('saved_recipes')
+            .select(`
+                *,
+                preference_profiles!user_id ( username ),
+                recipe_favorites!left ( user_id )
+            `)
+            // Receptes que són Públiques O són Meves
+            .or(`is_public.eq.true,user_id.eq.${criteria.userId}`)
+            .order('created_at', { ascending: false })
+            .limit(criteria.limit || 50); // Portem 50 candidates
+
+        if (error) {
+            console.error("❌ Error finding matches in DB:", error);
+            return [];
+        }
+
+        if (!data) return [];
+
+        // Convertim a domini
+        const rows = data as unknown as RecipeWithJoins[];
+
+        // Mapegem de forma segura (ignorant les que puguin fallar)
+        return rows.reduce((acc: Recipe[], row) => {
+            try {
+                acc.push(this.mapToDomain(row));
+            } catch (e) {
+                // Ignorem receptes corruptes silenciosament en aquest mode
+            }
+            return acc;
+        }, []);
     }
 }

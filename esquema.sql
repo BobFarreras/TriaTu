@@ -1,5 +1,5 @@
 
-\restrict s4v2lFkaZmiuyi61Gi7vgdG8fPN3CAgLcC3eircfWGbNrF2ttGGxAj9UXvCxOAG
+\restrict P62LHc9JyFBtQNu0ValxdPdmtZULvxufTRf2jCmnCohmkAeJtMdhYIEVWbOlTzT
 
 
 SET statement_timeout = 0;
@@ -345,6 +345,16 @@ CREATE TABLE IF NOT EXISTS "public"."rate_limits" (
 ALTER TABLE "public"."rate_limits" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."recipe_favorites" (
+    "user_id" "uuid" NOT NULL,
+    "recipe_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."recipe_favorites" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."recipe_ratings" (
     "recipe_id" "uuid" NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -420,7 +430,8 @@ CREATE TABLE IF NOT EXISTS "public"."saved_recipes" (
     "rating_count" integer DEFAULT 0,
     "rating_distribution" "jsonb" DEFAULT '{}'::"jsonb",
     "estimated_cost" numeric(10,2) DEFAULT 0,
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "is_ai_generated" boolean DEFAULT false
 );
 
 
@@ -458,6 +469,19 @@ CREATE TABLE IF NOT EXISTS "public"."shopping_list_items" (
 
 
 ALTER TABLE "public"."shopping_list_items" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."shopping_sessions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "total_cost" numeric(10,2) DEFAULT 0,
+    "item_count" integer DEFAULT 0,
+    "items_snapshot" "jsonb" NOT NULL
+);
+
+
+ALTER TABLE "public"."shopping_sessions" OWNER TO "postgres";
 
 
 CREATE OR REPLACE VIEW "public"."user_leaderboard" AS
@@ -535,6 +559,11 @@ ALTER TABLE ONLY "public"."rate_limits"
 
 
 
+ALTER TABLE ONLY "public"."recipe_favorites"
+    ADD CONSTRAINT "recipe_favorites_pkey" PRIMARY KEY ("user_id", "recipe_id");
+
+
+
 ALTER TABLE ONLY "public"."recipe_ratings"
     ADD CONSTRAINT "recipe_ratings_pkey" PRIMARY KEY ("recipe_id", "user_id");
 
@@ -562,6 +591,11 @@ ALTER TABLE ONLY "public"."security_logs"
 
 ALTER TABLE ONLY "public"."shopping_list_items"
     ADD CONSTRAINT "shopping_list_items_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."shopping_sessions"
+    ADD CONSTRAINT "shopping_sessions_pkey" PRIMARY KEY ("id");
 
 
 
@@ -657,6 +691,11 @@ ALTER TABLE ONLY "public"."decision_outcomes"
 
 
 
+ALTER TABLE ONLY "public"."saved_recipes"
+    ADD CONSTRAINT "fk_recipes_to_profiles" FOREIGN KEY ("user_id") REFERENCES "public"."preference_profiles"("user_id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."group_decisions"
     ADD CONSTRAINT "group_decisions_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
 
@@ -669,6 +708,16 @@ ALTER TABLE ONLY "public"."inventory_items"
 
 ALTER TABLE ONLY "public"."inventory_items"
     ADD CONSTRAINT "inventory_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."recipe_favorites"
+    ADD CONSTRAINT "recipe_favorites_recipe_id_fkey" FOREIGN KEY ("recipe_id") REFERENCES "public"."saved_recipes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."recipe_favorites"
+    ADD CONSTRAINT "recipe_favorites_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -702,6 +751,10 @@ ALTER TABLE ONLY "public"."saved_recipes"
 
 
 
+COMMENT ON CONSTRAINT "saved_recipes_user_id_fkey" ON "public"."saved_recipes" IS 'Link to author profile';
+
+
+
 ALTER TABLE ONLY "public"."security_logs"
     ADD CONSTRAINT "security_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
@@ -709,6 +762,11 @@ ALTER TABLE ONLY "public"."security_logs"
 
 ALTER TABLE ONLY "public"."shopping_list_items"
     ADD CONSTRAINT "shopping_list_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."shopping_sessions"
+    ADD CONSTRAINT "shopping_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
 
 
 
@@ -810,11 +868,19 @@ CREATE POLICY "Users can insert into their own shopping list" ON "public"."shopp
 
 
 
+CREATE POLICY "Users can insert own history" ON "public"."shopping_sessions" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
 CREATE POLICY "Users can insert their own inventory" ON "public"."inventory_items" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Users can insert their own recipes" ON "public"."saved_recipes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can manage their own favorites" ON "public"."recipe_favorites" USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -835,6 +901,10 @@ CREATE POLICY "Users can update their own inventory" ON "public"."inventory_item
 
 
 CREATE POLICY "Users can update their own shopping list" ON "public"."shopping_list_items" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own history" ON "public"."shopping_sessions" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -890,6 +960,9 @@ ALTER TABLE "public"."preference_profiles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."rate_limits" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."recipe_favorites" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."recipe_ratings" ENABLE ROW LEVEL SECURITY;
 
 
@@ -906,6 +979,9 @@ ALTER TABLE "public"."security_logs" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."shopping_list_items" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."shopping_sessions" ENABLE ROW LEVEL SECURITY;
 
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";
@@ -1011,6 +1087,12 @@ GRANT ALL ON TABLE "public"."rate_limits" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."recipe_favorites" TO "anon";
+GRANT ALL ON TABLE "public"."recipe_favorites" TO "authenticated";
+GRANT ALL ON TABLE "public"."recipe_favorites" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."recipe_ratings" TO "anon";
 GRANT ALL ON TABLE "public"."recipe_ratings" TO "authenticated";
 GRANT ALL ON TABLE "public"."recipe_ratings" TO "service_role";
@@ -1053,6 +1135,12 @@ GRANT ALL ON TABLE "public"."shopping_list_items" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."shopping_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."shopping_sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."shopping_sessions" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."user_leaderboard" TO "anon";
 GRANT ALL ON TABLE "public"."user_leaderboard" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_leaderboard" TO "service_role";
@@ -1089,6 +1177,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict s4v2lFkaZmiuyi61Gi7vgdG8fPN3CAgLcC3eircfWGbNrF2ttGGxAj9UXvCxOAG
+\unrestrict P62LHc9JyFBtQNu0ValxdPdmtZULvxufTRf2jCmnCohmkAeJtMdhYIEVWbOlTzT
 
 RESET ALL;

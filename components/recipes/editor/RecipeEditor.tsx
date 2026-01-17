@@ -144,12 +144,12 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
       </div>
 
       {/* SAVE BUTTON */}
-      <div className="absolute bottom-6 right-6 z-[60]">
+      <div className="absolute bottom-6 right-6 z-60">
         <motion.button
           id="tour-save-btn"
           whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
           onClick={handleSave} disabled={loading}
-          className={`w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_0_40px_-10px_rgba(168,85,247,0.6)] flex items-center justify-center ring-4 transition-all ${loading ? 'bg-slate-800 cursor-wait ring-slate-700' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-purple-500/40 cursor-pointer ring-slate-950/80'}`}
+          className={`w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_0_40px_-10px_rgba(168,85,247,0.6)] flex items-center justify-center ring-4 transition-all ${loading ? 'bg-slate-800 cursor-wait ring-slate-700' : 'bg-linear-to-r from-purple-600 to-pink-600 hover:shadow-purple-500/40 cursor-pointer ring-slate-950/80'}`}
         >
           {loading ? <span className="animate-spin text-2xl">⏳</span> : <Save className="w-6 h-6 md:w-7 md:h-7 text-white stroke-[2.5px]" />}
         </motion.button>

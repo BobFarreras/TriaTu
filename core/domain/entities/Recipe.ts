@@ -5,6 +5,7 @@ import { DietaryRestriction } from "../value-objects/DietaryRestriction";
 // ✅ 1. EXPORTEM LA INTERFÍCIE INGREDIENT
 // Això permet que altres fitxers (com PublishRecipe.ts) la puguin importar
 export interface Ingredient {
+    id: string;
     name: string;
     quantity: number;
     unit: string;
@@ -54,6 +55,12 @@ export class Recipe {
     get ratingSummary() { return this.props.ratingSummary; }
     get isAiGenerated() { return this.props.isAiGenerated; }
     get isFavorite() { return this.props.isFavorite ?? false; }
+    get estimatedCost() { return this.props.estimatedCost; }
+    get authorName() { return this.props.authorName; }
+
+
+
+
     // 🧠 LÒGICA ACTUALITZADA PER SUPORTAR TAGS "SMART"
     isSafeFor(restrictions: DietaryRestriction[]): boolean {
         if (!restrictions || restrictions.length === 0) return true;

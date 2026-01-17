@@ -7,7 +7,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container'; // ✅ Importem el contenidor
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
-import { FOOD_PRESETS } from '@/lib/foot-presets';
+import { FOOD_PRESETS } from '@/lib/food-presets';
 import { ExpirySafetyService } from '@/core/services/ExpirySafetyService'; // ✅ IMPRESCINDIBLE
 import { EmojiMatcherService } from '@/core/services/EmojiMarcherService'; // ✅ Importar
 import {

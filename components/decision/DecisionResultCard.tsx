@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { RecipeProps } from '@/core/domain/entities/Recipe';
-import { cookRecipeAction } from '@/app/actions/recipes'; // Assegura't que tens aquesta acció creada a la Fase 5
+import { cookRecipeAction } from '@/app/actions/recipe-actions'; // Assegura't que tens aquesta acció creada a la Fase 5
 import { toast } from 'sonner';
 
 interface Props {

@@ -1,63 +1,30 @@
 'use client';
 
-import { useState} from 'react';
-
-import { saveAndViewRecipeAction } from '@/app/actions/recipe-persistence';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+
+// ✅ IMPORTACIÓ CORRECTA
+import { saveRecipeAction } from '@/app/actions/recipe-actions';
 import { Recipe, RecipeProps } from '@/core/domain/entities/Recipe';
+import { getDishEmoji } from '@/lib/utils/dish-emojis'; // ✅ Importem la utilitat
+// ✅ Importem el tipus EditorData per fer el casting correcte
+import { EditorData } from '@/components/recipes/editor/types';
 interface Props {
   recipes: RecipeProps[];
-  userId: string; // Encara el rebem per si el necessites per UI, però no s'envia a l'acció
+  userId: string;
   onCancel: () => void;
 }
-// LLISTA D'IDS DE DEMO QUE NO S'HAN DE TORNAR A GUARDAR
+
 const DEMO_IDS = [
   "1090b513-97e9-4ea5-93ab-b8de7bb43c32",
   "f5d2abe7-95b3-42fd-96fc-7db1d33bbd63"
 ];
-function getDishEmoji(name: string): string {
-  if (!name) return '🍽️';
 
-  const n = name.toLowerCase();
-
-  // 🍕 Fast Food / Casual
-  if (n.includes('pizza')) return '🍕';
-  if (n.includes('burger') || n.includes('hamburg')) return '🍔';
-  if (n.includes('taco') || n.includes('fajita') || n.includes('burrito')) return '🌮';
-  if (n.includes('entrep') || n.includes('bocata') || n.includes('sandwich') || n.includes('bikini')) return '🥪';
-  if (n.includes('frit') || n.includes('fregit') || n.includes('croquet')) return '🍟';
-
-  // 🍝 Pasta & Arròs
-  if (n.includes('pasta') || n.includes('espagueti') || n.includes('macarron') || n.includes('ravioli')) return '🍝';
-  if (n.includes('arròs') || n.includes('paella') || n.includes('risotto')) return '🥘';
-  if (n.includes('fideu')) return '🍜';
-
-  // 🥗 Saludable / Verdures
-  if (n.includes('amanida') || n.includes('enciam') || n.includes('salad') || n.includes('verd')) return '🥗';
-  if (n.includes('sopa') || n.includes('crema') || n.includes('brou')) return '🥣';
-  if (n.includes('albergínia') || n.includes('carbassó') || n.includes('pastanaga')) return '🥦';
-
-  // 🥩 Proteïna
-  if (n.includes('pollastre') || n.includes('pavo') || n.includes('au')) return '🍗';
-  if (n.includes('carn') || n.includes('vedella') || n.includes('porc') || n.includes('filet') || n.includes('xai')) return '🥩';
-  if (n.includes('sushi') || n.includes('maki')) return '🍣';
-  if (n.includes('peix') || n.includes('luç') || n.includes('bacalla') || n.includes('salm') || n.includes('gamba')) return '🐟';
-  if (n.includes('ou') || n.includes('truita') || n.includes('remenat')) return '🍳';
-
-  // 🍰 Postres
-  if (n.includes('postre') || n.includes('pastís') || n.includes('cake') || n.includes('tiramisú')) return '🍰';
-  if (n.includes('gelat')) return '🍦';
-  if (n.includes('xocolata') || n.includes('bombó')) return '🍫';
-  if (n.includes('fruita') || n.includes('poma') || n.includes('maduixa')) return '🍎';
-  if (n.includes('galet')) return '🍪';
-
-  // 🥖 Acompanyaments
-  if (n.includes('pa ') || n.includes('torrada')) return '🥖';
-  if (n.includes('formatge')) return '🧀';
-
-  // Per defecte
-  return '🍽️';
+// Definim tipus locals per evitar els 'any' dins del map
+interface LocalStep {
+  id?: string;
+  content: string;
 }
 
 export function RecipeGrid({ recipes, onCancel }: Props) {
@@ -67,26 +34,65 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
   const handleSelect = async (recipe: Recipe | RecipeProps) => {
     if (savingId) return;
     
-    // Obtenim l'ID i les dades
+    // Extreiem les dades
     const recipeId = recipe.id;
-    const plainData = 'props' in recipe ? recipe.props : recipe;
+    // Càsting segur: si és una instància de Recipe, agafem props, sinó és l'objecte directament
+    const plainData = recipe instanceof Recipe ? recipe.toPrimitives() : recipe;
 
     setSavingId(recipeId);
 
-    // --- 🛑 CHECK DE SEGURETAT PER DEMO ---
-    // Si és una recepta de mostra existent, NO la guardem de nou.
-    // Simplement redirigim.
     if (recipeId && DEMO_IDS.includes(recipeId)) {
-        console.log("⏩ [RecipeGrid] Recepta DEMO detectada. Saltant guardat...");
         toast.success("Obrint recepta de mostra...");
         router.push(`/recipes/${recipeId}`);
         return;
     }
-    // --------------------------------------
 
-    console.log("📤 Enviant al servidor:", plainData.name);
+    console.log("📤 [RecipeGrid] Enviant a saveRecipeAction:", plainData.name);
 
-    const result = await saveAndViewRecipeAction(plainData);
+    // ✅ PREPARACIÓ DEL PAYLOAD
+    // Creem l'objecte que compleix amb EditorData manualment
+   // ✅ PREPARACIÓ DEL PAYLOAD (Tipat com EditorData)
+    const payload: EditorData = {
+        id: plainData.id,
+        name: plainData.name,
+        prepTimeMinutes: Number(plainData.prepTimeMinutes) || 30, // Assegurem number
+        
+        // Camps que falten a RecipeProps:
+        description: "", 
+        servings: 2, 
+        
+        // 🔥 FIX ERROR DIFFICULTY: Forcem el tipus estricte
+        difficulty: "medium" as "easy" | "medium" | "hard",
+
+        // Mapeig segur d'Ingredients
+        ingredients: plainData.ingredients.map((ing) => ({
+            id: ing.id,
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            emoji: ing.emoji,
+            estimatedCost: 0
+        })),
+
+        // Mapeig segur de Steps
+        steps: plainData.steps.map((step) => {
+            if (typeof step === 'string') {
+                return { id: crypto.randomUUID(), content: step };
+            }
+            const stepObj = step as LocalStep;
+            return { 
+                id: stepObj.id || crypto.randomUUID(), 
+                content: stepObj.content || "" 
+            };
+        }),
+
+        dietaryTags: plainData.dietaryTags || [],
+        
+        // Flag IA
+        isAiGenerated: true 
+    };
+
+    const result = await saveRecipeAction(payload);
 
     if (result.success) {
       toast.success("Recepta guardada correctament!");
@@ -103,7 +109,6 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
 
   return (
     <div id="tour-dec-results" className="space-y-6 w-full min-h-75">
-
       <div className="flex justify-between items-center">
         <div className="flex flex-col">
           <h3 className="text-xl font-black text-white flex items-center gap-2">
@@ -111,10 +116,7 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
           </h3>
           <p className="text-xs text-slate-400">Tria la que més t'agradi.</p>
         </div>
-        <button
-          onClick={onCancel}
-          className="text-xs font-bold text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-700 px-3 py-1.5 rounded-full transition-colors"
-        >
+        <button onClick={onCancel} className="text-xs font-bold text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-700 px-3 py-1.5 rounded-full transition-colors">
           Tancar
         </button>
       </div>
@@ -123,7 +125,7 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
         {recipes.map((recipe, idx) => {
           const isSaving = savingId === recipe.id;
           const safeName = recipe.name || "Recepta sense nom";
-          const emoji = getDishEmoji(safeName);
+          const emoji = getDishEmoji(safeName); 
 
           return (
             <div
@@ -153,9 +155,7 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
                 )}
               </div>
 
-              <h4 className="font-bold text-lg text-white mb-2 line-clamp-2">
-                {safeName}
-              </h4>
+              <h4 className="font-bold text-lg text-white mb-2 line-clamp-2">{safeName}</h4>
 
               <div className="flex flex-wrap gap-1 mb-4">
                 {recipe.ingredients?.slice(0, 3).map((ing, i) => (
@@ -163,11 +163,6 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
                     {ing.name}
                   </span>
                 ))}
-              </div>
-
-              <div className="mt-auto pt-3 border-t border-slate-800 flex justify-between">
-                <span className="text-[10px] uppercase font-bold text-purple-400">Cuinar</span>
-                <span className="text-slate-500 text-xs">➔</span>
               </div>
             </div>
           );

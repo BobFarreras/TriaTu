@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { toast } from 'sonner'; 
-import { saveRecipeAction } from '@/app/actions/recipes';
+import { saveRecipeAction } from '@/app/actions/recipe-actions';
 import { EditorData } from './types'; // ✅ Usamos solo el tipo correcto
 import { Dictionary } from '@/lib/i18n/dictionaries';
 

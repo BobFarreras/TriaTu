@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
-import { toggleFavoriteAction } from '@/app/actions/recipes'
+import { toggleFavoriteAction } from '@/app/actions/recipe-actions'
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 

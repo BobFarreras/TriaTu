@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { generateRecipesAction, cookRecipeAction } from '@/app/actions/recipes';
+import { generateRecipesAction, cookRecipeAction } from '@/app/actions/recipe-actions';
 import { RecipeProps } from '@/core/domain/entities/Recipe';
 import { toast } from 'sonner'; // O el sistema de notificacions que usis
 

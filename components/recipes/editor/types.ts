@@ -65,6 +65,7 @@ export interface EditorData {
   steps: RecipeStep[];
   dietaryTags: string[];
   difficulty: 'easy' | 'medium' | 'hard';
+  isAiGenerated?: boolean;
 }
 
 export interface IngredientsLabels {
