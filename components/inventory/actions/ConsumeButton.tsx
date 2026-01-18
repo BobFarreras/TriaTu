@@ -7,11 +7,12 @@ import { toast } from 'sonner';
 interface Props {
   itemId: string;
   currentQty: number;
+  onRefresh?: () => void; // ✅ NOVA PROP OPCIONAL
 }
 
-export function ConsumeButton({ itemId, currentQty }: Props) {
+export function ConsumeButton({ itemId, currentQty, onRefresh }: Props) {
   const [isPending, startTransition] = useTransition();
-  
+
   // Si queda 1 o menys, és l'últim
   const isLastItem = currentQty <= 1;
 
@@ -20,10 +21,19 @@ export function ConsumeButton({ itemId, currentQty }: Props) {
     startTransition(async () => {
       try {
         await consumeItemAction(itemId, 1);
+
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(isLastItem ? 50 : 20);
+          navigator.vibrate(isLastItem ? 50 : 20);
         }
+
+        // ✅ AQUESTA ÉS LA MÀGIA QUE ET FALTAVA
+        // Avisem al InventoryManager que torni a demanar les dades
+        if (onRefresh) {
+          onRefresh();
+        }
+
       } catch (error) {
+        console.log(error)
         toast.error("Error", { description: "Error al consumir" });
       }
     });
@@ -31,9 +41,9 @@ export function ConsumeButton({ itemId, currentQty }: Props) {
 
   // ESTILS BASE: Molt subtils (fons fosc transparent, sense vores fortes)
   const baseStyles = "relative flex items-center justify-center transition-all duration-200 overflow-hidden group z-20 backdrop-blur-sm";
-  
+
   // ESTATS DE COLOR (Només es noten al Hover)
-  const colorStyles = isLastItem 
+  const colorStyles = isLastItem
     ? "bg-black/20 hover:bg-red-900/30 text-slate-400 hover:text-red-300" // Acabar: Subtil -> Vermellós al hover
     : "bg-black/20 hover:bg-purple-900/30 text-slate-400 hover:text-white"; // Consumir: Subtil -> Blanc al hover
 

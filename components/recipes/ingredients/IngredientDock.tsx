@@ -60,7 +60,7 @@ export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: 
 
       {/* HEADER DESPLEGABLE */}
       {/* Fem que tot el header sigui clickable per millorar la UX en mòbil/escriptori */}
-      <button 
+      <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between px-4 py-3 border-b border-slate-800/50 bg-slate-900/50 hover:bg-slate-800/50 transition-colors w-full cursor-pointer focus:outline-none"
       >
@@ -69,16 +69,16 @@ export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: 
           <span className="bg-purple-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-purple-500/30">
             {ingredients.length}
           </span>
-          
+
           {/* Títol */}
           <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
             {labels.title}
           </span>
 
           {/* Fleta al costat del nom (Control visual d'estat) */}
-          <ChevronUp 
-            size={16} 
-            className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`} 
+          <ChevronUp
+            size={16}
+            className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
           />
         </div>
       </button>
@@ -86,7 +86,7 @@ export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: 
       {/* LLISTA D'INGREDIENTS (Contingut Collapsible) */}
       <motion.div
         initial={false}
-        animate={{ 
+        animate={{
           height: isExpanded ? 'auto' : 0,
           opacity: isExpanded ? 1 : 0
         }}
@@ -137,7 +137,8 @@ export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: 
                         {/* PREU VERD */}
                         {ing.estimatedCost && (
                           <span className="text-[9px] font-black text-emerald-400 bg-emerald-950/50 px-1 rounded">
-                            {ing.estimatedCost.toFixed(2)}€
+                            {/* ✅ CORRECCIÓ: Envoltem amb Number() per assegurar que és un número */}
+                            {Number(ing.estimatedCost).toFixed(2)}€
                           </span>
                         )}
                       </div>

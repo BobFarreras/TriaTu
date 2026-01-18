@@ -50,8 +50,8 @@ export function StepsBuilder({
         <button
           onClick={() => setMobileView('edit')}
           className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${mobileView === 'edit'
-              ? 'bg-slate-800 text-white shadow-sm'
-              : 'text-slate-500 hover:text-slate-300'
+            ? 'bg-slate-800 text-white shadow-sm'
+            : 'text-slate-500 hover:text-slate-300'
             }`}
         >
           <PenLine size={14} /> Editor
@@ -59,8 +59,8 @@ export function StepsBuilder({
         <button
           onClick={() => setMobileView('preview')}
           className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${mobileView === 'preview'
-              ? 'bg-slate-800 text-white shadow-sm'
-              : 'text-slate-500 hover:text-slate-300'
+            ? 'bg-slate-800 text-white shadow-sm'
+            : 'text-slate-500 hover:text-slate-300'
             }`}
         >
           <Eye size={14} /> Llista ({data.steps.length})
@@ -91,12 +91,16 @@ export function StepsBuilder({
           ${mobileView === 'edit' ? 'hidden lg:flex' : 'flex'}
       `}>
         <StepsList
-          steps={data.steps}
+          // ✅ CORRECCIÓ: Forcem que cada step tingui un id string per satisfer TS
+          steps={data.steps.map(step => ({
+            ...step,
+            id: step.id || crypto.randomUUID() // Si no hi ha ID, en creem un de temporal
+          }))}
           ingredients={data.ingredients}
           onReorder={handleReorder}
           onRemove={removeStep}
-          onEdit={handleEditClick} // ✅ Passem la funció d'editar
-          editingId={editingId}    // ✅ Passem l'ID actiu per marcar-lo visualment
+          onEdit={handleEditClick}
+          editingId={editingId}
           listEndRef={listEndRef}
           labels={labels}
         />

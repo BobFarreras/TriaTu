@@ -12,4 +12,6 @@ export interface ScannedItem {
   catalogImage?: string;   // Foto oficial del Bonpreu
   price?: number;          // Preu real
   matchConfidence?: number; // Com de segurs estem del match
+  confidence?: number;
+
 }

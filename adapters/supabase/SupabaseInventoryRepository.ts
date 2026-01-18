@@ -8,6 +8,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 interface InventoryItemRow {
   id: string;
   user_id: string;
+  room_id?: string | null; // <--- NOVA COLUMNA
   name: string;
   emoji: string | null;
   quantity: number;
@@ -16,7 +17,7 @@ interface InventoryItemRow {
   expiry_date: string | null;
   added_at: string;
   product_id: string | null;
-  
+
   // Camps "legacy" que podrien existir a la taula principal
   image?: string | null;
   image_url?: string | null;
@@ -73,12 +74,12 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     // Prioritat: Catàleg > Columna image_url > Columna image
     const catalogImage = row.product_catalog?.image_url;
     const directImage = row.image_url || row.image;
-    
+
     let finalImage = catalogImage || directImage || null;
 
     // Neteja: Evitem "Sí", "No" o strings que no siguin URLs
     if (finalImage && !finalImage.startsWith('http')) {
-        finalImage = null;
+      finalImage = null;
     }
 
     // 5. PREU
@@ -88,6 +89,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     return InventoryItem.create({
       id: row.id,
       userId: row.user_id,
+      roomId: row.room_id || undefined, // <--- MAPEGEM EL CONTEXT
       name: finalName,
       emoji: finalEmoji || undefined,
       quantity: Number(row.quantity),
@@ -105,6 +107,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     const row = {
       id: item.props.id,
       user_id: item.props.userId,
+      room_id: item.props.roomId || null, // <--- GUARDEM EL CONTEXT TAMBÉ AQUÍ
       name: item.props.name,
       emoji: item.props.emoji,
       quantity: item.props.quantity,
@@ -138,9 +141,9 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     return this.toDomain(data as unknown as InventoryItemRow);
   }
 
-  // ✅ CORREGIT: Ara usa this.supabase i reutilitza toDomain
-  async findByUser(userId: string): Promise<InventoryItem[]> {
-    const { data, error } = await this.supabase
+  // 🔍 CERCA PER CONTEXT (Usuari o Sala)
+  async findByContext(userId: string, roomId?: string): Promise<InventoryItem[]> {
+    let query = this.supabase
       .from('inventory_items')
       .select(`
         *,
@@ -149,46 +152,41 @@ export class SupabaseInventoryRepository implements InventoryRepository {
             price,
             emoji
         )
-      `)
-      .eq('user_id', userId)
-      .order('expiry_date', { ascending: true, nullsFirst: false });
+      `);
+
+    if (roomId) {
+      // MODE SALA: Filtrem per la sala
+      console.log(`📦 [Repo] Fetching ROOM inventory: ${roomId}`);
+      query = query.eq('room_id', roomId);
+    } else {
+      // MODE PERSONAL: Filtrem per usuari I que NO tingui sala
+      console.log(`👤 [Repo] Fetching PERSONAL inventory: ${userId}`);
+      query = query.eq('user_id', userId).is('room_id', null);
+    }
+
+    // Ordenació per defecte
+    query = query.order('expiry_date', { ascending: true, nullsFirst: false });
+
+    const { data, error } = await query;
 
     if (error) throw new Error(error.message);
     if (!data) return [];
 
-    // ✅ Càsting segur per evitar 'row: any'
     const rows = data as unknown as InventoryItemRow[];
-    
-    // Ara toDomain s'encarrega de la màgia de les imatges
     return rows.map(row => this.toDomain(row));
   }
+
+  // (Opcional) Wrapper de compatibilitat si no vols canviar tot el codi de cop
+  // async findByUser(userId: string): Promise<InventoryItem[]> {
+  //    return this.findByContext(userId);
+  // }
 
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase.from('inventory_items').delete().eq('id', id);
     if (error) throw new Error(error.message);
   }
 
-  async findExpiringSoon(userId: string, daysThreshold: number): Promise<InventoryItem[]> {
-    const now = new Date();
-    const thresholdDate = new Date();
-    thresholdDate.setDate(now.getDate() + daysThreshold);
-
-    const { data, error } = await this.supabase
-      .from('inventory_items')
-      .select(`
-        *,
-        product_catalog ( image_url, price, emoji ) 
-      `)
-      .eq('user_id', userId)
-      .lte('expiry_date', thresholdDate.toISOString())
-      .gte('expiry_date', now.toISOString())
-      .order('expiry_date', { ascending: true });
-
-    if (error) throw new Error(error.message);
-
-    const rows = data as unknown as InventoryItemRow[];
-    return rows.map(row => this.toDomain(row));
-  }
+  
 
   async batchUpdate(updates: { id: string; quantity: number }[]): Promise<void> {
     const promises = updates.map(update =>
@@ -209,6 +207,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     const rows = items.map(item => ({
       id: item.props.id,
       user_id: item.props.userId,
+      room_id: item.props.roomId || null, // <--- GUARDEM EL CONTEXT TAMBÉ AQUÍ
       name: item.props.name,
       emoji: item.props.emoji,
       quantity: item.props.quantity,
@@ -225,5 +224,32 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       console.error('Error batch saving items:', error);
       throw new Error(`Database error: ${error.message}`);
     }
+  }
+  async findExpiringSoon(userId: string, daysThreshold: number, roomId?: string): Promise<InventoryItem[]> {
+    const now = new Date();
+    const thresholdDate = new Date();
+    thresholdDate.setDate(now.getDate() + daysThreshold);
+
+    let query = this.supabase
+      .from('inventory_items')
+      .select(`
+        *,
+        product_catalog ( image_url, price, emoji ) 
+      `)
+      .lte('expiry_date', thresholdDate.toISOString())
+      .gte('expiry_date', now.toISOString())
+      .order('expiry_date', { ascending: true });
+
+    if (roomId) {
+      query = query.eq('room_id', roomId);
+    } else {
+      query = query.eq('user_id', userId).is('room_id', null);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+
+    const rows = data as unknown as InventoryItemRow[];
+    return rows.map(row => this.toDomain(row));
   }
 }

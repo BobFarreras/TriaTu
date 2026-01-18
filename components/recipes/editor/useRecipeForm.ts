@@ -46,9 +46,9 @@ type FeedbackState = {
 
 // ✅ Modifiquem la signatura per acceptar 'initialData' (Opcional)
 export function useRecipeForm(
-    labels: Dictionary['create_recipe'], 
-    setActiveTab: (tab: 'ingredients' | 'steps') => void,
-    initialData?: EditorData // ✅ Paràmetre nou per a edició
+  labels: Dictionary['create_recipe'],
+  setActiveTab: (tab: 'ingredients' | 'steps') => void,
+  initialData?: EditorData // ✅ Paràmetre nou per a edició
 ) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -65,12 +65,14 @@ export function useRecipeForm(
 
   // ✅ INICIALITZACIÓ DE L'ESTAT (Create vs Edit)
   // Si tenim initialData (Edició), l'ussem. Si no, valors per defecte (Creació).
+  // ✅ CORRECCIÓ 1: Afegim 'tags' als valors per defecte
   const [data, setData] = useState<EditorData>(initialData || {
     name: '',
     prepTimeMinutes: 30,
     ingredients: [],
     steps: [],
     dietaryTags: [],
+    tags: [], // 👈 AFEGEIX AIXÒ per arreglar l'error TS(2345)
     description: '',
     servings: 2,
     difficulty: 'medium'
@@ -115,20 +117,22 @@ export function useRecipeForm(
     }
 
     // ✅ 2. PREPARAR DADES: TRADUCCIÓ DE TAGS
+    // ✅ CORRECCIÓ 2: Mantenir la integritat del tipus al crear el payload
     const translatedTags = data.dietaryTags.map(tag => DB_TAGS_MAPPING[tag] || tag);
 
     const payload: EditorData = {
       ...data,
-      dietaryTags: translatedTags
+      dietaryTags: translatedTags,
+      // tags: data.tags // Ja es copia amb l'spread (...data), però TS estarà content
     };
 
     setLoading(true);
-    
+
     // ✅ CRIDA A LA NOVA ACCIÓ CENTRALITZADA
     // Si estem editant, assegura't que l'acció (saveRecipeAction) gestioni l'Update si rep un ID,
     // o crea una updateRecipeAction separada. Per ara mantenim la lògica original.
     const result = await saveRecipeAction(payload);
-    
+
     setLoading(false);
 
     if (result.success) {
@@ -144,6 +148,6 @@ export function useRecipeForm(
 
   return {
     data, setData, loading, errors, handleSave,
-    feedback, closeFeedback 
+    feedback, closeFeedback
   };
 }

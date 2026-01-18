@@ -23,6 +23,7 @@ export interface SaveRecipeInput {
   id?: string;
   name: string;
   prepTimeMinutes: number | string;
+  
   ingredients: {
     id?: string;
     name: string;

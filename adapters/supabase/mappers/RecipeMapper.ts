@@ -40,16 +40,20 @@ export interface RecipeWithJoins extends RecipeDBModel {
 export class RecipeMapper {
 
     // ➡️ TO PERSISTENCE
+    // ➡️ TO PERSISTENCE
     static toPersistence(recipe: Recipe) {
+        // Corregim el mapeig per evitar passar nulls a IngredientJSON
         const ingredientsPayload: IngredientJSON[] = recipe.ingredients.map(i => ({
             id: i.id,
             name: i.name,
             quantity: i.quantity,
             unit: i.unit,
             emoji: i.emoji || '🥘',
-            linkedProductId: i.linkedProductId,
-            linkedProductImage: i.linkedProductImage,
-            estimatedCost: i.estimatedCost
+            // Convertim null/undefined a undefined per complir amb IngredientJSON
+            linkedProductId: i.linkedProductId ?? undefined,
+            linkedProductImage: i.linkedProductImage ?? undefined,
+            // Assegurem que estimatedCost sigui number
+            estimatedCost: typeof i.estimatedCost === 'string' ? Number(i.estimatedCost) : i.estimatedCost
         }));
 
         return {
@@ -74,7 +78,7 @@ export class RecipeMapper {
     // ⬅️ TO DOMAIN
     static toDomain(row: RecipeWithJoins): Recipe {
         const rawIngredients = (Array.isArray(row.ingredients) ? row.ingredients : []) as IngredientJSON[];
-        
+
         const validIngredients: Ingredient[] = rawIngredients
             .map((i) => ({
                 id: i.id,

@@ -10,7 +10,7 @@ import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
 // --- MOCKS ---
 
 const mockInventoryRepo = {
-    findByUser: vi.fn()
+    findByContext: vi.fn()
 };
 const mockRecipeRepo = {
     findMatches: vi.fn()
@@ -85,7 +85,7 @@ describe('GenerateMenuService', () => {
 
     it('FATE: Hauria d\'utilitzar les preferències de l\'usuari i ignorar la BD', async () => {
         // 1. Setup: Inventari
-        mockInventoryRepo.findByUser.mockResolvedValue([mockInventoryItem]);
+        mockInventoryRepo.findByContext.mockResolvedValue([mockInventoryItem]);
 
         // 2. Setup: Perfil Usuari (Supabase)
         const mockProfileData = {
@@ -132,7 +132,7 @@ describe('GenerateMenuService', () => {
             })
         } as unknown);
 
-        mockInventoryRepo.findByUser.mockResolvedValue([mockInventoryItem]);
+        mockInventoryRepo.findByContext.mockResolvedValue([mockInventoryItem]);
         
         // Simulem que la BD troba 0 resultats
         mockRecipeRepo.findMatches.mockResolvedValue([]);

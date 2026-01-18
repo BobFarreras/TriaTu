@@ -1,8 +1,9 @@
 // src/hooks/useRoomSimulation.ts
 import { useState, useEffect } from 'react';
 import { CandidateDTO } from '@/features/rooms/ui/DecisionControls';
-import { HistoryItem } from '@/features/rooms/ui/HistoryList';
+
 import { RoomDTO } from '@/features/rooms/ui/RoomDetail';
+import { HistoryItem } from '../ui/history/types';
 
 /**
  * Hook personalitzat que gestiona tota la lògica "fake" del tour d'onboarding.

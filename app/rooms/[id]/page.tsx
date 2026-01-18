@@ -46,6 +46,14 @@ export default async function RoomPage({ params }: PageProps) {
   const candidateRepo = new SupabaseCandidateRepository();
   const candidates = await candidateRepo.getAllForRoom(id);
 
+  const { data: rawRoom } = await supabase
+    .from('decision_rooms')
+    .select('enable_inventory')
+    .eq('id', room.id)
+    .single();
+
+  const enableInventory = rawRoom?.enable_inventory ?? false;
+
   // 5. Mapeig a DTOs per a la UI (Presentation Layer)
   const roomDTO: RoomDTO = {
     id: room.id,
@@ -54,7 +62,7 @@ export default async function RoomPage({ params }: PageProps) {
     votingMode: room.votingMode,
     inviteCode: room.inviteCode,
     participants: room.participants.map(p => ({ userId: p.userId })),
-
+    enableInventory: enableInventory, // <--- ✅ PASSEM LA DADA REAL F
     // ✅ CORRECCIÓ CLAU: Ara passem la metadata al DTO
     // ✅ CORRECCIÓ: Tipem explícitament 'h'
     history: room.history.map((h) => {

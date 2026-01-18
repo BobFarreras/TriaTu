@@ -42,7 +42,7 @@ export async function toggleIngredientStockAction(
     const inventoryRepo = container.getInventoryRepo(supabase);
 
     // 1. Busquem l'ítem (Case insensitive)
-    const allItems = await inventoryRepo.findByUser(userId);
+    const allItems = await inventoryRepo.findByContext(userId);
     const item = allItems.find(i => 
         i.name.toLowerCase() === ingredientName.toLowerCase() || // Prioritzem match exacte
         i.name.toLowerCase().includes(ingredientName.toLowerCase()) || 

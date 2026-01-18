@@ -25,7 +25,7 @@ export class GenerateMenuService {
         console.log(`🧠 [Orchestrator] Iniciant estratègia HÍBRIDA (${mode})...`);
 
         // 1. CARREGAR DADES USUARI (Inventari + Perfil complet)
-        const inventory = await this.inventoryRepo.findByUser(userId);
+        const inventory = await this.inventoryRepo.findByContext(userId);
         const supabase = await createClient();
         
         // Recuperem tant les exclusions com les preferències de menjar

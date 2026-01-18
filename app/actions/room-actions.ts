@@ -10,8 +10,13 @@ import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandida
 import { Dictionary } from '@/lib/i18n/dictionaries';
 import { checkRoomDailyLimit } from '@/lib/security/decision-limit';
 
-import { CreateRoomSchema, ParticipantActionSchema} from '@/core/application/schemas/inputSchemas';
+import { CreateRoomSchema, ParticipantActionSchema } from '@/core/application/schemas/inputSchemas';
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
+// --- GESTIÓ D'IDIOMA ---
+import { ca } from '@/lib/i18n/locales/ca';
+import { es } from '@/lib/i18n/locales/es';
+import { en } from '@/lib/i18n/locales/en';
+import { RecipeEnricherService } from '@/core/services/RecipeEnrocherSercie';
 
 
 
@@ -32,12 +37,14 @@ type CreateRoomResult = {
   error?: string;
 };
 
-
-// --- GESTIÓ D'IDIOMA ---
-import { ca } from '@/lib/i18n/locales/ca';
-import { es } from '@/lib/i18n/locales/es';
-import { en } from '@/lib/i18n/locales/en';
-import { RecipeEnricherService } from '@/core/services/RecipeEnrocherSercie';
+// Definim el tipus exacte del que ens retorna Supabase
+interface RoomParticipantRow {
+  room: {
+    id: string;
+    name: string;
+    enable_inventory: boolean;
+  } | null;
+}
 
 // ✅ TIPATGE SEGUR: Definim el tipus del diccionari per evitar 'any'
 const DICTIONARIES: Record<string, Dictionary> = { ca, es, en };
@@ -257,7 +264,7 @@ export async function makeGroupDecisionAction(
       try {
         console.log(`✨ [ENRICH] Millorant la recepta guanyadora: "${winnerRecipe.name}"...`);
         winnerRecipe = await RecipeEnricherService.enrichRecipe(winnerRecipe);
-        
+
         const finalCost = winnerRecipe.estimatedCost || 0;
         console.log(`   💰 Cost calculat: ${finalCost.toFixed(2)}€`);
       } catch (err) {
@@ -302,22 +309,22 @@ export async function makeGroupDecisionAction(
 
     // 🔥 3. ROTACIÓ AUTOMÀTICA (Mantenir màxim 10) 🔥
     const { data: allHistory } = await supabase
-        .from('group_decisions')
-        .select('id')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: false }); // Més recents primer
+      .from('group_decisions')
+      .select('id')
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: false }); // Més recents primer
 
     if (allHistory && allHistory.length > 10) {
-        // Agafem els IDs a partir de la posició 10 (els més vells)
-        const idsToDelete = allHistory.slice(10).map(d => d.id);
-        
-        if (idsToDelete.length > 0) {
-            console.log(`🧹 [AUTO-CLEANUP] Eliminant ${idsToDelete.length} decisions antigues...`);
-            await supabase
-                .from('group_decisions')
-                .delete()
-                .in('id', idsToDelete);
-        }
+      // Agafem els IDs a partir de la posició 10 (els més vells)
+      const idsToDelete = allHistory.slice(10).map(d => d.id);
+
+      if (idsToDelete.length > 0) {
+        console.log(`🧹 [AUTO-CLEANUP] Eliminant ${idsToDelete.length} decisions antigues...`);
+        await supabase
+          .from('group_decisions')
+          .delete()
+          .in('id', idsToDelete);
+      }
     }
 
     revalidatePath(`/rooms/${roomId}`);
@@ -327,4 +334,77 @@ export async function makeGroupDecisionAction(
     console.error("❌ Room Action Error:", error);
     return { success: false, error: "Error en la decisió grupal" };
   }
+
+}
+export async function getMyInventoryRoomsAction() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  // Tipem la resposta com a array de RoomParticipantRow
+  const { data, error } = await supabase
+    .from('room_participants')
+    .select(`
+      room:decision_rooms (
+        id,
+        name,
+        enable_inventory 
+      )
+    `)
+    .eq('user_id', user.id)
+    .returns<RoomParticipantRow[]>(); // <--- Tipatge fort
+
+  if (error) {
+    console.error("Error fetching rooms:", error);
+    return [];
+  }
+
+  if (!data) return [];
+  const availableRooms = data
+    .map((row) => row.room)
+    // ✅ CORRECCIÓ: Fem servir 'room' (l'argument), no 'row'
+    .filter((room): room is NonNullable<typeof room> =>
+      room !== null && room.enable_inventory === true
+    )
+    .map((room) => ({
+      id: room.id,
+      name: room.name
+    }));
+
+
+
+  return availableRooms;
+}
+
+export async function toggleRoomFeatureAction(roomId: string, feature: 'INVENTORY' | 'SHOPPING', isEnabled: boolean) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  // 1. Verifiquem que l'usuari és el HOST de la sala (Seguretat)
+  const { data: room } = await supabase
+    .from('decision_rooms')
+    .select('host_user_id')
+    .eq('id', roomId)
+    .single();
+
+  if (!room || room.host_user_id !== user.id) {
+    return { success: false, error: "Només l'administrador pot canviar això." };
+  }
+
+  // 2. Mapegem la feature a la columna de la BD
+  const column = feature === 'INVENTORY' ? 'enable_inventory' : 'enable_shopping_list'; // (Si tens llista compra)
+
+  // 3. Actualitzem
+  const { error } = await supabase
+    .from('decision_rooms')
+    .update({ [column]: isEnabled })
+    .eq('id', roomId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath(`/rooms/${roomId}`);
+  return { success: true };
 }

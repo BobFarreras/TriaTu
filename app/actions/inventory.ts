@@ -4,30 +4,31 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/adapters/supabase/server';
-import { container } from '@/services/container'; // ✅ Importem el contenidor
+import { container } from '@/services/container';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
-import { InventoryItem } from '@/core/domain/entities/InventoryItem';
+import { InventoryItem } from '@/core/domain/entities/InventoryItem'; // Assegura't que l'Entity ja té roomId al constructor!
 import { FOOD_PRESETS } from '@/lib/food-presets';
-import { ExpirySafetyService } from '@/core/services/ExpirySafetyService'; // ✅ IMPRESCINDIBLE
-import { EmojiMatcherService } from '@/core/services/EmojiMarcherService'; // ✅ Importar
+import { ExpirySafetyService } from '@/core/services/ExpirySafetyService';
+import { EmojiMatcherService } from '@/core/services/EmojiMarcherService';
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
 } from '@/core/application/schemas/inputSchemas';
+
 // Definim què retornem a la UI (Serialitzable, sense classes)
 export interface ProductResult {
-  id: string; // El nostre ID de Supabase o temporal
+  id: string;
   name: string;
   price: number;
   image: string;
   source: string;
   emoji: string;
   tags: string[];
-  // ✅ AFEGEIX AQUESTS DOS CAMPS NOUS:
   quantityAmount?: number;
   quantityUnit?: string;
 }
-// --- HELPERS (Es queden igual) ---
+
+// --- HELPERS ---
 function calculateExpiryDate(name: string, emoji?: string): Date | undefined {
   const now = new Date();
   const preset = FOOD_PRESETS.find(p =>
@@ -42,47 +43,66 @@ function calculateExpiryDate(name: string, emoji?: string): Date | undefined {
   return undefined;
 }
 
-const BatchInventorySchema = z.array(InventoryItemSchema.omit({ userId: true }));
+// Actualitzem l'schema per acceptar roomId
+const BatchInventorySchema = z.array(InventoryItemSchema.omit({ userId: true }).extend({ roomId: z.string().optional() }));
+
 function getZodError(error: z.ZodError<unknown>): string { return error.issues[0]?.message || "Dades invàlides"; }
 function getErrorMessage(error: unknown): string { return error instanceof Error ? error.message : String(error); }
 
+// ------------------------------------------------------------------
+// 0. GET INVENTORY (NOVA ACCIÓ PER LLISTAR)
+// ------------------------------------------------------------------
+export async function getInventoryAction(roomId?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  try {
+    const repo = container.getInventoryRepo(supabase);
+    // Cridem al nou mètode del repo que vam crear al pas anterior
+    const items = await repo.findByContext(user.id, roomId);
+
+    // Serialitzem dates per al client
+    const serialized = items.map(i => ({
+      ...i.toPrimitives(),
+      expiryDate: i.expiryDate ? i.expiryDate.toISOString() : null,
+      addedAt: i.addedAt.toISOString(),
+      roomId: i.roomId || undefined
+    }));
+
+    return { success: true, data: serialized };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+// ------------------------------------------------------------------
+// 1. ADD ITEM (Amb suport Room)
+// ------------------------------------------------------------------
 export async function addItemAction(formData: FormData) {
   try {
-    // 1. Obtenim el client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
-    // 2. Recuperem camps clau per a la lògica de seguretat
-
     const name = String(formData.get('name') || 'Producte');
-    let emoji = formData.get('emoji')?.toString() || '📦'; // Emoji que ve del form
+    let emoji = formData.get('emoji')?.toString() || '📦';
+    const roomId = formData.get('roomId')?.toString() || undefined; // <--- LLEGIM EL CONTEXT
 
-    // ✨ ENRIQUIMENT D'EMOJI
-    // Si l'emoji és el genèric o volem assegurar-nos que és el millor:
+    // ENRIQUIMENT EMOJI
     if (emoji === '📦' || emoji === '🛒') {
       const betterEmoji = EmojiMatcherService.getEmoji(name);
-      if (betterEmoji !== '📦') {
-        emoji = betterEmoji;
-        console.log(`✨ [SERVER] Emoji millorat per "${name}": ${emoji}`);
-      }
+      if (betterEmoji !== '📦') emoji = betterEmoji;
     }
+
     const location = String(formData.get('location') || 'PANTRY');
     let expiryString = formData.get('expiryDate')?.toString();
 
-    // 🛡️ SEGURETAT: Si no arriba data (o és invàlida), la calculem nosaltres
+    // SEGURETAT DATA
     if (!expiryString || expiryString === 'null' || expiryString === 'undefined' || expiryString === '') {
-      console.log(`🛡️ [SERVER] Data absent. Calculant data segura per: ${name}`);
-
-      // El servei ens torna "YYYY-MM-DD"
       const safeDateYMD = ExpirySafetyService.applySafetyRules(name, location, undefined);
-
-      // La passem a ISO per a Zod i BBDD ("YYYY-MM-DDTHH:mm:ss.sssZ")
       expiryString = new Date(safeDateYMD).toISOString();
     }
-
-    // 🔴 LOG 1: Dades crues
-    console.log("🔍 [ACTION] Processing item:", { name, location, expiryString });
 
     const rawData = {
       userId: user.id,
@@ -90,45 +110,49 @@ export async function addItemAction(formData: FormData) {
       quantity: Number(formData.get('quantity')),
       unit: formData.get('unit'),
       location: location,
-      // Ara expiryString segur que té valor (o el del form, o el calculat)
       expiryDate: expiryString,
-      emoji: formData.get('emoji'),
-      // ✅ AFEGIT: Llegim el productId del formData
+      emoji: emoji,
       productId: formData.get('productId') && formData.get('productId') !== 'null'
         ? String(formData.get('productId'))
-        : null
+        : null,
+      roomId: roomId // <--- PASSEM EL ROOM ID AL VALIDATOR
     };
 
-    // 🔴 LOG 2: Validació
-    const validation = InventoryItemSchema.safeParse(rawData);
+    // Necessitem estendre l'schema base per acceptar roomId si no ho fa
+    const validation = InventoryItemSchema.extend({ roomId: z.string().optional() }).safeParse(rawData);
 
     if (!validation.success) {
-      console.error("❌ [ACTION] Zod Validation Error:", validation.error);
       return { success: false, error: getZodError(validation.error) };
     }
 
     const finalData = validation.data;
-
-    // Convertim a objecte Date real (Zod ja ha garantit que l'string és ISO vàlid)
-    // Nota: Com que hem forçat el càlcul a dalt, finalData.expiryDate sempre tindrà valor
     const finalExpiryDate = finalData.expiryDate ? new Date(finalData.expiryDate) : undefined;
 
-    // ✅ 3. USEM EL CONTENIDOR
-    const useCase = container.getAddItem(supabase);
+    // USEM EL REPO DIRECTAMENT (O UseCase actualitzat)
+    // Per simplificar i evitar tocar 10 arxius de UseCase, aquí cridarem al Repo,
+    // ja que AddItemUseCase potser no espera roomId.
+    // L'ideal seria actualitzar AddItemUseCase, però com que el Repo ja és llest:
+    const repo = container.getInventoryRepo(supabase);
 
-    await useCase.execute({
+    const newItem = InventoryItem.create({
+      id: crypto.randomUUID(),
       userId: user.id,
+      roomId: finalData.roomId || null, // <--- AQUI ES GUARDA LA MAAGIA
       name: String(finalData.name),
       quantity: Number(finalData.quantity),
       unit: String(finalData.unit),
       location: finalData.location as StorageLocation,
       expiryDate: finalExpiryDate,
-      emoji: String(finalData.emoji || '📦'),
+      emoji: String(finalData.emoji),
       addedAt: new Date(),
       productId: finalData.productId
     });
 
-    revalidatePath('/inventory');
+    await repo.save(newItem);
+
+    revalidatePath('/dashboard/inventory');
+    if (roomId) revalidatePath(`/rooms/${roomId}`); // Revalidar sala si cal
+
     return { success: true };
 
   } catch (error: unknown) {
@@ -138,18 +162,20 @@ export async function addItemAction(formData: FormData) {
 }
 
 // ------------------------------------------------------------------
-// 2. CONSUME ITEM
+// 2. CONSUME ITEM (Sense canvis, l'ID és únic)
 // ------------------------------------------------------------------
 export async function consumeItemAction(itemId: string, amount: number) {
   try {
     const validation = ConsumeItemSchema.safeParse({ itemId, amount });
     if (!validation.success) return { success: false, error: getZodError(validation.error) };
 
-    const supabase = await createClient(); // 1. Client
-    const useCase = container.getConsumeItem(supabase); // 2. Container
-
+    const supabase = await createClient();
+    const useCase = container.getConsumeItem(supabase);
+    // El UseCase només necessita l'ID. El Repo trobarà l'item sigui de sala o usuari.
     await useCase.execute(validation.data.itemId, validation.data.amount);
 
+    // ✅ AFEGEIX AIXÒ AL FINAL DE TOT:
+    // Això obliga a Next.js a refrescar les dades de la ruta /inventory automàticament
     revalidatePath('/inventory');
     return { success: true };
   } catch (error: unknown) {
@@ -160,7 +186,7 @@ export async function consumeItemAction(itemId: string, amount: number) {
 // ------------------------------------------------------------------
 // 3. UPDATE ITEM
 // ------------------------------------------------------------------
-interface UpdateItemDTO { id: string; name: string; quantity: number; unit: string; emoji: string; expiryDate?: Date | null; location?: string; }
+interface UpdateItemDTO { id: string; name: string; quantity: number; unit: string; emoji: string; expiryDate?: Date | null; location?: string; roomId?: string; }
 
 export async function updateItemAction(item: UpdateItemDTO) {
   try {
@@ -170,21 +196,27 @@ export async function updateItemAction(item: UpdateItemDTO) {
 
     if (!item.id || !item.name) throw new Error("Dades incompletes");
 
-    const useCase = container.getUpdateItem(supabase); // ✅ Container
+    const repo = container.getInventoryRepo(supabase);
 
-    await useCase.execute({
-      id: item.id,
-      userId: user.id,
+    // Recuperem l'item original per no perdre el roomId
+    const existing = await repo.findById(item.id);
+    if (!existing) throw new Error("Item not found");
+
+    // Creem la nova versió (Immutable)
+    const updated = InventoryItem.create({
+      ...existing.toPrimitives(), // Mantenim dades velles (com addedAt, roomId, userId)
       name: item.name,
       emoji: item.emoji || '📦',
       quantity: item.quantity,
       unit: item.unit,
       location: (item.location as StorageLocation) || StorageLocation.PANTRY,
-      expiryDate: item.expiryDate ? item.expiryDate : undefined,
-      addedAt: new Date()
+      expiryDate: item.expiryDate || undefined,
+      // roomId es manté de l'original a toPrimitives(), o el pots forçar si volguessis moure'l
     });
 
-    revalidatePath('/inventory');
+    await repo.save(updated);
+
+    revalidatePath('/dashboard/inventory');
     return { success: true };
   } catch (error: unknown) {
     return { success: false, error: getErrorMessage(error) };
@@ -192,18 +224,18 @@ export async function updateItemAction(item: UpdateItemDTO) {
 }
 
 // ------------------------------------------------------------------
-// 4. DELETE ITEM
+// 4. DELETE ITEM (Igual)
 // ------------------------------------------------------------------
 export async function deleteItemAction(itemId: string) {
   try {
     if (!itemId) return { success: false, error: "ID invàlid" };
 
     const supabase = await createClient();
-    const useCase = container.getDeleteItem(supabase); // ✅ Container
-
+    // Aquí podríem usar el Repo directament també
+    const useCase = container.getDeleteItem(supabase);
     await useCase.execute(itemId);
 
-    revalidatePath('/inventory');
+    revalidatePath('/dashboard/inventory');
     return { success: true };
   } catch (error: unknown) {
     return { success: false, error: getErrorMessage(error) };
@@ -222,8 +254,6 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
     const validation = BatchInventorySchema.safeParse(items);
     if (!validation.success) return { success: false, error: getZodError(validation.error) };
 
-    // ✅ Aquí necessitem el Repositori directament, no un UseCase.
-    // El contenidor també ens el pot donar!
     const repo = container.getInventoryRepo(supabase);
 
     const entities = validation.data.map(d => {
@@ -235,6 +265,7 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
       return InventoryItem.create({
         id: crypto.randomUUID(),
         userId: user.id,
+        roomId: d.roomId || null, // <--- AQUI TAMBÉ
         name: d.name,
         quantity: d.quantity,
         unit: d.unit,
@@ -243,30 +274,30 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
         emoji: d.emoji || '📦',
         addedAt: new Date(),
         productId: d.productId
-
       });
     });
 
     await repo.saveBatch(entities);
 
-    revalidatePath('/inventory');
+    revalidatePath('/dashboard/inventory');
     return { success: true };
 
   } catch (error: unknown) {
     console.error('Error in addBatchItemsAction:', error);
     return { success: false, error: getErrorMessage(error) };
   }
-
 }
 
-
-// ✅ Acceptem 'productId' com a 5è argument opcional
+// ------------------------------------------------------------------
+// 6. QUICK ADD
+// ------------------------------------------------------------------
 export async function quickAddInventoryAction(
-    name: string, 
-    quantity: number, 
-    unit: string, 
-    emoji?: string,
-    productId?: string
+  name: string,
+  quantity: number,
+  unit: string,
+  emoji?: string,
+  productId?: string,
+  roomId?: string // <--- NOU PARÀMETRE
 ) {
   try {
     const supabase = await createClient();
@@ -276,23 +307,25 @@ export async function quickAddInventoryAction(
     const expiryYMD = ExpirySafetyService.applySafetyRules(name, 'PANTRY', undefined);
     const expiryDate = new Date(expiryYMD);
 
-    const useCase = container.getAddItem(supabase);
+    const repo = container.getInventoryRepo(supabase);
 
-    await useCase.execute({
+    const newItem = InventoryItem.create({
+      id: crypto.randomUUID(),
       userId: user.id,
+      roomId: roomId || null, // <--- GUARDEM
       name: name,
       quantity: quantity,
       unit: unit,
-      // ✅ FIX: Fem servir l'Enum en lloc de l'string 'PANTRY'
-      // Si el teu enum es diu diferent (ex: StorageLocation.Rebost), canvia-ho.
-      location: StorageLocation.PANTRY, 
+      location: StorageLocation.PANTRY,
       expiryDate: expiryDate,
       emoji: emoji || '📦',
       addedAt: new Date(),
       productId: productId || null
     });
 
-    revalidatePath('/inventory');
+    await repo.save(newItem);
+
+    revalidatePath('/dashboard/inventory');
     return { success: true };
 
   } catch (error) {
@@ -301,23 +334,17 @@ export async function quickAddInventoryAction(
   }
 }
 
+// ------------------------------------------------------------------
+// 7. SEARCH (Igual, no depèn de la sala)
+// ------------------------------------------------------------------
 export async function searchProductsAction(query: string): Promise<{ success: boolean, data?: ProductResult[], error?: string }> {
-  if (!query || query.length < 3) {
-    return { success: true, data: [] };
-  }
+  if (!query || query.length < 3) return { success: true, data: [] };
 
   try {
-    // 1. Obtenim client segur
     const supabase = await createClient();
-
-    // 2. Injectem dependències (Aquí passa la màgia de la Cache)
     const searcher = container.getSearchAndCacheProducts(supabase);
-
-    // 3. Executem (Supabase? O Bonpreu? No ens importa!)
     const products = await searcher.execute(query);
 
-    // 4. Convertim Entitats de Domini -> Objectes Simples per a React
-    // (React no li agraden les classes amb mètodes a les props)
     const serialized = products.map(p => ({
       id: p.props.id,
       name: p.props.name,
@@ -329,14 +356,15 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
     }));
 
     return { success: true, data: serialized };
-
   } catch (error) {
     console.error("Error cercant productes:", error);
     return { success: false, error: "No s'ha pogut completar la cerca." };
   }
 }
 
-// Afegeix aquesta funció nova:
+// ------------------------------------------------------------------
+// 8. DELETE BATCH (Igual)
+// ------------------------------------------------------------------
 export async function deleteBatchItemsAction(ids: string[]) {
   try {
     const supabase = await createClient();
@@ -344,13 +372,9 @@ export async function deleteBatchItemsAction(ids: string[]) {
     if (!user) throw new Error('Unauthorized');
 
     const repo = container.getInventoryRepo(supabase);
-
-    // Assumim que el teu repo té un mètode batchDelete. 
-    // Si no el tens al repo, fes un bucle de delete (més lent però funciona)
-    // O implementa batchDelete(ids) al Repository com vam veure abans.
     await repo.batchDelete(ids);
 
-    revalidatePath('/inventory');
+    revalidatePath('/dashboard/inventory');
     return { success: true };
   } catch (error: unknown) {
     return { success: false, error: getErrorMessage(error) };

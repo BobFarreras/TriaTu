@@ -13,7 +13,7 @@ import { TourTrigger } from '@/components/onboarding/TourTrigger';
 import { useRoomTour } from './components/useRoomTour';
 import { useRoomSimulation } from '@/features/rooms/hooks/useRoomSimulation'; // <--- NOU HOOK
 import { HistoryItem } from './history/types';
-
+import { RoomFeaturesPanel } from './RoomFeaturesPanel'; // <--- IMPORT NOU
 export type RoomDTO = {
   id: string;
   name: string;
@@ -22,6 +22,7 @@ export type RoomDTO = {
   participants: { userId: string }[];
   history: HistoryItem[];
   votingMode: 'BLIND' | 'PUBLIC';
+  enableInventory: boolean; // <--- ✅ AFEGEIX AIXÒ
 };
 
 interface RoomDetailProps {
@@ -33,9 +34,9 @@ interface RoomDetailProps {
 export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetailProps) {
   // 1. Infrastructure Hooks
   useRealtimeRoom(room.id);
-  
+
   const { t } = useLanguage();
- 
+
 
   // 2. Local UI State
   const [mode, setMode] = useState<'magic' | 'manual'>('manual');
@@ -89,7 +90,14 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
           onCopyCode={handleShare}
         />
       </div>
-
+      {/* 🔥 AFEGIM EL PANELL DE FEATURES AQUÍ */}
+      <div className="mt-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <RoomFeaturesPanel
+          roomId={room.id}
+          isHost={isHost}
+          enableInventory={room.enableInventory}
+        />
+      </div>
       {/* TOUR TRIGGER */}
       <div className="fixed top-4 right-4 z-50">
         <TourTrigger tourId="room-guide" steps={steps} />

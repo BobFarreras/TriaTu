@@ -1,82 +1,117 @@
-// ARXIU: core/domain/entities/InventoryItem.ts
-
-import { StorageLocation } from './StorageLocation';
+import { StorageLocation } from "./StorageLocation";
 
 export interface InventoryItemProps {
   id: string;
   userId: string;
   name: string;
-  emoji?: string; // ✅ AFEGIT: Opcional, perquè potser no en té
   quantity: number;
   unit: string;
   location: StorageLocation;
-  expiryDate?: Date;
   addedAt: Date;
-  productId?: string | null;
-  image?: string; // Assegura't que tens image
-  price?: number; // ✅ AFEGEIX AIXÒ
+  
+  // ✅ CORRECCIÓ: Afegim '| null' explícitament per evitar l'error TS2322
+  expiryDate?: Date | null;
+  productId?: string | null; // Abans era només string, ara accepta null
+  roomId?: string | null;    // Abans era només string, ara accepta null
+  emoji?: string | null;
+  image?: string | null;
+  price?: number | null;
+}
+
+// L'error híbrid per a satisfer els tests i el codi antic
+export class InsufficientStockError extends Error {
+  constructor(info?: string | number, missing?: number) {
+    if (typeof info === 'number' && typeof missing === 'number') {
+         super(`Estoc insuficient. Tens ${info}, necessites ${missing}.`);
+    } else {
+         super("No hi ha prou estoc per consumir aquesta quantitat");
+    }
+    this.name = "InsufficientStockError";
+  }
 }
 
 export class InventoryItem {
-  public readonly props: InventoryItemProps;
+  public props: InventoryItemProps;
 
   private constructor(props: InventoryItemProps) {
     this.props = props;
   }
 
   public static create(props: InventoryItemProps): InventoryItem {
-    // Validació de quantitat (recorda: permetem 0, però no negatius)
-    // ✅ AFEGEIX AQUESTA VALIDACIÓ:
     if (props.quantity <= 0) {
-      throw new Error("La quantitat ha de ser positiva.");
+      throw new Error("La quantitat ha de ser positiva");
     }
-    if (!props.name || props.name.trim().length === 0) {
-      throw new Error("El nom de l'article no pot estar buit");
-    }
-    return new InventoryItem(props);
+
+    // Assegurem que les dates siguin objectes Date si existeixen
+    const safeProps = {
+        ...props,
+        addedAt: new Date(props.addedAt),
+        expiryDate: props.expiryDate ? new Date(props.expiryDate) : null
+    };
+
+    return new InventoryItem(safeProps);
   }
 
-  public updateQuantity(newQuantity: number): InventoryItem {
-    return InventoryItem.create({
-      ...this.props, // Això manté l'emoji si existeix
-      quantity: newQuantity
+  // Getters (Tipats correctament per acceptar nulls)
+  get id() { return this.props.id; }
+  get name() { return this.props.name; }
+  get quantity() { return this.props.quantity; }
+  get location() { return this.props.location; }
+  get userId() { return this.props.userId; }
+  get roomId() { return this.props.roomId; }
+  get emoji() { return this.props.emoji; }
+  get unit() { return this.props.unit; }
+  get expiryDate() { return this.props.expiryDate; }
+  get addedAt() { return this.props.addedAt; }
+  get productId() { return this.props.productId; } // Ara el getter ja no es queixarà
+
+  // ✅ Serialització correcta
+  public toPrimitives(): InventoryItemProps {
+    return { ...this.props };
+  }
+
+  // ✅ Mètode consume
+  public consume(amount: number): InventoryItem {
+    if (amount <= 0) throw new Error("La quantitat a consumir ha de ser positiva");
+    
+    if (amount > this.props.quantity) {
+      throw new InsufficientStockError(this.props.quantity, amount);
+    }
+
+    return new InventoryItem({
+      ...this.props,
+      quantity: Number((this.props.quantity - amount).toFixed(2))
     });
   }
 
-  // Getters
-  get id() { return this.props.id; }
-  get userId() { return this.props.userId; }
-  get name() { return this.props.name; }
-  get emoji() { return this.props.emoji; } // ✅ AFEGIT GETTER
-  get quantity() { return this.props.quantity; }
-  get unit() { return this.props.unit; }
-  get location() { return this.props.location; }
-  get expiryDate() { return this.props.expiryDate; }
-  get addedAt() { return this.props.addedAt; }
-  get productId() { return this.props.productId; }
+  // ✅ Mètode updateQuantity
+  public updateQuantity(newQuantity: number): InventoryItem {
+      if (newQuantity < 0) throw new Error("Quantitat negativa no permesa");
+      
+      return new InventoryItem({
+          ...this.props,
+          quantity: newQuantity
+      });
+  }
 
-  // Lògica de domini
   public isExpired(): boolean {
     if (!this.props.expiryDate) return false;
-    return this.props.expiryDate < new Date();
-  }
-
-  public isExpiringSoon(days: number): boolean {
-    if (!this.props.expiryDate) return false;
     const today = new Date();
-    const targetDate = new Date();
-    targetDate.setDate(today.getDate() + days);
-    return this.props.expiryDate <= targetDate && this.props.expiryDate >= today;
+    today.setHours(0, 0, 0, 0);
+    const expiry = new Date(this.props.expiryDate);
+    expiry.setHours(0, 0, 0, 0);
+    return expiry < today;
   }
-}
 
-// ARXIU: core/domain/entities/InventoryItem.ts
-
-
-// ✅ AFEGIR AL FINAL DEL FITXER:
-export class InsufficientStockError extends Error {
-  constructor(public readonly itemName: string, public readonly missingAmount: number) {
-    super(`No hi ha prou estoc de ${itemName}. Falten ${missingAmount}.`);
-    this.name = "InsufficientStockError";
+  public isExpiringSoon(daysThreshold: number = 3): boolean {
+    if (!this.props.expiryDate) return false;
+    if (this.isExpired()) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thresholdDate = new Date(today);
+    thresholdDate.setDate(today.getDate() + daysThreshold);
+    const expiry = new Date(this.props.expiryDate);
+    expiry.setHours(0, 0, 0, 0);
+    return expiry <= thresholdDate;
   }
 }

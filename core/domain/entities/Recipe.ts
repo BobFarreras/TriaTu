@@ -56,7 +56,10 @@ export class Recipe {
     get ratingSummary() { return this.props.ratingSummary; }
     get isPublic() { return this.props.isPublic; }
 
-
+// 🔥 GETTERS QUE FALTAVEN I QUE EL MAPPER NECESSITA
+    get createdAt() { return this.props.createdAt; }
+    get likesCount() { return this.props.likesCount; }
+    get authorName() { return this.props.authorName; }
 
     isSafeFor(restrictions: DietaryRestriction[]): boolean {
         if (!restrictions || restrictions.length === 0) return true;

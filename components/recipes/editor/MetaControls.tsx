@@ -72,7 +72,13 @@ export function MetaControls({
    };
 
    const adjustTime = (delta: number) => {
-      update({ ...data, prepTimeMinutes: Math.max(0, data.prepTimeMinutes + delta) });
+      // Convertim data.prepTimeMinutes a Number abans de sumar
+      const currentTime = Number(data.prepTimeMinutes) || 0;
+
+      update({
+         ...data,
+         prepTimeMinutes: Math.max(0, currentTime + delta)
+      });
    };
 
 

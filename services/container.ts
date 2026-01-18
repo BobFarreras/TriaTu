@@ -53,7 +53,7 @@ import { GetExpiringItems } from '@/core/usecases/inventory/GetExpiringItems';
 import { GetUserInventory } from '@/core/usecases/inventory/GetUserInventory';
 import { UpdateItem } from '@/core/usecases/inventory/UpdateItem';
 import { DeleteItem } from '@/core/usecases/inventory/DeleteItem';
-import { CookRecipe } from '@/core/usecases/inventory/CookRecipe';
+
 import { SearchAndCacheProducts } from '@/core/usecases/inventory/SearchAndCacheProducts';
 
 // USE CASES - RECIPES
@@ -66,13 +66,11 @@ import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
 import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
 import { GetShoppingHistory } from '@/core/application/shopping-list/GetShoppingHistory';
 
-import { InventoryRepository } from '@/core/ports/InventoryRepository';
-import { InventoryItem } from '@/core/domain/entities/InventoryItem';
+
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
 const foodKnowledgeService = new FoodKnowledgeService();
 const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
-const recipeMatcher = new RecipeMatcher();
 
 const geminiAdapter = new GeminiImageRecognizer();
 const openAIAdapter = new OpenAIImageRecognizer();
@@ -118,8 +116,7 @@ export const container = {
   getDeleteItem: (client: SupabaseClient) =>
     new DeleteItem(new SupabaseInventoryRepository(client)),
 
-  getCookRecipe: (client: SupabaseClient) =>
-    new CookRecipe(new SupabaseInventoryRepository(client), recipeMatcher),
+
 
   getInventoryRepo: (client: SupabaseClient) =>
     new SupabaseInventoryRepository(client),

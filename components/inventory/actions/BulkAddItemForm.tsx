@@ -16,22 +16,25 @@ interface CartItem {
   product: ProductResult;
   quantity: number;
 }
-
+interface BulkAddItemFormProps {
+  onClose: () => void;
+  activeRoomId?: string; // ✅ NOU PROP
+}
 // (La funció detectLocation la podem mantenir o usar la lògica dins del loop, 
 // però ExpirySafetyService ja fa la feina dura si li passem la ubicació)
 const detectLocation = (tags: string[] | undefined): StorageLocation => {
   if (!tags) return StorageLocation.PANTRY;
   const upperTags = tags.map(t => t.toUpperCase());
-  
+
   if (upperTags.includes('CONGELAT')) return StorageLocation.FREEZER;
   if (upperTags.includes('REFRIGERAT')) return StorageLocation.FRIDGE;
-  
+
   // Si no té tags, per defecte va al rebost (llevat que l'usuari ho canviï manualment després)
   return StorageLocation.PANTRY;
 };
 
-export function BulkAddItemForm({ onClose }: Props) {
-  
+export function BulkAddItemForm({ onClose, activeRoomId }: BulkAddItemFormProps) {
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -43,77 +46,72 @@ export function BulkAddItemForm({ onClose }: Props) {
 
   const handleSelect = (product: ProductResult) => {
     setCart(prev => {
-        const existing = prev.find(p => p.product.id === product.id);
-        if (existing) {
-            return prev.map(p => p.product.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
-        }
-        return [{ product, quantity: 1 }, ...prev];
+      const existing = prev.find(p => p.product.id === product.id);
+      if (existing) {
+        return prev.map(p => p.product.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
+      }
+      return [{ product, quantity: 1 }, ...prev];
     });
   };
-  
+
   const handleRemove = (id: string) => setCart(prev => prev.filter(p => p.product.id !== id));
 
   const handleSaveAll = async () => {
-     if (cart.length === 0) return;
-     setIsSaving(true);
+    if (cart.length === 0) return;
+    setIsSaving(true);
 
-     try {
-        const itemsPayload = cart.map(item => {
-            // 1. Detectem ubicació
-            const location = detectLocation(item.product.tags);
-            
-            // ✅ 2. CALCULEM LA DATA SEGURA (Això és el que faltava!)
-            // Passem: Nom, Ubicació i undefined (perquè no tenim data prèvia)
-            // El servei retornarà "+3 dies" per pollastre, "+6 mesos" per congelats, etc.
-            const safeExpiryDate = ExpirySafetyService.applySafetyRules(
-                item.product.name, 
-                location, 
-                undefined, // No tenim data de referència
-                item.product.tags // ✅ AFEGIT: Passem els tags del producte!
-            );
+    try {
+      const itemsPayload = cart.map(item => {
+        const location = detectLocation(item.product.tags);
 
-            // Convertim a ISO per al servidor
-            const isoDate = new Date(safeExpiryDate).toISOString();
+        const safeExpiryDate = ExpirySafetyService.applySafetyRules(
+          item.product.name,
+          location,
+          undefined,
+          item.product.tags
+        );
+        const isoDate = new Date(safeExpiryDate).toISOString();
 
-            return {
-                name: item.product.name,
-                quantity: item.quantity,
-                unit: 'ut', 
-                location: location, 
-                emoji: item.product.emoji,
-                productId: item.product.id,
-                expiryDate: isoDate // ✅ Enviem la data calculada
-            };
-        });
+        return {
+          name: item.product.name,
+          quantity: item.quantity,
+          unit: 'ut',
+          location: location,
+          emoji: item.product.emoji,
+          productId: item.product.id,
+          expiryDate: isoDate,
+          roomId: activeRoomId // ✅ VITAL: Afegir això aquí!
+        };
+      });
 
-        const result = await addBatchItemsAction(itemsPayload);
+      const result = await addBatchItemsAction(itemsPayload);
 
-        if (result.success) {
-           onClose();
-        } else {
-           alert("Error guardant: " + result.error);
-        }
-     } catch(e) { 
-        console.error(e); 
-     } finally { 
-        setIsSaving(false); 
-     }
+      if (result.success) {
+        onClose();
+      } else {
+        alert("Error guardant: " + result.error);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
 
   return (
-   
+
     <div className="flex flex-col h-full w-full bg-slate-950">
 
-       <div className="flex-1 overflow-hidden relative">
-         <ProductExplorer 
-            onSelect={handleSelect} 
-            quantities={quantitiesMap} 
-            onClose={onClose} 
-         />
+      <div className="flex-1 overflow-hidden relative">
+        <ProductExplorer
+          onSelect={handleSelect}
+          quantities={quantitiesMap}
+          onClose={onClose}
+        />
       </div>
-      <CartDock 
-        items={cart} 
+      <CartDock
+        items={cart}
         onRemove={handleRemove}
         onSave={handleSaveAll}
         isSaving={isSaving}

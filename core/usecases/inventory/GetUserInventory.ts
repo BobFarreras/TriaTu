@@ -6,6 +6,6 @@ export class GetUserInventory {
   constructor(private readonly inventoryRepo: InventoryRepository) {}
 
   async execute(userId: string): Promise<InventoryItem[]> {
-    return this.inventoryRepo.findByUser(userId);
+    return this.inventoryRepo.findByContext(userId);
   }
 }

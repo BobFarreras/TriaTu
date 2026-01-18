@@ -54,10 +54,7 @@ export interface RecipeStep {
   content: string;
 }
 
-export interface RecipeStep {
-  id: string;
-  content: string;
-}
+
 
 export interface EditorIngredient {
   id: string;
@@ -83,7 +80,8 @@ export interface EditorData {
   
   ingredients: EditorIngredient[]; // ✅ Ara és fortament tipat
   
-  steps: { id?: string; content: string }[];
+  // ✅ CANVI: En lloc de { id?: string; content: string }[], usa RecipeStep[]
+  steps: RecipeStep[];
   tags: string[];
   dietaryTags: string[];
   isAiGenerated?: boolean;
