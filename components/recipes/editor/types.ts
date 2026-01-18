@@ -39,10 +39,14 @@ export interface Ingredient {
   emoji?: string;     // Ex: "🍗" (Si és genèric)
   image?: string; // ✅ AFEGEIX AQUESTA LÍNIA (amb ? perquè és opcional)
   // 🔥 NOUS CAMPS: Enllaç amb Bonpreu (Opcional)
-  linkedProductId?: string;      // ID extern del producte
-  linkedProductImage?: string;   // URL de la foto real
+
   referencePrice?: number;       // Preu del paquet (Ex: 5.99)
-  estimatedCost?: number;        // Cost calculat per a la recepta (Ex: 2.50)
+  // 🔥 SOLUCIÓ ERROR 2: Permetre 'null' explícitament
+  linkedProductId?: string | null; 
+  linkedProductImage?: string | null;
+  
+  // 🔥 SOLUCIÓ ERROR 1: Assegurar que el tipus base accepta el que veus
+  estimatedCost?: number | string;
 }
 
 export interface RecipeStep {

@@ -13,8 +13,11 @@ export interface GenerationContext {
   energyLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
   timeAvailableMinutes?: number;
   
-  // Configuració de la petició
+  // Configuració de la peticiósi
   focusDish?: string; 
   count: number;
   language: string;
+  vibe: string;
+
+  
 }

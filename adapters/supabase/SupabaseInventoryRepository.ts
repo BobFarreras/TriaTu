@@ -3,7 +3,8 @@ import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-// ✅ 1. INTERFÍCIE ACTUALITZADA (Amb Preu)
+// ✅ 1. INTERFÍCIE ROBUSTA PER AL JOIN
+// Definim exactament què ens retorna Supabase
 interface InventoryItemRow {
   id: string;
   user_id: string;
@@ -16,15 +17,19 @@ interface InventoryItemRow {
   added_at: string;
   product_id: string | null;
   
-  // 🔥 AFEGIM EL PREU AL JOIN
+  // Camps "legacy" que podrien existir a la taula principal
+  image?: string | null;
+  image_url?: string | null;
+
+  // El JOIN amb el catàleg
   product_catalog: {
     image_url: string | null;
-    price: number | null; // <--- NOU
-    emoji: string | null; // <--- NOU (Opcional, per si el catàleg té millor emoji)
-  } | null; 
+    price: number | null;
+    emoji: string | null;
+  } | null;
 }
 
-// Helper pur per separar emojis
+// Helper pur per separar emojis del text
 function splitEmoji(text: string): { emoji: string | undefined; name: string } {
   const regex = /^([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])\s*/;
   const match = text.match(regex);
@@ -35,13 +40,16 @@ function splitEmoji(text: string): { emoji: string | undefined; name: string } {
 }
 
 export class SupabaseInventoryRepository implements InventoryRepository {
+  // ✅ CORRECCIÓ: Fem servir 'supabase' consistentment
   constructor(private readonly supabase: SupabaseClient) { }
 
+  // 🔥 CENTRE DE TRANSFORMACIÓ 🔥
+  // Tota la lògica de neteja d'imatges i preus va aquí perquè tots els mètodes la usin.
   private toDomain(row: InventoryItemRow): InventoryItem {
     let finalEmoji = row.emoji;
     let finalName = row.name;
 
-    // Si no té emoji, intentem treure'l del nom
+    // 1. EMOJI: Extracció del nom si falta
     if (!finalEmoji && finalName) {
       const separated = splitEmoji(finalName);
       if (separated.emoji) {
@@ -50,21 +58,33 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       }
     }
 
-    // 🔥 PREFERÈNCIA: Si el catàleg té emoji, el fem servir
+    // 2. EMOJI: Prioritat del catàleg (sol ser de més qualitat)
     if (row.product_catalog?.emoji) {
-        finalEmoji = row.product_catalog.emoji;
+      finalEmoji = row.product_catalog.emoji;
     }
 
+    // 3. LOCATION: Validació
     const isValidLocation = Object.values(StorageLocation).includes(row.location as StorageLocation);
     const location: StorageLocation = isValidLocation
       ? (row.location as StorageLocation)
       : StorageLocation.PANTRY;
 
-    const imageUrl = row.product_catalog?.image_url || null;
+    // 4. IMATGE: Lògica de prioritat i neteja
+    // Prioritat: Catàleg > Columna image_url > Columna image
+    const catalogImage = row.product_catalog?.image_url;
+    const directImage = row.image_url || row.image;
     
-    // 🔥 RECUPEREM EL PREU
+    let finalImage = catalogImage || directImage || null;
+
+    // Neteja: Evitem "Sí", "No" o strings que no siguin URLs
+    if (finalImage && !finalImage.startsWith('http')) {
+        finalImage = null;
+    }
+
+    // 5. PREU
     const price = row.product_catalog?.price ? Number(row.product_catalog.price) : undefined;
 
+    // ✅ CORRECCIÓ: Usem .create() perquè el constructor és privat
     return InventoryItem.create({
       id: row.id,
       userId: row.user_id,
@@ -76,8 +96,8 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       expiryDate: row.expiry_date ? new Date(row.expiry_date) : undefined,
       addedAt: new Date(row.added_at),
       productId: row.product_id || undefined,
-      image: imageUrl!,
-      price: price // ✅ Assignem el preu a l'entitat
+      image: finalImage || undefined, // Passem la imatge neta
+      price: price
     });
   }
 
@@ -92,9 +112,9 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       location: item.props.location,
       expiry_date: item.props.expiryDate ? item.props.expiryDate.toISOString() : null,
       added_at: item.props.addedAt.toISOString(),
-      product_id: item.props.productId 
+      product_id: item.props.productId
     };
-    
+
     const { error } = await this.supabase.from('inventory_items').upsert(row);
     if (error) throw new Error(`Database error: ${error.message}`);
   }
@@ -105,7 +125,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       .select(`
         *,
         product_catalog ( image_url, price, emoji )
-      `) // ✅ Afegim JOIN aquí també per consistència
+      `)
       .eq('id', id)
       .single();
 
@@ -114,11 +134,11 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       throw new Error(error.message);
     }
     if (!data) return null;
-    
+
     return this.toDomain(data as unknown as InventoryItemRow);
   }
 
-  // 🔥 MÈTODE CRÍTIC ARREGLAT 🔥
+  // ✅ CORREGIT: Ara usa this.supabase i reutilitza toDomain
   async findByUser(userId: string): Promise<InventoryItem[]> {
     const { data, error } = await this.supabase
       .from('inventory_items')
@@ -126,17 +146,20 @@ export class SupabaseInventoryRepository implements InventoryRepository {
         *,
         product_catalog (
             image_url,
-            price,  
+            price,
             emoji
         )
-      `) // ✅ SELECT COMPLET
+      `)
       .eq('user_id', userId)
       .order('expiry_date', { ascending: true, nullsFirst: false });
 
     if (error) throw new Error(error.message);
     if (!data) return [];
 
+    // ✅ Càsting segur per evitar 'row: any'
     const rows = data as unknown as InventoryItemRow[];
+    
+    // Ara toDomain s'encarrega de la màgia de les imatges
     return rows.map(row => this.toDomain(row));
   }
 
@@ -155,7 +178,7 @@ export class SupabaseInventoryRepository implements InventoryRepository {
       .select(`
         *,
         product_catalog ( image_url, price, emoji ) 
-      `) // ✅ SELECT COMPLET
+      `)
       .eq('user_id', userId)
       .lte('expiry_date', thresholdDate.toISOString())
       .gte('expiry_date', now.toISOString())

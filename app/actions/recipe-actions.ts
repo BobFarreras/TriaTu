@@ -53,28 +53,37 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
     }
 
     // 2. PROCESSAR INGREDIENTS (Amb lògica de vincle corregida)
-    const ingredientsPayload = data.ingredients.map((ing) => {
+    // 2. PROCESSAR INGREDIENTS + ENRIQUIMENT D'IMATGES
+    // 🔥 Utilitzem Promise.all per poder fer consultes async dins del map
+    const ingredientsPayload = await Promise.all(data.ingredients.map(async (ing) => {
 
       let finalId = ing.id;
       let finalEmoji = ing.emoji;
       const finalName = ing.name;
-
       const linkedProductId = ing.linkedProductId;
-      const linkedProductImage = ing.linkedProductImage;
+      let linkedProductImage = ing.linkedProductImage; // Pot venir null del front
       const estimatedCost = ing.estimatedCost ? Number(ing.estimatedCost) : 0;
 
-      // 🔥🔥🔥 CORRECCIÓ CRÍTICA 🔥🔥🔥
-      // Comprovem si linkedProductId és un string vàlid i no està buit
       const hasLink = typeof linkedProductId === 'string' && linkedProductId.length > 0;
 
       if (hasLink) {
-        // A) TÉ VINCLE -> PRESERVEM DADES D'INVENTARI
-        console.log(`   💎 [KEEP] Vinculat: "${finalName}" -> ID: ${linkedProductId} (${estimatedCost.toFixed(2)}€)`);
+        console.log(`   💎 [KEEP] Vinculat: "${finalName}" -> ID: ${linkedProductId}`);
 
-        // Si l'ingredient no tenia ID propi, li assignem el del producte
+        // 🔥🔥🔥 AUTO-REPAIR: Si tenim ID però no imatge, la busquem ara mateix
+        if (!linkedProductImage) {
+          const { data: product } = await supabase
+            .from('product_catalog')
+            .select('image_url')
+            .eq('id', linkedProductId)
+            .single();
+
+          if (product?.image_url) {
+            linkedProductImage = product.image_url;
+            console.log(`      📸 Recuperada imatge perduda: ${linkedProductImage?.substring(0, 20)}...`);
+          }
+        }
+
         if (!finalId || finalId.length < 5) finalId = linkedProductId!;
-
-        // Si no té emoji o és el genèric de cuina, li posem una caixa
         if (!finalEmoji || finalEmoji === '🥘') finalEmoji = '📦';
       }
       else {
@@ -103,10 +112,10 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
         unit: ing.unit,
         emoji: finalEmoji,
         linkedProductId: hasLink ? linkedProductId : null,
-        linkedProductImage: hasLink ? linkedProductImage : null,
+        linkedProductImage: hasLink ? linkedProductImage : null, // ✅ Ara segur que la tenim
         estimatedCost
       };
-    });
+    }));
 
     // 3. PROCESSAR PASSOS (Normalitzar IDs)
     const stepsData = data.steps.map(s => {
@@ -262,7 +271,7 @@ export async function generateMenuAction(
       console.log(`   💰 Cost 1a recepta: ${cost ? cost.toFixed(2) + '€' : 'MISSING ⚠️'}`);
     }
 
-  
+
 
     return {
       success: true,

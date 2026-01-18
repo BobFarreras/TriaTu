@@ -1,17 +1,15 @@
 import { DietaryRestriction } from "../value-objects/DietaryRestriction";
 
-// ✅ 1. ASSEGURAR QUE LA INTERFÍCIE INCLOU ELS CAMPS NOUS
 export interface Ingredient {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  emoji?: string;
-  
-  // Camps opcionals per vinculació amb inventari
-  linkedProductId?: string | null;     // ID del producte real
-  linkedProductImage?: string | null;  // Imatge
-  estimatedCost?: number;              // Cost calculat
+    id: string;
+    name: string;
+    quantity: number;
+    unit: string;
+    emoji?: string;
+    // Camps opcionals per vinculació
+    linkedProductId?: string | null;
+    linkedProductImage?: string | null;
+    estimatedCost?: number | string;
 }
 
 export interface RecipeProps {
@@ -39,6 +37,7 @@ export interface RecipeProps {
 
 export class Recipe {
     constructor(public readonly props: RecipeProps) {
+        // 🔥 Validem SEMPRE en crear
         this.validate();
     }
 
@@ -51,48 +50,69 @@ export class Recipe {
     get tags() { return this.props.tags; }
     get dietaryTags() { return this.props.dietaryTags; }
     get prepTimeMinutes() { return this.props.prepTimeMinutes; }
-    get createdAt() { return this.props.createdAt; }
-    get likesCount() { return this.props.likesCount; }
-    get isPublic() { return this.props.isPublic; }
     get estimatedCost() { return this.props.estimatedCost; }
     get isAiGenerated() { return this.props.isAiGenerated; }
-    get authorName() { return this.props.authorName; }
     get isFavorite() { return this.props.isFavorite ?? false; }
     get ratingSummary() { return this.props.ratingSummary; }
+    get isPublic() { return this.props.isPublic; }
+
+
 
     isSafeFor(restrictions: DietaryRestriction[]): boolean {
         if (!restrictions || restrictions.length === 0) return true;
         const normalizedRestrictions = restrictions.map(r => r.toLowerCase());
         const tags = (this.props.dietaryTags || []).map(t => t.toLowerCase());
+
         return normalizedRestrictions.every(restriction => {
             if (tags.includes(`${restriction}-free`)) return true;
-            if (tags.includes(`no-${restriction}`)) return true;
-            if (tags.includes(restriction)) return true;
-            if (tags.includes(`contains-${restriction}`)) return false;
+            if (tags.includes(`sense ${restriction}`)) return true;
+            if (tags.includes(`sense-${restriction}`)) return true;
             return true;
         });
     }
 
-    validate(): void {
-        if (!this.props.name) throw new Error("Nom obligatori");
-    }
-
-    // 🚨🚨🚨 AQUÍ ESTAVA L'ERROR 🚨🚨🚨
     toPrimitives(): RecipeProps {
         return {
             ...this.props,
-            // Hem d'assegurar que els ingredients es mapegen completament
+            // Assegurem la còpia profunda i correcta dels ingredients
             ingredients: this.props.ingredients.map(i => ({
                 id: i.id,
                 name: i.name,
                 quantity: i.quantity,
                 unit: i.unit,
                 emoji: i.emoji,
-                // ✅ ARA SÍ: COPIEM EXPLÍCITAMENT ELS CAMPS DE VINCULACIÓ
-                linkedProductId: i.linkedProductId,
-                linkedProductImage: i.linkedProductImage,
-                estimatedCost: i.estimatedCost
+                linkedProductId: i.linkedProductId || null,
+                linkedProductImage: i.linkedProductImage || null,
+                estimatedCost: i.estimatedCost || 0
             }))
         };
+    }
+
+    private validate(): void {
+        // 1. Validar Nom
+        if (!this.props.name || this.props.name.trim().length < 3) {
+            throw new Error("El nom ha de tenir almenys 3 caràcters");
+        }
+
+        // 2. Validar Ingredients
+        if (!this.props.ingredients || this.props.ingredients.length === 0) {
+            throw new Error("La recepta ha de tenir almenys un ingredient");
+        }
+
+        // 3. Validar consistència d'ingredients
+        this.props.ingredients.forEach((ing, index) => {
+            if (!ing.name || ing.name.trim() === '') {
+                throw new Error(`L'ingredient a la posició ${index} no té nom`);
+            }
+            if (ing.quantity <= 0) {
+                throw new Error(`L'ingredient "${ing.name}" ha de tenir una quantitat positiva`);
+            }
+        });
+
+        // 🔥 4. NOVA VALIDACIÓ: Passos obligatoris
+        // Això és el que farà passar el test que et falla
+        if (!this.props.steps || this.props.steps.length === 0) {
+            throw new Error("La recepta ha de tenir almenys un pas d'instruccions");
+        }
     }
 }

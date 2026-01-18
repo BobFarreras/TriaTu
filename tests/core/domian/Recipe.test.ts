@@ -1,14 +1,24 @@
-// src/core/domain/entities/Recipe.test.ts
 import { describe, it, expect } from 'vitest';
-import { Recipe } from '@/core/domain/entities/Recipe';
-
+import { Recipe, RecipeProps, Ingredient } from '@/core/domain/entities/Recipe';
 
 describe('Recipe Entity', () => {
-  const validProps = {
+  // Mock d'un ingredient vàlid
+  const validIngredient: Ingredient = {
+      id: 'ing-1',
+      name: 'Ous',
+      quantity: 2,
+      unit: 'u',
+      linkedProductId: null,
+      linkedProductImage: null,
+      estimatedCost: 0
+  };
+
+  // Mock de propietats base vàlides
+  const validProps: RecipeProps = {
     id: '123',
     authorId: 'user-1',
     name: 'Truita de Patates',
-    ingredients: [{ name: 'Ous', quantity: 2, unit: 'u' }],
+    ingredients: [validIngredient],
     steps: ['Batre', 'Cuinar'],
     tags: ['tradicional'],
     dietaryTags: ['vegetarian'],
@@ -16,7 +26,7 @@ describe('Recipe Entity', () => {
     createdAt: new Date(),
     likesCount: 0,
     isPublic: true,
-    ratingSummary: { average: 5, count: 1,distribution: {} }
+    ratingSummary: { average: 5, count: 1, distribution: {} }
   };
 
   it('hauria de crear una instància vàlida', () => {
@@ -33,16 +43,36 @@ describe('Recipe Entity', () => {
     expect(() => new Recipe({ ...validProps, ingredients: [] })).toThrow(/ingredient/);
   });
 
-  it('hauria de llançar error si un ingredient és invàlid', () => {
+  it('hauria de llançar error si un ingredient és invàlid (quantitat negativa)', () => {
+    const badIngredient: Ingredient = { 
+        id: 'bad-1', 
+        name: 'Ous', 
+        quantity: -1, 
+        unit: 'u' 
+    };
+
     expect(() => new Recipe({ 
       ...validProps, 
-      ingredients: [{ name: '', quantity: -1, unit: '' }] 
-    })).toThrow(/nom i quantitat positiva/);
+      ingredients: [badIngredient] 
+    })).toThrow(/quantitat positiva/);
   });
 
-  it('hauria d\'inicialitzar likesCount a 0 si ve null', () => {
-   
-    const recipe = new Recipe({ ...validProps, likesCount: 0 }); // El constructor de Recipe ja gestiona el null/undefined
-    expect(recipe.likesCount).toBe(0);
+  it('hauria de llançar error si un ingredient no té nom', () => {
+    const unnamedIngredient: Ingredient = { 
+        id: 'bad-2', 
+        name: '', 
+        quantity: 5, 
+        unit: 'u' 
+    };
+
+    expect(() => new Recipe({ 
+      ...validProps, 
+      ingredients: [unnamedIngredient] 
+    })).toThrow(/no té nom/);
+  });
+
+  it('hauria de permetre crear recepta amb likesCount a 0', () => {
+    const recipe = new Recipe({ ...validProps, likesCount: 0 });
+    expect(recipe.props.likesCount).toBe(0);
   });
 });

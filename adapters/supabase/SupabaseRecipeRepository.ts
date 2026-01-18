@@ -11,7 +11,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     // --- SAVE (Upsert) ---
     async save(recipe: Recipe): Promise<void> {
         const supabase = await createClient();
-        
+
         // 1. Convertim Domini -> BD
         const row = RecipeMapper.toPersistence(recipe);
 
@@ -29,7 +29,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     // --- SEARCH (Filtres avançats) ---
     async search(filter: RecipeFilter): Promise<{ recipes: Recipe[]; total: number }> {
         const supabase = await createClient();
-        
+
         let query = supabase.from('saved_recipes').select(`
             *,
             preference_profiles!user_id ( username ),
@@ -83,7 +83,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
             .maybeSingle();
 
         if (error || !data) return null;
-        
+
         return RecipeMapper.toDomain(data as unknown as RecipeWithJoins);
     }
 
@@ -136,7 +136,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     // --- FIND MATCHES (Per al Generador de Menús) ---
     async findMatches(criteria: MatchCriteria): Promise<Recipe[]> {
         const supabase = await createClient();
-        
+
         const { data, error } = await supabase
             .from('saved_recipes')
             .select(`
@@ -152,7 +152,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
 
         const rows = data as unknown as RecipeWithJoins[];
         return rows.reduce((acc: Recipe[], row) => {
-            try { acc.push(RecipeMapper.toDomain(row)); } catch (e) {}
+            try { acc.push(RecipeMapper.toDomain(row)); } catch (e) { }
             return acc;
         }, []);
     }
@@ -161,7 +161,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     async toggleFavorite(userId: string, recipeId: string): Promise<boolean> {
         const supabase = await createClient();
         const { data } = await supabase.from('recipe_favorites').select('*').eq('user_id', userId).eq('recipe_id', recipeId).maybeSingle();
-        
+
         if (data) {
             await supabase.from('recipe_favorites').delete().eq('user_id', userId).eq('recipe_id', recipeId);
             return false;
@@ -172,9 +172,29 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     }
 
     // --- DELETION ---
-    async delete(id: string): Promise<void> {
+    async delete(id: string, authorId: string): Promise<void> {
         const supabase = await createClient();
-        await supabase.from('saved_recipes').delete().eq('id', id);
+
+        // 1. Fem la consulta a Supabase
+        const { error, count } = await supabase
+            .from('saved_recipes') // Nom correcte de la taula
+            .delete({ count: 'exact' }) // Demanem el recompte per validar
+            .match({
+                id: id,
+                user_id: authorId // ✅ MAPPEIG CLAU: Domini (authorId) -> DB (user_id)
+            });
+
+        // 2. Gestió d'errors d'infraestructura (connexió, permisos SQL, etc.)
+        if (error) {
+            throw new Error(`Infrastructure error deleting recipe: ${error.message}`);
+        }
+
+        // 3. Validació lògica (opcional però recomanada)
+        // Si count és 0, no ha fallat l'SQL, però no s'ha esborrat res 
+        // (perquè l'ID no existia o l'usuari no n'era el propietari).
+        if (count === 0) {
+            console.warn(`Delete operation affecting 0 rows. RecipeId: ${id}, UserId: ${authorId}`);
+        }
     }
 
     // --- RATINGS ---

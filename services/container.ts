@@ -32,7 +32,7 @@ import { GenerateMenuService } from '@/core//services/GenerateMenuService';
 // PORTS
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
 import { RecipeRepository } from '@/core/ports/RecipeRepository';
-
+import { DeleteRecipe } from '@/core/usecases/recipes/DeleteRecipe';
 // USE CASES - DECISION & ROOMS
 import { MakeIndividualDecision } from '@/core/usecases/decision/MakeIndividualDecision';
 import { CreateDecisionRoom } from '@/core/usecases/rooms/CreateDecisionRoom';
@@ -147,9 +147,9 @@ export const container = {
 
   // === RECIPES & GENERATION ===
   getRecipeRepository: (): RecipeRepository => recipeRepo,
-  
+
   // ✅ NOU: El servei estrella d'avui (Híbrid)
-  getGenerateMenuService: (client: SupabaseClient) => 
+  getGenerateMenuService: (client: SupabaseClient) =>
     new GenerateMenuService(
       new SupabaseInventoryRepository(client),
       recipeRepo,
@@ -178,5 +178,11 @@ export const container = {
     ),
 
   getShoppingListRepo: (client: SupabaseClient) =>
-    new SupabaseShoppingListRepository(client)
+    new SupabaseShoppingListRepository(client),
+
+  // ✅ CORRECCIÓ: Tipem el paràmetre explícitament
+  getDeleteRecipe() {
+    const repo = new SupabaseRecipeRepository();
+    return new DeleteRecipe(repo);
+  },
 };

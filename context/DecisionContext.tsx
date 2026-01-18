@@ -6,7 +6,7 @@ import { generateMenuAction } from '@/app/actions/recipe-actions';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { toast } from 'sonner';
 
-// --- INTERFÍCIES DEFINITIVES ---
+// --- DEFINITIVE INTERFACES ---
 
 interface DecisionState {
     isPending: boolean;
@@ -26,7 +26,7 @@ interface DecisionContextType extends DecisionState {
     hasActiveResult: boolean;
 }
 
-// Interface que coincideix amb el que envia el Server Action (sense tipus complexos)
+// Interface matching Server Action output
 interface RawIngredient {
     id?: string;
     name?: string;
@@ -34,6 +34,7 @@ interface RawIngredient {
     unit?: string;
     emoji?: string;
     linkedProductId?: string | null;
+    linkedProductImage?: string | null; // ✅ Vital field
     estimatedCost?: number;
 }
 
@@ -54,7 +55,7 @@ interface RawRecipeInput {
         distribution?: Record<string, number>;
     };
     dietaryTags?: string[];
-    estimatedCost?: number; // ✅ CLAU: Acceptem el cost a nivell d'arrel
+    estimatedCost?: number;
     isAiGenerated?: boolean;
 }
 
@@ -81,34 +82,25 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const setMode = useCallback((mode: 'FATE' | 'CHEF') => {
-        console.log("🎛️ [DecisionContext] Canvi de mode:", mode);
+        console.log("🎛️ [DecisionContext] Mode change:", mode);
         setState(prev => {
             if (prev.mode === mode) return prev;
             return { ...prev, mode };
         });
     }, []);
 
-    // Aquesta funció neteja i valida les dades "brutes" que venen del servidor
+    // Function to clean and validate raw data from server
     const sanitizeRecipeProps = (input: unknown): RecipeProps => {
-        // Casting inicial segur
         const props = input as RawRecipeInput;
-
-        // DEBUG: Veure si arriba el cost
-        if (props.estimatedCost) {
-             console.log(`💰 [Sanitize] Recepta "${props.name}" té cost: ${props.estimatedCost}€`);
-        } else {
-             console.warn(`⚠️ [Sanitize] Recepta "${props.name}" NO té cost!`);
-        }
 
         return {
             id: props.id || crypto.randomUUID(),
             authorId: props.authorId || 'unknown',
-            name: props.name || 'Recepta sense nom',
+            name: props.name || 'Recipe without name',
             prepTimeMinutes: props.prepTimeMinutes || 0,
             likesCount: props.likesCount || 0,
             isPublic: !!props.isPublic,
             createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
-            // ✅ ASSEGURAR QUE EL COST NO ES PERD
             estimatedCost: props.estimatedCost || 0,
             isAiGenerated: props.isAiGenerated,
             
@@ -117,17 +109,21 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
                 count: props.ratingSummary?.count || 0,
                 distribution: props.ratingSummary?.distribution || {}
             },
+            
             dietaryTags: props.dietaryTags || [],
             
-            // ✅ MAPEIG COMPLET INGREDIENTS
+            // ✅ CRITICAL FIX: Mapping Ingredients correctly
             ingredients: (Array.isArray(props.ingredients) ? props.ingredients : []).map((ing: RawIngredient) => ({
                 id: ing.id || crypto.randomUUID(), 
                 name: ing.name || "Ingredient",
                 unit: ing.unit || "ut",
                 quantity: (!ing.quantity || ing.quantity <= 0) ? 1 : ing.quantity,
                 emoji: ing.emoji,
-                // Recuperem les dades de preu i ID de producte
+                
+                // 🛑 THIS WAS THE BUG: Passing the image through
                 linkedProductId: ing.linkedProductId || null,
+                linkedProductImage: ing.linkedProductImage || null, // <--- HERE
+                
                 estimatedCost: ing.estimatedCost || 0
             })),
             
@@ -137,10 +133,9 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
     };
 
     const generateMenu = useCallback(async (userId: string, dishName: string = '') => {
-        // Capturem l'estat actual per enviar-lo (closures)
         const currentMode = state.mode;
         
-        console.log(`🚀 [DecisionContext] Iniciant generació. Mode: ${currentMode}, Energia: ${state.energy}`);
+        console.log(`🚀 [DecisionContext] Starting generation. Mode: ${currentMode}`);
         
         setState(prev => ({ ...prev, isPending: true, error: null, recipes: [] }));
 
@@ -148,23 +143,22 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
             const result = await generateMenuAction(
                 userId,
                 dishName,
-                currentMode, // Usem la variable local per assegurar
+                currentMode,
                 state.energy,
                 state.time,
                 locale
             );
 
             if (result.success && result.recipes) {
-                console.log(`✅ [DecisionContext] Rebudes ${result.recipes.length} receptes brutes.`);
+                console.log(`✅ [DecisionContext] Received ${result.recipes.length} raw recipes.`);
 
-                // Mapegem amb tipus explícits
                 const recipeInstances = result.recipes
                     .map((props: unknown) => {
                         try {
                             const cleanProps = sanitizeRecipeProps(props);
                             return new Recipe(cleanProps);
                         } catch (e) {
-                            console.warn("⚠️ Recepta saltada per dades incorrectes:", e); 
+                            console.warn("⚠️ Skipped recipe due to incorrect data:", e); 
                             return null;
                         }
                     })
@@ -177,30 +171,30 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
                 }));
 
                 if (recipeInstances.length > 0) {
-                    toast.success(`👨‍🍳 Menú llest: ${recipeInstances.length} propostes!`);
+                    toast.success(`👨‍🍳 Menu ready: ${recipeInstances.length} proposals!`);
                 } else {
-                    throw new Error("No s'han pogut validar les receptes.");
+                    throw new Error("Could not validate recipes.");
                 }
             } else {
-                throw new Error(result.error || "Error desconegut");
+                throw new Error(result.error || "Unknown error");
             }
         } catch (err: unknown) {
-            let errorMessage = "Error desconegut";
+            let errorMessage = "Unknown error";
             if (err instanceof Error) errorMessage = err.message;
             else if (typeof err === 'string') errorMessage = err;
 
-            const isLimitError = errorMessage.toLowerCase().includes('límit') ||
-                errorMessage.toLowerCase().includes('limit');
+            const isLimitError = errorMessage.toLowerCase().includes('limit') || 
+                               errorMessage.toLowerCase().includes('límit');
 
             if (isLimitError) {
                 console.warn("⏳ Rate Limit Hit:", errorMessage);
-                toast.warning("⏳ Límit Assolit", {
-                    description: "Has generat massa menús. Espera una estona!",
+                toast.warning("⏳ Limit Reached", {
+                    description: "You've generated too many menus. Wait a bit!",
                     duration: 5000
                 });
             } else {
                 console.warn("❌ Error generateMenu:", errorMessage);
-                toast.error("Error al forn", { description: errorMessage });
+                toast.error("Oven Error", { description: errorMessage });
             }
 
             setState(prev => ({

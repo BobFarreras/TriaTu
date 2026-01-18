@@ -27,7 +27,7 @@ export interface RecipeRepository {
     findAllByUser(userId: string): Promise<Recipe[]>;
 
     findRandom(count: number, restrictions: DietaryRestriction[]): Promise<Recipe[]>;
-    delete(id: string): Promise<void>;
+    delete(id: string, authorId: string): Promise<void>;
 
     // ✅ IMPRESCINDIBLE per RateRecipe (addRating estava faltant a la interfície)
     rate(rating: Rating): Promise<void>;

@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useTransition } from 'react';
 import { IngredientsManager } from './IngredientsManager';
 import { StepsBuilder } from './StepsBuilder';
 import { MetaControls } from './MetaControls';
-import { Save} from 'lucide-react';
+import { Save, Trash2 } from 'lucide-react'; // Importem icona Trash2
+
 import { InventoryItemUI, StepsLabels, IngredientsLabels } from './types';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { motion } from 'framer-motion';
@@ -17,7 +18,7 @@ import { RecipeProps } from '@/core/domain/entities/Recipe';
 import { EditorTabs, TabType } from './editor/EditorTabs';
 import { getEditorTourSteps, mapRecipeToFormData } from './editor/utils';
 import { EditorHeader } from './editor/EditorHeader';
-
+import { deleteRecipeAction } from '@/app/actions/delete-recipe'; // Importem l'acció
 interface Props {
   userInventory: InventoryItemUI[];
   initialRecipe?: RecipeProps;
@@ -30,17 +31,17 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
 
   // 1. DATA MAPPING (Extret a utils)
   const initialFormData = useMemo(() => mapRecipeToFormData(initialRecipe), [initialRecipe]);
-
+  const [isPendingDelete, startDeleteTransition] = useTransition();
   // 2. FORM LOGIC
   const { data, setData, loading, errors, handleSave, feedback, closeFeedback } =
     useRecipeForm(t.create_recipe, setActiveTab, initialFormData);
-  
+
   // 3. ONBOARDING LOGIC
   const { startTour, currentStepIndex, isActive, steps: activeSteps } = useOnboarding();
   const onboardingSteps = useMemo(() => getEditorTourSteps(t), [t]);
 
   useEffect(() => {
-    if (initialRecipe) return; 
+    if (initialRecipe) return;
     const timer = setTimeout(() => startTour('recipe-editor', onboardingSteps), 800);
     return () => clearTimeout(timer);
   }, [startTour, onboardingSteps, initialRecipe]);
@@ -72,7 +73,25 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
     ...(t.create_recipe.steps as unknown as Record<string, string>),
     title: "Passos"
   } as StepsLabels;
+  // NOU HANDLER: Gestió de l'eliminació
+  const handleDelete = async () => {
+    if (!initialRecipe?.id) return;
 
+    // UX: Confirmació nativa (Simple i efectiva per accions destructives)
+    // En el futur es pot canviar per un Modal de UI si es vol més estil.
+    const confirmed = window.confirm("Estàs segur que vols eliminar aquesta recepta? Aquesta acció no es pot desfer.");
+
+    if (confirmed) {
+      startDeleteTransition(async () => {
+        const result = await deleteRecipeAction(initialRecipe.id!);
+        if (result?.error) {
+          // Si falla, mostrem feedback utilitzant el sistema existent
+          // Nota: necessitaràs exposar 'setFeedback' des de useRecipeForm o similar
+          alert(result.error); // Fallback si no tenim accés al setFeedback des d'aquí fàcilment
+        }
+      });
+    }
+  };
   return (
     <div className="flex flex-col h-full w-full bg-slate-950 overflow-hidden relative">
       <FeedbackModal
@@ -87,16 +106,32 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
         <TourTrigger tourId="recipe-editor" steps={onboardingSteps} />
       </div>
 
-      <EditorHeader 
-        title={data.name} 
-        isEditing={!!initialRecipe} 
-        onExit={handleExit} 
-        onTitleClick={() => setActiveTab('meta')} 
-      />
+      {/* HEADER MODIFICAT: Passem la funció de delete o col·loquem el botó aquí si EditorHeader ho permet */}
+      {/* Si EditorHeader no accepta children o accions extra, podem posar el botó flotant a l'esquerra del Save o a dalt */}
 
-      <EditorTabs 
-        activeTab={activeTab} 
-        onChange={setActiveTab} 
+      <div className="relative z-50">
+        <EditorHeader
+          title={data.name}
+          isEditing={!!initialRecipe}
+          onExit={handleExit}
+          onTitleClick={() => setActiveTab('meta')}
+        />
+        {/* Botó d'eliminar absolut a la capçalera (ajustar posició segons disseny de EditorHeader) */}
+        {initialRecipe && (
+          <button
+            onClick={handleDelete}
+            disabled={isPendingDelete || loading}
+            className="absolute top-4 right-16 p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+            title="Eliminar recepta"
+          >
+            {isPendingDelete ? <span className="animate-spin">⏳</span> : <Trash2 className="w-5 h-5" />}
+          </button>
+        )}
+      </div>
+
+      <EditorTabs
+        activeTab={activeTab}
+        onChange={setActiveTab}
         errors={{ name: errors.name, ingredients: errors.ingredients, steps: errors.steps }}
         counts={{ ingredients: data.ingredients.length, steps: data.steps.length }}
       />
@@ -104,7 +139,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
       {/* CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative w-full p-2 sm:p-4 md:p-6">
         <div id="tour-content-area" className="h-full w-full bg-slate-900/30 border border-slate-800/50 rounded-3xl overflow-hidden relative backdrop-blur-sm shadow-inner">
-          
+
           {activeTab === 'meta' && (
             <div className="h-full overflow-y-auto p-4 animate-in fade-in zoom-in-95 scrollbar-thin scrollbar-thumb-slate-800">
               <div className="max-w-2xl mx-auto space-y-6 pt-4 pb-20">
