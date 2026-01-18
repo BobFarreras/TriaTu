@@ -670,6 +670,8 @@ export const es = {
       add_title: "Añadir nuevo alimento",
       name_placeholder: "¿Qué añadimos a la despensa?",
       quantity_label: "Cantidad",
+      product_placeholder: "Escribe 'Leche' o elige una categoría...",
+
       location: {
         fridge: "Nevera",
         pantry: "Despensa",

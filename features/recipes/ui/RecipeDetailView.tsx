@@ -52,7 +52,7 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
       <div className="lg:hidden sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 p-3 shadow-xl">
         <div className="flex items-center gap-3">
             <div className="shrink-0">
-                <BackButton href="/recipes" className="bg-slate-800 text-white p-2 rounded-full" label="" />
+                <BackButton  className="bg-slate-800 text-white p-2 rounded-full" label="" />
             </div>
             
             <div className="flex-1 min-w-0 flex flex-col justify-center mr-2">
@@ -92,7 +92,7 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
           {/* --- DESKTOP HEADER --- */}
           <div className="hidden lg:flex items-start gap-4 mb-8 relative pt-6">
              <div className="shrink-0 flex flex-col gap-3 sticky top-8 z-10">
-                <BackButton href="/recipes" label="Tornar" className="bg-slate-900/50 hover:bg-slate-800 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl transition-all" />
+                <BackButton label="Tornar" className="bg-slate-900/50 hover:bg-slate-800 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl transition-all" />
                 <div className="flex items-center gap-2 mt-2">
                     <FavoriteButton 
                         recipeId={recipe.id} 

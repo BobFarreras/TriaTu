@@ -40,7 +40,7 @@ export default async function ShoppingListPage() {
       <div className="max-w-2xl mx-auto space-y-6">
 
         <div className="flex items-center justify-between mb-6">
-          <BackButton href="/" />
+          <BackButton/>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             📝 Compra Activa
           </h1>

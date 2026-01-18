@@ -79,11 +79,21 @@ export default function RootLayout({
         <style>{`html, body { background-color: #131f24 !important; }`}</style>
       </head>
 
-      <body className={`${inter.className} min-h-dvh bg-[#131f24] text-white bg-gamified-pattern overflow-x-hidden antialiased`}>
-        <LanguageProvider >
+      {/* 1. ELIMINEM 'overflow-x-hidden' i 'min-h-dvh' DEL BODY 
+         Això retorna el control de l'scroll al navegador (Brave)
+      */}
+      <body className={`${inter.className} bg-[#131f24] text-white bg-gamified-pattern antialiased`}>
+        <LanguageProvider>
           <DecisionProvider>
-            {children}
-            {/* ✅ AFEGEIX AIXÒ AL FINAL DEL BODY */}
+            
+            {/* 2. CREEM UN WRAPPER PRINCIPAL 
+               Aquí és on apliquem les restriccions d'alçada i overflow.
+               Això enganya al navegador: el body té scroll, i aquest div gestiona el contingut.
+            */}
+            <div className="min-h-dvh w-full overflow-x-hidden flex flex-col">
+                {children}
+            </div>
+
             <Toaster position="bottom-right" richColors />
           </DecisionProvider>
         </LanguageProvider>

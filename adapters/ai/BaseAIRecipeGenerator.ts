@@ -117,7 +117,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
     try {
       const cleanJson = jsonString.replace(/```json|```/g, '').trim();
       return JSON.parse(cleanJson).recipes || [];
-    } catch (e) { return []; }
+    } catch (e) { console.log(e); return []; }
   }
 
   private mapToDomain(dto: AIRecipeDTO, ctx: GenerationContext): Recipe | null {

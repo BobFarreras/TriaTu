@@ -7,23 +7,13 @@ import { container } from '@/services/container';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
-import { DecisionType } from '@/core/domain/entities/Decision';
-import { DecisionContext } from '@/core/domain/value-objects/DecisionContext';
-import { checkRoomDailyLimit } from '@/lib/security/decision-limit';
-import { findBestRecipe, ParticipantProfile, RecipeCandidate } from '@/core/domain/services/recommendation-service';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { CreateRoomSchema, ParticipantActionSchema, ClearHistorySchema } from '@/core/application/schemas/inputSchemas';
-
-// --- GESTIÓ D'IDIOMA ---
-import { ca } from '@/lib/i18n/locales/ca';
-import { es } from '@/lib/i18n/locales/es';
-import { en } from '@/lib/i18n/locales/en';
-// ✅ IMPORT IMPORTANT: Importem el tipus base del diccionari
 import { Dictionary } from '@/lib/i18n/dictionaries';
+import { checkRoomDailyLimit } from '@/lib/security/decision-limit';
 
-// ✅ FIX: Usem 'any' aquí per evitar que TS es queixi si 'es' o 'en' 
-// tenen menys claus que 'ca'. Així no bloqueja la compilació.
-const DICTIONARIES: Record<string, any> = { ca, es, en };
+import { CreateRoomSchema, ParticipantActionSchema} from '@/core/application/schemas/inputSchemas';
+import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
+
+
 
 // --- TIPUS DE RETORN I DB ---
 export type ActionState = {
@@ -42,27 +32,33 @@ type CreateRoomResult = {
   error?: string;
 };
 
-interface DecisionMeta {
-  matchCount?: number;
-  isManual?: boolean;
-  totalOptions?: number;
-  [key: string]: unknown; 
-}
 
-// Interfaces per Type Safety amb Supabase
+// --- GESTIÓ D'IDIOMA ---
+import { ca } from '@/lib/i18n/locales/ca';
+import { es } from '@/lib/i18n/locales/es';
+import { en } from '@/lib/i18n/locales/en';
+import { RecipeEnricherService } from '@/core/services/RecipeEnrocherSercie';
+
+// ✅ TIPATGE SEGUR: Definim el tipus del diccionari per evitar 'any'
+const DICTIONARIES: Record<string, Dictionary> = { ca, es, en };
+
+// ✅ INTERFÍCIES NOVES PER EVITAR 'ANY'
 interface DbProfile {
-    user_id: string;
-    exclusions: string[] | null;
-    food_preferences: string[] | null;
+  user_id: string;
+  exclusions: string[] | null;
+  food_preferences: string[] | null;
 }
 
-interface DbRecipe {
-    id: string;
-    name: string;
-    dietary_tags: string[] | null;
-    tags: string[] | null;
+interface DecisionMeta {
+  isAiGenerated?: boolean;
+  isManual?: boolean;
+  vibe?: string;
+  tags?: string[];
+  fullRecipe?: unknown; // O el tipus RecipeProps si el tens importat
+  totalOptions?: number;
+  matchCount?: number;
+  [key: string]: unknown; // Permet extensibilitat sense usar 'any' descontrolat
 }
-
 // Helper per errors Zod
 function getZodError(error: z.ZodError<unknown>): string {
   return error.issues[0]?.message || "Dades invàlides";
@@ -106,12 +102,12 @@ export async function kickParticipantAction(roomId: string, participantId: strin
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
-  
+
   const KickSchema = z.object({ roomId: z.string().uuid(), participantId: z.string().uuid(), hostId: z.string().uuid() });
   const validation = KickSchema.safeParse({ roomId, participantId, hostId: user.id });
-  
+
   if (!validation.success) return { success: false, error: getZodError(validation.error) };
-  
+
   try {
     const useCase = container.getRemoveParticipant();
     await useCase.execute(user.id, roomId, participantId);
@@ -122,26 +118,7 @@ export async function kickParticipantAction(roomId: string, participantId: strin
   }
 }
 
-// ---------------------------------------------------------
-// 4. CLEAR HISTORY
-// ---------------------------------------------------------
-export async function clearHistoryAction(roomId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Unauthorized" };
-  
-  const validation = ClearHistorySchema.safeParse({ roomId, userId: user.id });
-  if (!validation.success) return { success: false, error: getZodError(validation.error) };
-  
-  try {
-    const useCase = container.getClearRoomHistory();
-    await useCase.execute(user.id, roomId);
-    revalidatePath(`/rooms/${roomId}`);
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : "Error desconegut" };
-  }
-}
+
 
 // ---------------------------------------------------------
 // 5. ADD CANDIDATE
@@ -187,33 +164,15 @@ export async function addCandidateAction(roomId: string, candidateName: string) 
   }
 }
 
-// ---------------------------------------------------------
-// 6. MAKE INDIVIDUAL DECISION
-// ---------------------------------------------------------
-export async function makeIndividualDecisionAction(input: { userId: string; type: string; energyLevel: number; timeMinutes: number; }) {
-  try {
-    const useCase = container.getMakeIndividualDecision();
-    const context = new DecisionContext({ energyLevel: input.energyLevel, availableTimeMinutes: input.timeMinutes });
-
-    const decision = await useCase.execute({
-      userId: input.userId,
-      type: input.type as DecisionType,
-      context
-    });
-
-    return { success: true, data: { id: decision.id, choice: decision.outcome?.choice } };
-  } catch (error) {
-    return { success: false, error: "Error prenent decisió individual" };
-  }
-}
 
 // ---------------------------------------------------------
-// 7. MAKE GROUP DECISION
+// 7. MAKE GROUP DECISION (FINAL AMB TOTES LES FEATURES)
 // ---------------------------------------------------------
+
 export async function makeGroupDecisionAction(
-  roomId: string, 
-  mode: 'magic' | 'manual', 
-  locale: string = 'ca' 
+  roomId: string,
+  mode: 'magic' | 'manual',
+  locale: string = 'ca'
 ) {
   console.log(`⚡ GROUP DECISION [${mode}] Room: ${roomId}`);
   const supabase = await createClient();
@@ -221,58 +180,106 @@ export async function makeGroupDecisionAction(
 
   if (!user) return { success: false, error: "Unauthorized" };
 
-  // Normalitzem l'idioma
   const normalizedLocale = locale.substring(0, 2).toLowerCase();
   const t: Dictionary = DICTIONARIES[normalizedLocale] || DICTIONARIES['ca'];
 
-  // Validació Límits
+  // 1. Validació Límits
   const limitCheck = await checkRoomDailyLimit(supabase, roomId);
   if (!limitCheck.allowed) return { success: false, error: limitCheck.error };
 
   try {
     let outcomeChoice: string;
     let outcomeReason: string;
-    let outcomeMeta: DecisionMeta = {}; 
+    let outcomeMeta: DecisionMeta = {};
     let candidatesTitles: string[] = [];
 
-    // --- MODE MÀGIC ---
+    // --- MODE MÀGIC (IA GENERATIVA) ---
     if (mode === 'magic') {
       const { data: participants } = await supabase.from('room_participants').select('user_id').eq('room_id', roomId);
       if (!participants?.length) throw new Error("Room is empty");
-      
+
       const userIds = participants.map(p => p.user_id);
-      const { data: profiles } = await supabase.from('preference_profiles').select('user_id, exclusions, food_preferences').in('user_id', userIds);
-      
-      // ✅ FIX: Casting segur amb interfícies definides
-      const typedProfiles = (profiles as unknown as DbProfile[]) || [];
 
-      const groupProfile: ParticipantProfile[] = typedProfiles.map(p => ({
-        id: p.user_id,
-        allergies: p.exclusions || [],
+      // Recuperar perfils
+      const { data: rawProfiles } = await supabase
+        .from('preference_profiles')
+        .select('user_id, exclusions, food_preferences')
+        .in('user_id', userIds);
+
+      const profiles = (rawProfiles || []) as unknown as DbProfile[];
+
+      // Fusió de Dades
+      const groupRestrictions = new Set<string>();
+      const groupPreferences: string[] = [];
+
+      profiles.forEach((p) => {
+        if (p.exclusions) p.exclusions.forEach((e) => groupRestrictions.add(e));
+        if (p.food_preferences) p.food_preferences.forEach((pref) => groupPreferences.push(pref));
+      });
+
+      const finalRestrictions = Array.from(groupRestrictions) as DietaryRestriction[];
+
+      // Triar Vibe
+      let vibe = "Sorpresa creativa per a grups";
+      if (groupPreferences.length > 0) {
+        const randomPref = groupPreferences[Math.floor(Math.random() * groupPreferences.length)];
+        vibe = `Estil ${randomPref} (Consens Grupal)`;
+      }
+
+      console.log(`👥 [GROUP AI] Generant menú per a ${userIds.length} persones.`);
+      console.log(`   🚫 Restriccions: ${finalRestrictions.join(', ') || 'CAP'}`);
+      console.log(`   ✨ Vibe triat: "${vibe}"`);
+
+      // Generar Receptes
+      const generator = container.getRecipeGenerator();
+
+      const context = {
+        mode: 'FATE' as const,
+        count: 4,
+        language: locale,
+        inventory: [],
+        restrictions: finalRestrictions,
         dislikes: [],
-        preferences: p.food_preferences || []
-      }));
+        energyLevel: 'MEDIUM' as const,
+        timeAvailableMinutes: 45,
+        focusDish: undefined,
+        vibe: vibe
+      };
 
-      const candidates = await fetchCandidatesForRoom(supabase); 
-      
-      const result = findBestRecipe(groupProfile, candidates);
-      if (!result.success || !result.choice) throw new Error("No s'ha pogut decidir");
+      const aiRecipes = await generator.generate(context);
 
-      outcomeChoice = result.choice;
-      outcomeMeta = result.metadata || {};
-      
-      const count = outcomeMeta.matchCount || 0;
-      // ✅ FIX: Accés segur a les propietats traduïdes
-      outcomeReason = count === 0 
-        ? t.room.history.magic_safe 
-        : t.room.history.magic_match.replace('{count}', count.toString());
+      if (!aiRecipes || aiRecipes.length === 0) throw new Error("La IA no ha generat res.");
+
+      // Seleccionar Guanyadora
+      let winnerRecipe = aiRecipes[Math.floor(Math.random() * aiRecipes.length)];
+
+      // 🔥 ENRIQUIMENT MÀGIC (Buscar fotos i preus)
+      try {
+        console.log(`✨ [ENRICH] Millorant la recepta guanyadora: "${winnerRecipe.name}"...`);
+        winnerRecipe = await RecipeEnricherService.enrichRecipe(winnerRecipe);
         
-      candidatesTitles = candidates.map(c => c.title);
+        const finalCost = winnerRecipe.estimatedCost || 0;
+        console.log(`   💰 Cost calculat: ${finalCost.toFixed(2)}€`);
+      } catch (err) {
+        console.error("⚠️ Error enriquint recepta:", err);
+      }
+
+      outcomeChoice = winnerRecipe.name;
+      outcomeReason = `Proposta basada en l'estil "${vibe}" i segura per a tots els participants.`;
+
+      outcomeMeta = {
+        isAiGenerated: true,
+        vibe,
+        tags: winnerRecipe.tags,
+        // Ara fullRecipe tindrà linkedProductImage i estimatedCost plens!
+        fullRecipe: winnerRecipe.toPrimitives()
+      };
+
+      candidatesTitles = aiRecipes.map(r => r.name);
 
     } else {
       // --- MODE MANUAL ---
       const { data: manualCandidates } = await supabase.from('room_candidates').select('content').eq('room_id', roomId);
-      
       if (!manualCandidates?.length) return { success: false, error: "No hi ha opcions!" };
 
       const winner = manualCandidates[Math.floor(Math.random() * manualCandidates.length)];
@@ -282,7 +289,7 @@ export async function makeGroupDecisionAction(
       candidatesTitles = manualCandidates.map(c => c.content);
     }
 
-    // Persistència
+    // 2. Persistència (INSERTAR LA NOVA DECISIÓ)
     await supabase.from('group_decisions').insert({
       room_id: roomId,
       choice: outcomeChoice,
@@ -293,6 +300,26 @@ export async function makeGroupDecisionAction(
 
     await supabase.from('decision_rooms').update({ last_decision_at: new Date().toISOString() }).eq('id', roomId);
 
+    // 🔥 3. ROTACIÓ AUTOMÀTICA (Mantenir màxim 10) 🔥
+    const { data: allHistory } = await supabase
+        .from('group_decisions')
+        .select('id')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: false }); // Més recents primer
+
+    if (allHistory && allHistory.length > 10) {
+        // Agafem els IDs a partir de la posició 10 (els més vells)
+        const idsToDelete = allHistory.slice(10).map(d => d.id);
+        
+        if (idsToDelete.length > 0) {
+            console.log(`🧹 [AUTO-CLEANUP] Eliminant ${idsToDelete.length} decisions antigues...`);
+            await supabase
+                .from('group_decisions')
+                .delete()
+                .in('id', idsToDelete);
+        }
+    }
+
     revalidatePath(`/rooms/${roomId}`);
     return { success: true, outcome: { choice: outcomeChoice, reason: outcomeReason } };
 
@@ -300,20 +327,4 @@ export async function makeGroupDecisionAction(
     console.error("❌ Room Action Error:", error);
     return { success: false, error: "Error en la decisió grupal" };
   }
-}
-
-// --- HELPERS ---
-
-async function fetchCandidatesForRoom(supabase: SupabaseClient): Promise<RecipeCandidate[]> {
-    const { data } = await supabase.from('saved_recipes').select('id, name, dietary_tags, tags').limit(50);
-    
-    // ✅ FIX: Casting segur
-    const typedData = (data as unknown as DbRecipe[]) || [];
-
-    return typedData.map(r => ({
-        id: r.id,
-        title: r.name,
-        tags: [...(r.dietary_tags || []), ...(r.tags || [])],
-        description: ''
-    }));
 }

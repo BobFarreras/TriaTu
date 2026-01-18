@@ -42,6 +42,9 @@ html, body {
   overflow-x: hidden;
   overscroll-behavior-y: none;          /* Vital per iOS */
   -webkit-tap-highlight-color: transparent;
+  /* Això desbloqueja la rodeta a Brave */
+  overscroll-behavior: auto !important; 
+  touch-action: auto !important;
 }
 
 /* Patró de fons sempre fosc */
@@ -49,4 +52,9 @@ html, body {
   background-color: #131f24 !important;
   background-image: radial-gradient(#1e3a8a 1px, transparent 1px);
   background-size: 20px 20px;
+  pointer-events: none !important;
+}
+/* Restaura els events pel contingut de dins */
+body > * {
+  pointer-events: auto;
 }

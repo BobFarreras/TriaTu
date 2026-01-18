@@ -66,6 +66,8 @@ import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
 import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
 import { GetShoppingHistory } from '@/core/application/shopping-list/GetShoppingHistory';
 
+import { InventoryRepository } from '@/core/ports/InventoryRepository';
+import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
 const foodKnowledgeService = new FoodKnowledgeService();
 const individualEngine = new BasicDecisionEngine();
@@ -130,7 +132,7 @@ export const container = {
 
   // === AI & TOOLS ===
   getImageRecognizer: () => robustRecognizer,
-  getRecipeGenerator: getRecipeGenerator,
+
 
   // === DECISIONS ===
   getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, userProfileRepo, individualEngine),
@@ -185,4 +187,16 @@ export const container = {
     const repo = new SupabaseRecipeRepository();
     return new DeleteRecipe(repo);
   },
-};
+  // ✅ NOU MÈTODE NECESSARI
+  // ✅ CORRECCIÓ: Retornem el FallbackRecipeGenerator, no només Gemini
+  // ✅ CORRECCIÓ FINAL: Sense arguments als constructors
+  getRecipeGenerator() {
+    // 1. Instanciem els motors directament (sense repo, ja que l'inventari ve pel Context)
+    const primary = new GeminiRecipeGenerator();
+    const secondary = new OpenAIRecipeGenerator();
+
+    // 2. Retornem l'estratègia robusta amb Fallback
+    console.log("🛡️ [Container] Inicialitzant Generador amb Fallback (Gemini -> OpenAI)");
+    return new FallbackRecipeGenerator(primary, secondary);
+  }
+}

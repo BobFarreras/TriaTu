@@ -1,7 +1,7 @@
 // src/lib/security/decision-limit.ts
 import { SupabaseClient } from '@supabase/supabase-js';
 
-const DAILY_LIMIT = 10; // Posem 20 en total (Manuals + Màgiques)
+const DAILY_LIMIT = 20; // Posem 20 en total (Manuals + Màgiques)
 
 export async function checkRoomDailyLimit(supabase: SupabaseClient, roomId: string): Promise<{ allowed: boolean; error?: string }> {
   

@@ -70,7 +70,7 @@ export function InventoryHeader({
 
         {/* ESQUERRA */}
         <div className="flex items-center gap-3">
-          <BackButton href="/dashboard" className="h-9 w-9 bg-transparent border-0 hover:bg-slate-800" />
+          <BackButton className="h-9 w-9 bg-transparent border-0 hover:bg-slate-800" />
           {/* Opcional: Si vols mostrar el títol aquí */}
           {/* <h1 className="text-xl font-bold text-white">{titleText}</h1> */}
         </div>

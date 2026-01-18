@@ -48,7 +48,7 @@ export default async function RoomsPage() {
         
         {/* HEADER */}
         <div className="flex items-center gap-4 mb-6">
-            <BackButton href="/dashboard" />
+            <BackButton href='/'/>
             {/* Component Client per al títol traduït */}
             <SocialHeader /> 
         </div>

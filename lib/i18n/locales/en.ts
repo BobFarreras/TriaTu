@@ -670,6 +670,8 @@ export const en = {
       add_title: "Add new item",
       name_placeholder: "What are we adding?",
       quantity_label: "Quantity",
+      product_placeholder: "Type 'Milk' or choose a category...",
+
       location: {
         fridge: "Fridge",
         pantry: "Pantry",
