@@ -57,7 +57,6 @@ import { CookRecipe } from '@/core/usecases/inventory/CookRecipe';
 import { SearchAndCacheProducts } from '@/core/usecases/inventory/SearchAndCacheProducts';
 
 // USE CASES - RECIPES
-import { SaveGeneratedRecipe } from '@/core/usecases/recipes/SaveGeneratedRecipe';
 import { GetRecipe } from '@/core/usecases/recipes/GetRecipe';
 import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspiration';
 
@@ -157,7 +156,6 @@ export const container = {
       getRecipeGenerator()
     ),
 
-  getSaveGeneratedRecipe: () => new SaveGeneratedRecipe(recipeRepo),
   getGetRecipe: () => new GetRecipe(recipeRepo),
   getGetRandomInspiration: () => new GetRandomInspiration(recipeRepo),
   getRecipeById: () => ({ execute: (id: string) => recipeRepo.findById(id) }),

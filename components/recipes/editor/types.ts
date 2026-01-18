@@ -55,16 +55,33 @@ export interface RecipeStep {
   content: string;
 }
 
-export interface EditorData {
-  id?: string; // ✅ FIX: Afegim l'ID opcional per suportar l'Edició
+export interface EditorIngredient {
+  id: string;
   name: string;
-  description: string;
-  prepTimeMinutes: number;
-  servings: number;
-  ingredients: Ingredient[];
-  steps: RecipeStep[];
+  quantity: number;
+  unit: string;
+  emoji?: string;
+  
+  // ✅ CORRECCIÓN: Añadimos '| null' para que coincida con el mapeo
+  // El '?' permite undefined, y el '| null' permite el valor null explícito.
+  estimatedCost?: number | string;
+  linkedProductId?: string | null; 
+  linkedProductImage?: string | null;
+}
+
+export interface EditorData {
+  id?: string;
+  name: string;
+  description?: string;
+  servings?: number;
+  prepTimeMinutes: number | string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  
+  ingredients: EditorIngredient[]; // ✅ Ara és fortament tipat
+  
+  steps: { id?: string; content: string }[];
+  tags: string[];
   dietaryTags: string[];
-  difficulty: 'easy' | 'medium' | 'hard';
   isAiGenerated?: boolean;
 }
 

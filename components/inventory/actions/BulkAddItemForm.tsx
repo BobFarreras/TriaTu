@@ -22,8 +22,11 @@ interface CartItem {
 const detectLocation = (tags: string[] | undefined): StorageLocation => {
   if (!tags) return StorageLocation.PANTRY;
   const upperTags = tags.map(t => t.toUpperCase());
+  
   if (upperTags.includes('CONGELAT')) return StorageLocation.FREEZER;
   if (upperTags.includes('REFRIGERAT')) return StorageLocation.FRIDGE;
+  
+  // Si no té tags, per defecte va al rebost (llevat que l'usuari ho canviï manualment després)
   return StorageLocation.PANTRY;
 };
 
@@ -65,7 +68,8 @@ export function BulkAddItemForm({ onClose }: Props) {
             const safeExpiryDate = ExpirySafetyService.applySafetyRules(
                 item.product.name, 
                 location, 
-                undefined // No tenim data de referència
+                undefined, // No tenim data de referència
+                item.product.tags // ✅ AFEGIT: Passem els tags del producte!
             );
 
             // Convertim a ISO per al servidor

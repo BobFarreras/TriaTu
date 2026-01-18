@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowLeft, Crown, Sparkles } from 'lucide-react';
+
+import {Crown, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Hook de traducció
 import { RankingPodium } from './RankingPodium';
 import { RankingList } from './RankingList';

@@ -1,64 +1,88 @@
 import { StorageLocation } from "@/core/domain/entities/StorageLocation";
-
+import { FOOD_PRESETS } from "@/lib/food-presets"; 
 
 export class ExpirySafetyService {
   
-  // ✅ AFEGIM EL PARÀMETRE 'tags'
   static applySafetyRules(name: string, location: string, aiDate?: string, tags: string[] = []): string {
     const today = new Date();
-    const lowerName = name.toLowerCase();
     
-    // Normalitzem els tags per evitar errors (majúscules/minúscules)
-    const normalizedTags = tags.map(t => t.toUpperCase());
+    // Normalitzem tags
+    const normalizedTags = tags ? tags.map(t => t.toUpperCase()) : [];
 
-    // --- REGLA 0: ELS TAGS MANEN (Font de Veritat) ---
-    
-    // 1. Si té tag CONGELAT -> Freezer i 6 mesos (Indiscutible)
-    if (normalizedTags.includes('CONGELAT')) {
+    console.log(`🔍 [ExpiryDebug] Analitzant: "${name}"`);
+    console.log(`   🏷️ Tags: ${JSON.stringify(normalizedTags)}`);
+
+    // --- REGLA 1: CONGELATS (SAGRADA) ---
+    // Tant se val si és KM0 o no. Si està congelat, dura 6 mesos.
+    if (normalizedTags.includes('CONGELAT') || location === StorageLocation.FREEZER) {
        if (aiDate && this.daysDiff(new Date(aiDate)) > 90) return aiDate;
        return this.addDays(today, 180); 
     }
 
-    // 2. Si té tag CONSERVA o SEC -> Rebost i 1-2 anys
+    // --- REGLA 2: KM0 DIRECTE (LA TEVA PETICIÓ) ---
+    // Si és KM0 -> 10 dies. Punt. 
+    // Això arregla el cogombre, l'enciam i qualsevol cosa fresca de proximitat.
+    if (normalizedTags.includes('KM0')) {
+        console.log(`   ✅ REGLA APLICADA: KM0 Directe (10 dies)`);
+        // Nota: Si la IA havia predit una data (aiDate), la ignorem o la respectem?
+        // Si volem ser estrictes amb els 10 dies:
+        return this.addDays(today, 10);
+    }
+
+    // --- REGLA 3: CONSERVES I SECS ---
     if (normalizedTags.includes('CONSERVA') || normalizedTags.includes('SEC') || normalizedTags.includes('DESHIDRATAT')) {
-       return aiDate || this.addDays(today, 365); // 1 any mínim
-    }
-
-    // 3. Si té tag REFRIGERAT -> Nevera
-    const isRefrigerated = normalizedTags.includes('REFRIGERAT') || location === StorageLocation.FRIDGE;
-
-    if (isRefrigerated) {
-       // Ara sí, mirem el nom per afinar (Carn vs Iogurt)
-       // Però ja sabem segur que NO és una llauna perquè té el tag REFRIGERAT
-       
-       const meatKeywords = ['pollastre', 'carn', 'vedella', 'porc', 'hamburguesa', 'salsitxa', 'bistec', 'llom', 'aletes', 'conill', 'gall', 'indi'];
-       const fishKeywords = ['peix', 'salmó', 'lluç', 'sípia', 'calamar', 'gambes', 'musclos', 'rap', 'bacallà', 'tonyina']; // Tonyina aquí només entrarà si té tag REFRIGERAT
-
-       if (meatKeywords.some(k => lowerName.includes(k)) || fishKeywords.some(k => lowerName.includes(k))) {
-          // Si és fresc i la data és > 5 dies, tallem.
-          if (aiDate && this.daysDiff(new Date(aiDate)) > 5) return this.addDays(today, 3);
-          return aiDate || this.addDays(today, 5);
-       }
-
-       // Iogurts i làctics refrigerats
-       if (lowerName.includes('iogurt') || lowerName.includes('llet') || lowerName.includes('formatge')) {
-          return aiDate || this.addDays(today, 21);
-       }
-
-       // Fruita/Verdura refrigerada
-       return aiDate || this.addDays(today, 7);
-    }
-
-    // 4. Si no té tags especials i és PANTRY -> Assumim llarga durada
-    // (Això arregla les llaunes que no tinguin tag explícit però no tinguin REFRIGERAT)
-    if (location === StorageLocation.PANTRY) {
        return aiDate || this.addDays(today, 365);
     }
 
-    return this.addDays(today, 7); // Fallback segur
+    // ... Resta de regles (Nevera, Rebost, Presets...) es mantenen igual ...
+    // ... per als productes que NO siguin KM0 ...
+    
+    const lowerName = name.toLowerCase();
+    const detectedCategory = this.detectCategoryFromPresets(lowerName);
+
+    // REFRIGERATS
+    const isRefrigerated = normalizedTags.includes('REFRIGERAT') || location === StorageLocation.FRIDGE;
+    if (isRefrigerated) {
+       // Carn/Peix
+       if (detectedCategory === 'PROTEIN' || detectedCategory === 'MEAT' || detectedCategory === 'FISH') {
+          return aiDate || this.addDays(today, 4);
+       }
+       // Làctics
+       if (detectedCategory === 'DAIRY' || lowerName.includes('iogurt') || lowerName.includes('formatge')) {
+          return aiDate || this.addDays(today, 21);
+       }
+       // Fruita/Verdura (No KM0)
+       if (detectedCategory === 'FRUIT' || detectedCategory === 'VEGETABLE') {
+           return aiDate || this.addDays(today, 10); 
+       }
+       return aiDate || this.addDays(today, 7);
+    }
+
+    // REBOST (PANTRY)
+    if (location === StorageLocation.PANTRY) {
+       if (detectedCategory === 'FRUIT' || detectedCategory === 'VEGETABLE') {
+          return aiDate || this.addDays(today, 15);
+       }
+       if (detectedCategory === 'BAKERY' || lowerName.includes('pa ')) {
+           return this.addDays(today, 3);
+       }
+       // Secs
+       return aiDate || this.addDays(today, 365);
+    }
+
+    // FALLBACK
+    return this.addDays(today, 7); 
   }
 
-  // ... helpers (addDays, daysDiff) iguals que abans
+  // ... Helpers i detectCategoryFromPresets iguals que abans ...
+  private static detectCategoryFromPresets(name: string): string | undefined {
+      const found = FOOD_PRESETS.find(preset => {
+          const pName = preset.id.toLowerCase();
+          return name.includes(pName) || pName.includes(name);
+      });
+      return found?.category;
+  }
+
   private static addDays(date: Date, days: number): string {
     const result = new Date(date);
     result.setDate(result.getDate() + days);

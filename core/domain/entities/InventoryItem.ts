@@ -13,7 +13,8 @@ export interface InventoryItemProps {
   expiryDate?: Date;
   addedAt: Date;
   productId?: string | null;
-  image?: string | null;
+  image?: string; // Assegura't que tens image
+  price?: number; // ✅ AFEGEIX AIXÒ
 }
 
 export class InventoryItem {

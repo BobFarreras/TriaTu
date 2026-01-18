@@ -1,95 +1,102 @@
+// src/components/recipes/RecipeGrid.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-// ✅ IMPORTACIÓ CORRECTA
 import { saveRecipeAction } from '@/app/actions/recipe-actions';
 import { Recipe, RecipeProps } from '@/core/domain/entities/Recipe';
-import { getDishEmoji } from '@/lib/utils/dish-emojis'; // ✅ Importem la utilitat
-// ✅ Importem el tipus EditorData per fer el casting correcte
+import { getDishEmoji } from '@/lib/utils/dish-emojis';
 import { EditorData } from '@/components/recipes/editor/types';
+
 interface Props {
   recipes: RecipeProps[];
   userId: string;
   onCancel: () => void;
 }
 
-const DEMO_IDS = [
-  "1090b513-97e9-4ea5-93ab-b8de7bb43c32",
-  "f5d2abe7-95b3-42fd-96fc-7db1d33bbd63"
-];
-
-// Definim tipus locals per evitar els 'any' dins del map
-interface LocalStep {
-  id?: string;
-  content: string;
+// ✅ Interface local estesa que accepta nulls
+interface ExtendedIngredient {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  emoji?: string;
+  linkedProductId?: string | null;
+  linkedProductImage?: string | null;
+  estimatedCost?: number;
 }
+
+interface ExtendedStep { id?: string; content?: string; }
 
 export function RecipeGrid({ recipes, onCancel }: Props) {
   const router = useRouter();
   const [savingId, setSavingId] = useState<string | null>(null);
-
+  // 🔍 DEBUG: Afegeix això per veure què arriba realment al navegador
+  console.log("🔍 [RecipeGrid DEBUG] Receptes rebudes:", recipes.length);
+  if (recipes.length > 0) {
+    console.log("🔍 [RecipeGrid DEBUG] Mostra de la 1a recepta:", {
+      nom: recipes[0].name,
+      cost: recipes[0].estimatedCost,
+      tipus_cost: typeof recipes[0].estimatedCost,
+      ingredients_count: recipes[0].ingredients.length
+    });
+  }
   const handleSelect = async (recipe: Recipe | RecipeProps) => {
     if (savingId) return;
-    
-    // Extreiem les dades
+
     const recipeId = recipe.id;
-    // Càsting segur: si és una instància de Recipe, agafem props, sinó és l'objecte directament
+    // Si ve com a classe, extraiem les primitives. Si ve com a objecte (JSON), ja ho és.
     const plainData = recipe instanceof Recipe ? recipe.toPrimitives() : recipe;
 
     setSavingId(recipeId);
+    console.log("📤 [RecipeGrid] Guardant:", plainData.name);
 
-    if (recipeId && DEMO_IDS.includes(recipeId)) {
-        toast.success("Obrint recepta de mostra...");
-        router.push(`/recipes/${recipeId}`);
-        return;
-    }
-
-    console.log("📤 [RecipeGrid] Enviant a saveRecipeAction:", plainData.name);
-
-    // ✅ PREPARACIÓ DEL PAYLOAD
-    // Creem l'objecte que compleix amb EditorData manualment
-   // ✅ PREPARACIÓ DEL PAYLOAD (Tipat com EditorData)
     const payload: EditorData = {
-        id: plainData.id,
-        name: plainData.name,
-        prepTimeMinutes: Number(plainData.prepTimeMinutes) || 30, // Assegurem number
-        
-        // Camps que falten a RecipeProps:
-        description: "", 
-        servings: 2, 
-        
-        // 🔥 FIX ERROR DIFFICULTY: Forcem el tipus estricte
-        difficulty: "medium" as "easy" | "medium" | "hard",
+      id: plainData.id,
+      name: plainData.name,
+      prepTimeMinutes: Number(plainData.prepTimeMinutes) || 30,
+      description: "",
+      servings: 2,
+      difficulty: "medium",
 
-        // Mapeig segur d'Ingredients
-        ingredients: plainData.ingredients.map((ing) => ({
-            id: ing.id,
-            name: ing.name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            emoji: ing.emoji,
-            estimatedCost: 0
-        })),
+      tags: plainData.tags || [],
+      dietaryTags: plainData.dietaryTags || [],
 
-        // Mapeig segur de Steps
-        steps: plainData.steps.map((step) => {
-            if (typeof step === 'string') {
-                return { id: crypto.randomUUID(), content: step };
-            }
-            const stepObj = step as LocalStep;
-            return { 
-                id: stepObj.id || crypto.randomUUID(), 
-                content: stepObj.content || "" 
-            };
-        }),
+      // 🔥 CORRECCIÓ DE DADES PERDUDES
+      ingredients: plainData.ingredients.map((ing) => {
+        // Càsting per accedir a camps opcionals que poden venir del backend
+        const extendedIng = ing as unknown as ExtendedIngredient;
 
-        dietaryTags: plainData.dietaryTags || [],
-        
-        // Flag IA
-        isAiGenerated: true 
+        // DEBUG: Comprovem si el camp existeix abans d'enviar
+        if (extendedIng.linkedProductId) {
+          console.log(`   💎 [GRID] Vincle trobat: ${extendedIng.name} -> ${extendedIng.linkedProductId}`);
+        }
+
+        return {
+          id: extendedIng.id,
+          name: extendedIng.name,
+          quantity: extendedIng.quantity,
+          unit: extendedIng.unit,
+          emoji: extendedIng.emoji,
+
+          // 🛑 CRUCIAL: Usem '|| null'.
+          // Si és undefined o null, enviem null. Així el JSON no ho elimina.
+          linkedProductId: extendedIng.linkedProductId || null,
+          linkedProductImage: extendedIng.linkedProductImage || null,
+
+          estimatedCost: extendedIng.estimatedCost || 0
+        };
+      }),
+
+      steps: plainData.steps.map((step) => {
+        if (typeof step === 'string') return { id: crypto.randomUUID(), content: step };
+        const stepObj = step as ExtendedStep;
+        return { id: stepObj.id || crypto.randomUUID(), content: stepObj.content || "" };
+      }),
+
+      isAiGenerated: true
     };
 
     const result = await saveRecipeAction(payload);
@@ -124,8 +131,10 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {recipes.map((recipe, idx) => {
           const isSaving = savingId === recipe.id;
+          // Assegurem que name no sigui null
           const safeName = recipe.name || "Recepta sense nom";
-          const emoji = getDishEmoji(safeName); 
+          const emoji = getDishEmoji(safeName);
+          const hasCost = recipe.estimatedCost && recipe.estimatedCost > 0;
 
           return (
             <div
@@ -148,11 +157,20 @@ export function RecipeGrid({ recipes, onCancel }: Props) {
                 <div className="text-3xl bg-slate-800 w-12 h-12 flex items-center justify-center rounded-2xl">
                   {emoji}
                 </div>
-                {recipe.prepTimeMinutes && (
-                  <span className="text-[10px] font-bold bg-black/40 text-slate-300 px-2 py-1 rounded-full">
-                    {recipe.prepTimeMinutes} min
-                  </span>
-                )}
+                <div className="flex flex-col items-end gap-1">
+                  {recipe.prepTimeMinutes && (
+                    <span className="text-[10px] font-bold bg-black/40 text-slate-300 px-2 py-1 rounded-full">
+                      {recipe.prepTimeMinutes} min
+                    </span>
+                  )}
+                  {hasCost ? (
+                    <span className="text-[10px] font-bold bg-emerald-900/40 text-emerald-400 px-2 py-1 rounded-full border border-emerald-500/20">
+                      {recipe.estimatedCost?.toFixed(2)}€
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-red-400">0.00€</span>
+                  )}
+                </div>
               </div>
 
               <h4 className="font-bold text-lg text-white mb-2 line-clamp-2">{safeName}</h4>

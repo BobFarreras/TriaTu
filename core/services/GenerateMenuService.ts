@@ -30,14 +30,25 @@ export class GenerateMenuService {
         const { data: profile } = await supabase.from('preference_profiles').select('*').eq('user_id', userId).single();
 
         const restrictions = (profile?.exclusions || []) as DietaryRestriction[];
+
+        // 🔥 LOGS NOUS DE DEPURACIÓ 🔥
+        console.log("👤 [USER PROFILE] Dades carregades:");
+        console.log(`   🚫 Al·lèrgies/Restriccions: ${restrictions.length > 0 ? restrictions.join(', ') : 'CAP'}`);
+        console.log(`   📦 Inventari disponible: ${inventory.length} items`);
+        // Mirem un exemple de l'inventari per veure si té imatge
+        if (inventory.length > 0) {
+            const sample = inventory[0].props; // o .toPrimitives() si és entitat
+            console.log(`   🔍 Mostra Inventari (Imatge?): ${sample.name} -> Image: ${sample.image || 'NULL'}`);
+        }
+        
         const finalRecipes: Recipe[] = [];
         const TARGET_COUNT = 4;
-        
+
         // 🔥 DEV MODE: Canvia a false per usar BD
-        const FORCE_AI_MODE = true; 
+        const FORCE_AI_MODE = true;
 
         // 2. FASE 1: CERCA A LA BASE DE DADES (Retrieval)
-        if (!FORCE_AI_MODE) { 
+        if (!FORCE_AI_MODE) {
             try {
                 const dbCandidates = await this.recipeRepo.findMatches({ userId, limit: 50 });
                 const inventoryNames = inventory.map(i => i.name.toLowerCase());
@@ -97,17 +108,23 @@ export class GenerateMenuService {
 
         // 🔥 FASE 4: NO GUARDEM (VOLÀTIL)
         // Retornem les receptes amb un ID temporal. L'usuari haurà de fer click per guardar-les.
+
         const volatileAiRecipes = aiRecipes.map((recipe: Recipe) => {
-             // Clonem per afegir metadades sense persistir
-             const props = recipe.toPrimitives();
-             return new Recipe({
-                 ...props,
-                 id: crypto.randomUUID(), // ID temporal
-                 authorId: userId,
-                 isAiGenerated: true,
-                 isPublic: false, // No visible fins que es guardi
-                 authorName: "✨ Chef IA (Sugerencia)"
-             });
+            // Obtenim les dades planes (que inclouen estimatedCost i ingredients amb preus)
+            const props = recipe.toPrimitives();
+
+            return new Recipe({
+                ...props,
+                id: crypto.randomUUID(),
+                authorId: userId,
+                isAiGenerated: true,
+                isPublic: false,
+                authorName: "✨ Chef IA (Sugerencia)",
+                // 👇 FORÇA EXPLÍCITAMENT EL COST SI EL TENS
+                estimatedCost: props.estimatedCost,
+                // 👇 FORÇA EXPLÍCITAMENT ELS INGREDIENTS PER SI DE CAS
+                ingredients: props.ingredients
+            });
         });
 
         finalRecipes.push(...volatileAiRecipes);

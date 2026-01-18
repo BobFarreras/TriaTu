@@ -1,4 +1,4 @@
-// ARXIU: app/actions/recipes.ts
+// ARXIU: app/actions/recipe-actions.ts
 'use server'
 
 import { createClient } from '@/adapters/supabase/server';
@@ -11,23 +11,12 @@ import { EmojiMatcherService } from '@/core/services/EmojiMarcherService'; // �
 import { GenerateRecipeSchema } from '@/core/application/schemas/inputSchemas';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
-type ActionResponse =
-  | { success: true; recipeId: string }
-  | { success: false; error: string };
+
+type ActionResponse = { success: true; recipeId: string } | { success: false; error: string };
 
 
-// ✅ NOVA INTERFÍCIE: Definim què esperem de l'ingredient (així evitem 'any')
-interface RecipeIngredientInput {
-  id?: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  emoji?: string;           // Ara TypeScript sap que això pot existir
-  estimatedCost?: number | string; // També tipem el cost
-}
 export async function saveRecipeAction(data: EditorData): Promise<ActionResponse> {
-  // 🔥🔥🔥 LOG CRÍTIC: Comprovem què arriba 🔥🔥🔥
-  console.log("\n🟥 [SAVE ACTION] REBUT:", data.name);
+  console.log(`\n💾 [SAVE ACTION] Guardant: "${data.name}"...`);
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -38,68 +27,94 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
     const { data: profile } = await supabase.from('preference_profiles').select('username').eq('user_id', user.id).single();
     if (profile?.username) authorName = profile.username;
 
+    // 1. Càlcul de cost total (ROBUST)
     const totalCost = data.ingredients.reduce((acc, ing) => {
-      const typedIng = ing as RecipeIngredientInput;
-      const cost = parseFloat(String(typedIng.estimatedCost || 0));
-      return acc + (isNaN(cost) ? 0 : cost);
+      // Assegurem que llegim el valor correcte, sigui string o number
+      // (A vegades ve com "2.50" string des del JSON)
+      let costVal = ing.estimatedCost;
+
+      if (typeof costVal === 'string') {
+        costVal = parseFloat(costVal);
+      }
+
+      // Si encara és null/undefined o NaN, comptem 0
+      const cost = Number(costVal) || 0;
+
+      return acc + cost;
     }, 0);
 
-    let isAiGenerated = false;
-    if (data.isAiGenerated) {
-      isAiGenerated = true;
-    } else if (data.id) {
+    console.log(`💰 [SAVE ACTION] Cost Total Calculat: ${totalCost.toFixed(2)}€`);
+
+    let isAiGenerated = !!data.isAiGenerated;
+    // Si és un update, intentem mantenir el flag original si no ens l'envien
+    if (!isAiGenerated && data.id) {
       const { data: oldRecipe } = await supabase.from('saved_recipes').select('is_ai_generated').eq('id', data.id).single();
       if (oldRecipe) isAiGenerated = oldRecipe.is_ai_generated;
     }
 
-    console.log("🔄 [SERVER] Processant ingredients amb neteja de marques...");
-
+    // 2. PROCESSAR INGREDIENTS (Amb lògica de vincle corregida)
     const ingredientsPayload = data.ingredients.map((ing) => {
-      const typedIng = ing as RecipeIngredientInput;
 
-      // 1. NETEJA EXTREMA
-      const cleanName = typedIng.name
-        .replace(/\b(BONPREU|PATCHEF|TERRALL|COOSUR|DE L'ERA|FERRARINI|GERMANOR|PESCANOVA|HACENDADO|YOSOY|GALLINA BLANCA|NESTLE|DANONE|CASA TARRADELLAS)\b/gi, "") // Més marques
-        .replace(/\b(de|d')\b/gi, "") // Treure preposicions soltes si molesten
-        .replace(/[0-9.]+(g|ml|kg|l)\b/gi, "") // Treure quantitats colades al nom (ex: "300g")
-        .replace(/\s+/g, ' ')
-        .trim();
+      let finalId = ing.id;
+      let finalEmoji = ing.emoji;
+      const finalName = ing.name;
 
-      // 2. MATCH: Intentem trobar el preset amb el nom net
-      const preset = EmojiMatcherService.match(cleanName);
+      const linkedProductId = ing.linkedProductId;
+      const linkedProductImage = ing.linkedProductImage;
+      const estimatedCost = ing.estimatedCost ? Number(ing.estimatedCost) : 0;
 
-      let finalId = typedIng.id;
-      let finalEmoji = typedIng.emoji;
+      // 🔥🔥🔥 CORRECCIÓ CRÍTICA 🔥🔥🔥
+      // Comprovem si linkedProductId és un string vàlid i no està buit
+      const hasLink = typeof linkedProductId === 'string' && linkedProductId.length > 0;
 
-      // LOG DE CADA INGREDIENT
-      process.stdout.write(`   🔹 "${typedIng.name}" -> Clean: "${cleanName}" `);
+      if (hasLink) {
+        // A) TÉ VINCLE -> PRESERVEM DADES D'INVENTARI
+        console.log(`   💎 [KEEP] Vinculat: "${finalName}" -> ID: ${linkedProductId} (${estimatedCost.toFixed(2)}€)`);
 
-      if (preset) {
-        finalId = preset.id;
-        finalEmoji = preset.emoji;
-        console.log(`✅ MATCH -> ${finalEmoji} (${finalId})`);
-      } else {
-        // Fallback: Si no hi ha preset, intentem mantenir l'emoji del front
-        if (!finalEmoji || finalEmoji === '🥘') {
-          finalEmoji = '🥘';
-          console.log(`❌ NO MATCH`);
+        // Si l'ingredient no tenia ID propi, li assignem el del producte
+        if (!finalId || finalId.length < 5) finalId = linkedProductId!;
+
+        // Si no té emoji o és el genèric de cuina, li posem una caixa
+        if (!finalEmoji || finalEmoji === '🥘') finalEmoji = '📦';
+      }
+      else {
+        // B) NO TÉ VINCLE -> FEM SERVIR MATCHER (EmojiMatcherService)
+        // Netejem noms de marques conegudes per millorar el match
+        const cleanName = finalName
+          .replace(/\b(BONPREU|PATCHEF|TERRALL|COOSUR|DE L'ERA|FERRARINI|GERMANOR|PESCANOVA)\b/gi, "")
+          .trim();
+
+        const preset = EmojiMatcherService.match(cleanName);
+
+        if (preset) {
+          finalId = preset.id;
+          finalEmoji = preset.emoji;
         } else {
-          console.log(`⚠️ NO MATCH -> Mantenim: ${finalEmoji}`);
+          if (!finalEmoji) finalEmoji = '🥘';
+          if (!finalId) finalId = crypto.randomUUID();
         }
-        if (!finalId) finalId = crypto.randomUUID();
+        console.log(`   🧩 [MATCHER] Genèric: "${finalName}" -> ${finalEmoji}`);
       }
 
       return {
         id: finalId,
-        name: typedIng.name, // Guardem el nom original
-        quantity: typedIng.quantity,
-        unit: typedIng.unit,
-        emoji: finalEmoji
+        name: finalName,
+        quantity: ing.quantity,
+        unit: ing.unit,
+        emoji: finalEmoji,
+        linkedProductId: hasLink ? linkedProductId : null,
+        linkedProductImage: hasLink ? linkedProductImage : null,
+        estimatedCost
       };
     });
 
-    const stepsData = data.steps.map(s => ({ id: s.id || crypto.randomUUID(), content: s.content || "" }));
+    // 3. PROCESSAR PASSOS (Normalitzar IDs)
+    const stepsData = data.steps.map(s => {
+      if (typeof s === 'string') return { id: crypto.randomUUID(), content: s };
+      return { id: s.id || crypto.randomUUID(), content: s.content || "" };
+    });
 
+    // 4. CONSTRUIR PAYLOAD DE BASE DE DADES
     const recipePayload = {
       user_id: user.id,
       name: data.name,
@@ -107,6 +122,7 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
       prep_time_minutes: Number(data.prepTimeMinutes) || 0,
       ingredients: ingredientsPayload,
       steps: stepsData,
+      tags: data.tags || [],
       dietary_tags: data.dietaryTags || [],
       estimated_cost: totalCost,
       is_public: true,
@@ -116,37 +132,41 @@ export async function saveRecipeAction(data: EditorData): Promise<ActionResponse
 
     const table = supabase.from('saved_recipes');
     let resultData: { id: string } | null = null;
-    let resultError = null;
 
     if (data.id) {
+      // UPDATE o UPSERT
       const { data: existing } = await table.select('user_id').eq('id', data.id).single();
       if (existing) {
         if (existing.user_id !== user.id) return { success: false, error: "No tens permís." };
         const { data: updated, error } = await table.update(recipePayload).eq('id', data.id).select('id').single();
-        resultData = updated; resultError = error;
+        if (error) throw error;
+        resultData = updated;
       } else {
+        // Si l'ID venia però no existeix a BD, fem insert amb aquell ID
         const { data: inserted, error } = await table.insert({ ...recipePayload, id: data.id }).select('id').single();
-        resultData = inserted; resultError = error;
+        if (error) throw error;
+        resultData = inserted;
       }
     } else {
+      // INSERT NOU (ID automàtic)
       const { data: inserted, error } = await table.insert(recipePayload).select('id').single();
-      resultData = inserted; resultError = error;
+      if (error) throw error;
+      resultData = inserted;
     }
 
-    if (resultError) throw new Error(resultError.message);
+    console.log(`✅ [SUCCESS] Guardat amb cost: ${totalCost.toFixed(2)}€`);
 
-    console.log("✅ [SUCCESS] Guardat a DB OK.");
+    // Revalidar caché de Next.js
     revalidatePath('/recipes');
     if (data.id) revalidatePath(`/recipes/${data.id}`);
 
     return { success: true, recipeId: resultData!.id };
 
   } catch (error: unknown) {
-    console.error("Error saving recipe:", error);
+    console.error("❌ Error saving recipe:", error);
     return { success: false, error: "Error al guardar." };
   }
 }
-
 // Acció per Favorits (Necessita el Repositori)
 export async function toggleFavoriteAction(recipeId: string) {
   const supabase = await createClient();
@@ -201,11 +221,9 @@ export async function generateMenuAction(
 
   try {
     const supabase = await createClient();
-
-    // ✅ 3. EXECUTAR EL SERVEI HÍBRID
-    // Aquí està la màgia: Tot el codi de buscar a BD, filtrar i cridar IA està dins del servei.
     const service = container.getGenerateMenuService(supabase);
 
+    // EXECUTEM EL SERVEI (L'Orchestrator decideix internament)
     const recipes = await service.execute(
       userId,
       mode,
@@ -215,10 +233,40 @@ export async function generateMenuAction(
       lang
     );
 
-    // 4. RETORNAR (Serialitzat)
+    // CONVERSIÓ A PRIMITIVES
+    // 1. Convertim a primitives (això ja ho fas)
+    const plainRecipes = recipes.map(r => r.toPrimitives());
+
+    // 2. ⚠️ ASSEGURA'T QUE estimatedCost EXISTEIX AQUÍ ⚠️
+    // Si plainRecipes[0].estimatedCost és undefined, JSON.stringify l'esborrarà!
+    if (plainRecipes.length > 0 && plainRecipes[0].estimatedCost === undefined) {
+      console.error("⚠️ ALERTA: estimatedCost és undefined abans d'enviar al client!");
+    }
+
+    // 3. Sanitització
+    const cleanRecipes = JSON.parse(JSON.stringify(plainRecipes));
+
+
+    // 👇 DETECCIÓ DE L'ESTRATÈGIA UTILITZADA 👇
+    // Si la primera recepta té isAiGenerated a true, és que hem usat el Generador.
+    // Si no, és que hem recuperat de la BD (Basic/Legacy).
+    const isAi = plainRecipes.length > 0 && plainRecipes[0].isAiGenerated;
+    const strategyUsed = isAi ? "✨ GEN (IA Generativa)" : "📚 BASIC (Recuperat de BD)";
+
+    console.log(`✅ [ACTION] Finalitzat. ${plainRecipes.length} receptes.`);
+    console.log(`   🛠️ ESTRATÈGIA FINAL: [ ${strategyUsed} ]`);
+
+    if (plainRecipes.length > 0) {
+      // Validem visualment que el preu arriba
+      const cost = plainRecipes[0].estimatedCost;
+      console.log(`   💰 Cost 1a recepta: ${cost ? cost.toFixed(2) + '€' : 'MISSING ⚠️'}`);
+    }
+
+  
+
     return {
       success: true,
-      recipes: recipes.map(r => r.toPrimitives())
+      recipes: cleanRecipes
     };
 
   } catch (error) {
