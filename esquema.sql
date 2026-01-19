@@ -1,5 +1,5 @@
 
-\restrict P62LHc9JyFBtQNu0ValxdPdmtZULvxufTRf2jCmnCohmkAeJtMdhYIEVWbOlTzT
+\restrict YRoDmoNmIBW7mMswUcFEwHAdwVbmpLbbjdxeVgrk0KXmFEWnmlEfX5d1YS7HPvC
 
 
 SET statement_timeout = 0;
@@ -108,6 +108,24 @@ $$;
 
 
 ALTER FUNCTION "public"."has_room_access"("_room_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_member_of_room"("_room_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM room_participants
+    WHERE room_id = _room_id
+    AND user_id = auth.uid()
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."is_member_of_room"("_room_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."is_room_member"("_room_id" "uuid") RETURNS boolean
@@ -248,6 +266,7 @@ CREATE TABLE IF NOT EXISTS "public"."decision_rooms" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "voting_mode" "text" DEFAULT 'BLIND'::"text",
     "invite_code" "text" DEFAULT "encode"("extensions"."gen_random_bytes"(4), 'hex'::"text"),
+    "enable_inventory" boolean DEFAULT false,
     CONSTRAINT "decision_rooms_voting_mode_check" CHECK (("voting_mode" = ANY (ARRAY['BLIND'::"text", 'PUBLIC'::"text"])))
 );
 
@@ -294,8 +313,11 @@ CREATE TABLE IF NOT EXISTS "public"."inventory_items" (
     "expiry_date" timestamp with time zone,
     "added_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "emoji" "text",
-    "product_id" "uuid"
+    "product_id" "uuid",
+    "room_id" "uuid"
 );
+
+ALTER TABLE ONLY "public"."inventory_items" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."inventory_items" OWNER TO "postgres";
@@ -485,20 +507,28 @@ ALTER TABLE "public"."shopping_sessions" OWNER TO "postgres";
 
 
 CREATE OR REPLACE VIEW "public"."user_leaderboard" AS
- SELECT "user_id",
-    COALESCE("username", ('Chef '::"text" || "substr"(("user_id")::"text", 1, 4))) AS "display_name",
-    COALESCE("avatar_emoji", '👨‍🍳'::"text") AS "avatar_emoji",
-    (COALESCE(( SELECT "sum"("rr"."value") AS "sum"
-           FROM ("public"."recipe_ratings" "rr"
-             JOIN "public"."saved_recipes" "r" ON (("r"."id" = "rr"."recipe_id")))
-          WHERE (("r"."user_id" = "p"."user_id") AND ("rr"."user_id" <> "p"."user_id"))), (0)::bigint) * 2) AS "quality_score",
-    LEAST(( SELECT "count"(*) AS "count"
-           FROM "public"."inventory_items" "i"
-          WHERE ("i"."user_id" = "p"."user_id")), (50)::bigint) AS "pantry_score",
-    (( SELECT "count"(*) AS "count"
-           FROM "public"."recipe_ratings" "rr"
-          WHERE ("rr"."user_id" = "p"."user_id")) * 5) AS "community_score"
-   FROM "public"."preference_profiles" "p";
+ SELECT "p"."user_id",
+    COALESCE("p"."username", ('Chef '::"text" || "substr"(("p"."user_id")::"text", 1, 4))) AS "display_name",
+    COALESCE("p"."avatar_emoji", '👨‍🍳'::"text") AS "avatar_emoji",
+    (COALESCE("quality_data"."score", (0)::bigint) * 2) AS "quality_score",
+    LEAST(COALESCE("inventory_data"."count", (0)::bigint), (50)::bigint) AS "pantry_score",
+    (COALESCE("community_data"."count", (0)::bigint) * 5) AS "community_score",
+    (((COALESCE("quality_data"."score", (0)::bigint) * 2) + LEAST(COALESCE("inventory_data"."count", (0)::bigint), (50)::bigint)) + (COALESCE("community_data"."count", (0)::bigint) * 5)) AS "total_score"
+   FROM ((("public"."preference_profiles" "p"
+     LEFT JOIN ( SELECT "r"."user_id",
+            "sum"("rr"."value") AS "score"
+           FROM ("public"."saved_recipes" "r"
+             JOIN "public"."recipe_ratings" "rr" ON (("r"."id" = "rr"."recipe_id")))
+          WHERE ("rr"."user_id" <> "r"."user_id")
+          GROUP BY "r"."user_id") "quality_data" ON (("p"."user_id" = "quality_data"."user_id")))
+     LEFT JOIN ( SELECT "inventory_items"."user_id",
+            "count"(*) AS "count"
+           FROM "public"."inventory_items"
+          GROUP BY "inventory_items"."user_id") "inventory_data" ON (("p"."user_id" = "inventory_data"."user_id")))
+     LEFT JOIN ( SELECT "recipe_ratings"."user_id",
+            "count"(*) AS "count"
+           FROM "public"."recipe_ratings"
+          GROUP BY "recipe_ratings"."user_id") "community_data" ON (("p"."user_id" = "community_data"."user_id")));
 
 
 ALTER VIEW "public"."user_leaderboard" OWNER TO "postgres";
@@ -619,6 +649,10 @@ CREATE INDEX "idx_group_decisions_room_id" ON "public"."group_decisions" USING "
 
 
 
+CREATE INDEX "idx_inventory_items_room_id" ON "public"."inventory_items" USING "btree" ("room_id");
+
+
+
 CREATE INDEX "idx_inventory_items_user_id" ON "public"."inventory_items" USING "btree" ("user_id");
 
 
@@ -703,6 +737,11 @@ ALTER TABLE ONLY "public"."group_decisions"
 
 ALTER TABLE ONLY "public"."inventory_items"
     ADD CONSTRAINT "inventory_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "public"."product_catalog"("id");
+
+
+
+ALTER TABLE ONLY "public"."inventory_items"
+    ADD CONSTRAINT "inventory_items_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
 
 
 
@@ -802,6 +841,28 @@ CREATE POLICY "Dev policy profiles" ON "public"."preference_profiles" USING (tru
 
 
 
+CREATE POLICY "Enable Delete for Members" ON "public"."inventory_items" FOR DELETE TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM "public"."room_participants"
+  WHERE (("room_participants"."room_id" = "inventory_items"."room_id") AND ("room_participants"."user_id" = "auth"."uid"())))))));
+
+
+
+CREATE POLICY "Enable Insert for Members" ON "public"."inventory_items" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM "public"."room_participants"
+  WHERE (("room_participants"."room_id" = "inventory_items"."room_id") AND ("room_participants"."user_id" = "auth"."uid"())))))));
+
+
+
+CREATE POLICY "Enable Modify for Members" ON "public"."inventory_items" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM "public"."room_participants"
+  WHERE (("room_participants"."room_id" = "inventory_items"."room_id") AND ("room_participants"."user_id" = "auth"."uid"())))))));
+
+
+
+CREATE POLICY "Enable Read for Authenticated Users" ON "public"."inventory_items" FOR SELECT TO "authenticated" USING (true);
+
+
+
 CREATE POLICY "Enable delete for owners and hosts" ON "public"."room_candidates" FOR DELETE USING ((("auth"."uid"() = "user_id") OR (( SELECT "decision_rooms"."host_user_id"
    FROM "public"."decision_rooms"
   WHERE ("decision_rooms"."id" = "room_candidates"."room_id")) = "auth"."uid"())));
@@ -816,6 +877,10 @@ CREATE POLICY "Enable insert for authenticated" ON "public"."room_candidates" FO
 
 
 
+CREATE POLICY "Enable insert for authenticated users" ON "public"."room_participants" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
 CREATE POLICY "Enable insert for authenticated users only" ON "public"."security_logs" FOR INSERT TO "authenticated" WITH CHECK (true);
 
 
@@ -825,6 +890,10 @@ CREATE POLICY "Enable read access for all" ON "public"."room_candidates" FOR SEL
 
 
 CREATE POLICY "Enable read access for authenticated users" ON "public"."decision_rooms" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable read access for authenticated users" ON "public"."room_participants" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -844,6 +913,10 @@ CREATE POLICY "Ratings are viewable by everyone" ON "public"."recipe_ratings" FO
 
 
 
+CREATE POLICY "Read Participants" ON "public"."room_participants" FOR SELECT TO "authenticated" USING (true);
+
+
+
 CREATE POLICY "Read group decisions" ON "public"."group_decisions" USING (true);
 
 
@@ -856,10 +929,6 @@ CREATE POLICY "Users can delete from their own shopping list" ON "public"."shopp
 
 
 
-CREATE POLICY "Users can delete their own inventory" ON "public"."inventory_items" FOR DELETE USING (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can delete their own recipes" ON "public"."saved_recipes" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
 
@@ -869,10 +938,6 @@ CREATE POLICY "Users can insert into their own shopping list" ON "public"."shopp
 
 
 CREATE POLICY "Users can insert own history" ON "public"."shopping_sessions" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can insert their own inventory" ON "public"."inventory_items" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -896,19 +961,11 @@ CREATE POLICY "Users can rate recipes" ON "public"."recipe_ratings" FOR INSERT W
 
 
 
-CREATE POLICY "Users can update their own inventory" ON "public"."inventory_items" FOR UPDATE USING (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own shopping list" ON "public"."shopping_list_items" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Users can view own history" ON "public"."shopping_sessions" FOR SELECT USING (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can view their own inventory" ON "public"."inventory_items" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -924,15 +981,7 @@ CREATE POLICY "allow_host_all" ON "public"."decision_rooms" USING (("auth"."uid"
 
 
 
-CREATE POLICY "allow_join" ON "public"."room_participants" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "allow_participant_read" ON "public"."decision_rooms" FOR SELECT USING ("public"."has_room_access"("id"));
-
-
-
-CREATE POLICY "allow_read_participants" ON "public"."room_participants" FOR SELECT USING ("public"."has_room_access"("room_id"));
 
 
 
@@ -1006,6 +1055,12 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_member_of_room"("_room_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_member_of_room"("_room_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_member_of_room"("_room_id" "uuid") TO "service_role";
 
 
 
@@ -1177,6 +1232,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict P62LHc9JyFBtQNu0ValxdPdmtZULvxufTRf2jCmnCohmkAeJtMdhYIEVWbOlTzT
+\unrestrict YRoDmoNmIBW7mMswUcFEwHAdwVbmpLbbjdxeVgrk0KXmFEWnmlEfX5d1YS7HPvC
 
 RESET ALL;

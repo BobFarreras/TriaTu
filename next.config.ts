@@ -22,7 +22,10 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // ✅ 1. Permetre optimització d'imatges de Bonpreu
+  // 1. Configuració d'imatges
+  // Mantenim el domini aquí. Encara que usem 'unoptimized={true}' al component,
+  // és bona pràctica tenir-lo llistat per si en el futur l'WAF de Bonpreu
+  // deixés de bloquejar Vercel i volguéssim tornar a l'optimització automàtica.
   images: {
     remotePatterns: [
       {
@@ -33,6 +36,7 @@ const nextConfig: NextConfig = {
     ],
   },
   
+  // 2. Capçaleres de seguretat
   async headers() {
     return [
       {
@@ -47,7 +51,10 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'geolocation=(), interest-cohort=()' }, 
           {
             key: 'Content-Security-Policy',
-            // ✅ 2. Afegim el domini de Bonpreu a img-src
+            // AQUESTA ÉS LA CLAU PER A LA SOLUCIÓ:
+            // A l'afegir 'https://www.compraonline.bonpreuesclat.cat' a img-src,
+            // permetem que el navegador de l'usuari (Client-Side) descarregui
+            // la imatge directament, saltant-se el servidor de Vercel.
             value: `
               default-src 'self';
               script-src 'self' 'unsafe-eval' 'unsafe-inline';
