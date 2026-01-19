@@ -8,7 +8,7 @@ import { FOOD_PRESETS } from '@/lib/food-presets';
 import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
-
+import { getSafeImageUrl } from '@/lib/imageUtils'; // 👈 IMPORTA AIXÒ
 const getUnitEmoji = (unit: string) => {
   const u = unit.toLowerCase();
   if (['kg', 'g', 'mg'].includes(u)) return '⚖️';
@@ -69,7 +69,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
     borderClass = 'border-amber-500/50';
     bgClass = 'bg-amber-950/20';
   }
-
+  const safeImageSrc = getSafeImageUrl(item.image);
   return (
     <>
       <div
@@ -122,12 +122,11 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
           {item.image && !imageError ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={item.image}
+              src={safeImageSrc} // 👈 Canviat
               alt={displayName}
-              // 👇 AFEGEIX AQUESTA LÍNIA CLAU:
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-contain max-h-20 md:max-h-25 drop-shadow-lg"
+              className="w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg"
               onError={() => setImageError(true)}
+            // Ja no cal referrerPolicy perquè ve de wsrv.nl
             />
           ) : (
             <div className="text-4xl md:text-6xl filter drop-shadow-md select-none">{displayEmoji}</div>

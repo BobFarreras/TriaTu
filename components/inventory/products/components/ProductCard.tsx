@@ -1,5 +1,5 @@
 import { ProductResult } from '@/app/actions/inventory';
-
+import { getSafeImageUrl } from '@/lib/imageUtils';
 interface Props {
   product: ProductResult;
   quantity: number;
@@ -11,7 +11,7 @@ export function ProductCard({ product, quantity, onSelect }: Props) {
   // ✅ 1. LÒGICA DE NETEJA: Treiem la marca "Bonpreu" per guanyar espai
   // Això elimina "BONPREU ", "BON PREU ", "Bonpreu " del principi.
   const cleanName = product.name.replace(/^(BON\s?PREU)\s+/i, '');
-
+  const safeImageSrc = getSafeImageUrl(product.image);
   return (
     <button
       onClick={() => onSelect(product)}
@@ -35,10 +35,8 @@ export function ProductCard({ product, quantity, onSelect }: Props) {
         {product.image ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={product.image}
+            src={safeImageSrc} // 👈 Canviat
             alt=""
-            // 👇 AFEGEIX AQUESTA LÍNIA CLAU:
-            referrerPolicy="no-referrer"
             className="w-full h-full object-contain"
             loading="lazy"
           />

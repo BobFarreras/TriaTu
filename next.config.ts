@@ -12,6 +12,20 @@ const withPWA = withPWAInit({
   disable: isDev,
   workboxOptions: {
     disableDevLogs: true,
+    // Això evita que la PWA intenti cachejar imatges que donen error
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/wsrv\.nl\/.*/i,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'external-images',
+          expiration: {
+            maxEntries: 50,
+            maxAgeSeconds: 60 * 60 * 24 * 30, // 30 dies
+          },
+        },
+      },
+    ],
   },
 });
 
@@ -21,13 +35,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '5mb',
     },
   },
-
-  // 1. Configuració d'imatges
-  // Mantenim el domini aquí. Encara que usem 'unoptimized={true}' al component,
-  // és bona pràctica tenir-lo llistat per si en el futur l'WAF de Bonpreu
-  // deixés de bloquejar Vercel i volguéssim tornar a l'optimització automàtica.
+  
   images: {
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'wsrv.nl', // ✅ Afegim el proxy aquí
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: 'www.compraonline.bonpreuesclat.cat',
@@ -36,7 +51,6 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  // 2. Capçaleres de seguretat
   async headers() {
     return [
       {
@@ -51,17 +65,14 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'geolocation=(), interest-cohort=()' }, 
           {
             key: 'Content-Security-Policy',
-            // AQUESTA ÉS LA CLAU PER A LA SOLUCIÓ:
-            // A l'afegir 'https://www.compraonline.bonpreuesclat.cat' a img-src,
-            // permetem que el navegador de l'usuari (Client-Side) descarregui
-            // la imatge directament, saltant-se el servidor de Vercel.
+            // ✅ AFEGIM 'https://wsrv.nl' tant a img-src com a connect-src
             value: `
               default-src 'self';
               script-src 'self' 'unsafe-eval' 'unsafe-inline';
               style-src 'self' 'unsafe-inline';
-              img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in https://www.compraonline.bonpreuesclat.cat;
+              img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in https://wsrv.nl https://www.compraonline.bonpreuesclat.cat;
               font-src 'self' data:;
-              connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in;
+              connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://wsrv.nl;
             `.replace(/\s{2,}/g, ' ').trim()
           }
         ],
