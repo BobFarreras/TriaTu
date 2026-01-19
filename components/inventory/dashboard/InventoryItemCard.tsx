@@ -48,7 +48,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
     p.name.toLowerCase() === item.name.toLowerCase() || p.emoji === item.emoji
   );
   const itemTranslations = t.food?.items as Record<string, string> | undefined;
-  
+
   const displayName = matchedPreset && itemTranslations?.[matchedPreset.id]
     ? itemTranslations[matchedPreset.id]
     : item.name;
@@ -105,7 +105,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
               <ConsumeButton
                 itemId={item.id}
                 currentQty={item.quantity}
-                onRefresh={onRefresh} 
+                onRefresh={onRefresh}
               />
             </div>
           )}
@@ -123,8 +123,10 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={item.image}
-              alt={displayName} // Usem displayName pel ALT també
-              className="w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg"
+              alt={displayName}
+              // 👇 AFEGEIX AQUESTA LÍNIA CLAU:
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-contain max-h-20 md:max-h-25 drop-shadow-lg"
               onError={() => setImageError(true)}
             />
           ) : (
@@ -136,7 +138,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
         <div className="text-center mt-auto md:mb-2 z-10">
           <h4 className="text-[10px] md:text-xs font-bold text-slate-300 leading-tight line-clamp-2">
             {/* ✅ AQUÍ SOLUCIONEM L'ERROR TS: Fem servir la variable displayName */}
-            {displayName} 
+            {displayName}
           </h4>
         </div>
 
@@ -144,10 +146,10 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
         {!isSelectionMode && (
           <div className="hidden md:block mt-1">
             {/* 🚨🚨🚨 L'ERROR ERA AQUÍ: Faltava passar onRefresh!! 🚨🚨🚨 */}
-            <ConsumeButton 
-                itemId={item.id} 
-                currentQty={item.quantity} 
-                onRefresh={onRefresh} // ✅ ARA SÍ!
+            <ConsumeButton
+              itemId={item.id}
+              currentQty={item.quantity}
+              onRefresh={onRefresh} // ✅ ARA SÍ!
             />
           </div>
         )}
