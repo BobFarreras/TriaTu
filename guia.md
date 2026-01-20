@@ -106,6 +106,7 @@ No saben res de negoci.
 
 - Cada feature ha de tenir un `README.md` amb objectiu, components clau i flux.
 Components llestos que coneixen el domini.
+ - Estructura per feature: `features/<feature>/{components,hooks,logic,__tests__,index.ts}` (ex: `features/inventory`).
 
 **Exemple:**  
 `ProfileForm` sap que existeix `updateProfile` i gestiona l’estat del formulari.

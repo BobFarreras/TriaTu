@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ProductExplorer } from '@/components/inventory/products/ProductExplorer';
-import { CartDock } from '@/components/inventory/products/CartDock'; // ✅ Importem el Dock
+import { ProductExplorer } from '@/features/inventory/products/ProductExplorer';
+import { CartDock } from '@/features/inventory/products/CartDock'; // ✅ Importem el Dock
 import { ProductResult, addBatchItemsAction } from '@/app/actions/inventory';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 // ✅ 1. IMPORTAR EL SERVEI DE SEGURETAT

@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ProductExplorer } from '@/components/inventory/products/ProductExplorer';
-import { CartDock } from '@/components/inventory/products/CartDock'; 
+import { ProductExplorer } from '@/features/inventory/products/ProductExplorer';
+import { CartDock } from '@/features/inventory/products/CartDock'; 
 import { ProductResult } from '@/app/actions/inventory';
 import { addBatchToShoppingListAction } from '@/app/actions/shopping-list-actions';
 
@@ -93,3 +93,4 @@ export function BulkAddShoppingItemForm({ onClose }: Props) {
     </div>
   );
 }
+

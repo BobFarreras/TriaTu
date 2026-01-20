@@ -16,9 +16,9 @@ import { useInventoryData } from './hooks/useInventoryData';
 import { BulkAddItemForm } from './actions/BulkAddItemForm';
 import { InventoryList } from './dashboard/InventoryList';
 import { InventoryHeader } from './dashboard/InventoryHeader';
-import { CameraScanner } from '../scanner/CameraScanner';
-import { ScannedListEditor } from '../scanner/ScannedListEditor';
-import { AROverlay } from '../scanner/AROverlay';
+import { CameraScanner } from '@/components/scanner/CameraScanner';
+import { ScannedListEditor } from '@/components/scanner/ScannedListEditor';
+import { AROverlay } from '@/components/scanner/AROverlay';
 
 // UI Utils
 import { Loader2 } from 'lucide-react';

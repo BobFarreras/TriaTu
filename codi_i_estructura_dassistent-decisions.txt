@@ -8895,7 +8895,7 @@ export default function InventoryNotFound() {
 
 import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
-import { InventoryManager } from '@/components/inventory/InventoryManager'; // Assegura't que la ruta és correcta
+import { InventoryManager } from '@/features/inventory/InventoryManager'; // Assegura't que la ruta és correcta
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { redirect } from 'next/navigation';
@@ -10561,8 +10561,8 @@ export function AddItemToggle() {
 'use client';
 
 import { useState } from 'react';
-import { ProductExplorer } from '@/components/inventory/products/ProductExplorer';
-import { CartDock } from '@/components/inventory/products/CartDock'; // ✅ Importem el Dock
+import { ProductExplorer } from '@/features/inventory/products/ProductExplorer';
+import { CartDock } from '@/features/inventory/products/CartDock'; // ✅ Importem el Dock
 import { ProductResult, addBatchItemsAction } from '@/app/actions/inventory';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 // ✅ 1. IMPORTAR EL SERVEI DE SEGURETAT
@@ -18022,8 +18022,8 @@ export function ScannedListEditor({
 'use client';
 
 import { useState } from 'react';
-import { ProductExplorer } from '@/components/inventory/products/ProductExplorer';
-import { CartDock } from '@/components/inventory/products/CartDock'; 
+import { ProductExplorer } from '@/features/inventory/products/ProductExplorer';
+import { CartDock } from '@/features/inventory/products/CartDock'; 
 import { ProductResult } from '@/app/actions/inventory';
 import { addBatchToShoppingListAction } from '@/app/actions/shopping-list-actions';
 

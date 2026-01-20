@@ -3,7 +3,7 @@
 import { Users, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { DecisionMetadata } from '@/core/domain/types/DecisionTypes';
-import { safeParseMeta } from './types';
+import { safeParseMeta } from '../../logic/history-types';
 
 // Tipus per evitar 'any' en les traduccions complexes
 type ProfileTranslations = { 

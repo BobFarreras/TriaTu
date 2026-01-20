@@ -2,7 +2,7 @@
 
 import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
-import { InventoryManager } from '@/components/inventory/InventoryManager'; // Assegura't que la ruta és correcta
+import { InventoryManager } from '@/features/inventory/InventoryManager'; // Assegura't que la ruta és correcta
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { redirect } from 'next/navigation';

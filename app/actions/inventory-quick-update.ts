@@ -6,6 +6,7 @@ import { container } from '@/services/container';
 import { revalidatePath } from 'next/cache';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation'; // ✅ Necessari per recrear
 import { FOOD_PRESETS } from '@/lib/food-presets'; // ✅ Necessari per calcular data/emoji
+import { error as logError } from '@/lib/logger';
 
 // --- HELPER: Conversió d'Unitats ---
 function normalizeQuantity(qty: number, unit: string): { val: number; base: string } {

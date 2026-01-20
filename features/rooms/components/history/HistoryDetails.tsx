@@ -5,7 +5,7 @@ import { BrainCircuit, ChefHat, Clock, Euro, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { Button } from '@/components/ui/Button';
 import { materializeRecipeAction } from '@/app/actions/recipe-actions';
-import { HistoryItem, safeParseMeta } from './types';
+import { HistoryItem, safeParseMeta } from '../../logic/history-types';
 import { MagicStats } from './MagicStats'; // ✅ Ara ja existeix
 
 // Interfície mínima per a la recepta completa (evita 'any')

@@ -1,7 +1,7 @@
 'use client';
 import { ChevronDown, ChefHat, Sparkles, Dices, Clock } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { HistoryItem, safeParseMeta } from './types'; // Definirem types.ts després
+import { HistoryItem, safeParseMeta } from '../../logic/history-types';
 
 export const HistoryHeader = ({ item, isOpen, toggle }: { item: HistoryItem; isOpen: boolean; toggle: () => void; }) => {
   const { t } = useLanguage();

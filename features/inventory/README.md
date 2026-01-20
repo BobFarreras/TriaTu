@@ -153,3 +153,13 @@ La interfície s’ha refactoritzat per ser **One-Screen** i evitar scroll innec
 - El sistema usa **injecció de dependències** (`src/services/container.ts`)
 - Pots substituir `GeminiImageRecognizer` per `OpenAIImageRecognizer`
   **canviant només una línia** al contenidor.
+
+## Estructura actual de la feature
+- `features/inventory/` (UI i hooks de la feature)
+- `actions/`, `dashboard/`, `products/`, `ui/` (submodules d'inventari)
+- `hooks/`, `logic/`, `__tests__/` (organitzacio per feature)
+
+## Nota de migracio (features/inventory)
+- La UI d'inventari ara viu a `features/inventory`.
+- El scanner continua a `components/scanner` per ser compartit.
+- Imports d'inventari han de sortir de `@/features/inventory/*`.

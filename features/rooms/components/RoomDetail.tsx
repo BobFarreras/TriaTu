@@ -10,7 +10,7 @@ import { RoomHeader } from './RoomHeader';
 import { HistoryList } from './HistoryList';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { TourTrigger } from '@/components/onboarding/TourTrigger';
-import { useRoomTour } from './components/useRoomTour';
+import { useRoomTour } from '../hooks/useRoomTour';
 import { useRoomSimulation } from '@/features/rooms/hooks/useRoomSimulation'; // <--- NOU HOOK
 import { HistoryItem } from '../logic/history-types';
 import { RoomFeaturesPanel } from './RoomFeaturesPanel'; // <--- IMPORT NOU

@@ -1177,3 +1177,8 @@ Has definit una arquitectura:
 - preparada per IA futura
 - preparada per durar anys
 
+
+## Annex: Organitzacio de la UI per features
+- Cada feature viu a `features/<feature>` amb `components/`, `hooks/`, `logic/`, `__tests__/`, `index.ts`.
+- UI compartida viu a `components/`.
+- Les pages de `app/` importen des de `features/` o `components/` segons sigui compartit o especific.

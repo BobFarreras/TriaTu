@@ -6,4 +6,4 @@ export { NavigationPanel } from './components/NavigationPanel';
 export { RoomsEntryCard } from './components/RoomsEntryCard';
 export { UserDropdown } from './components/UserDropdown';
 export { UserPreferencesSidebar } from './components/UserPreferencesSidebar';
-export { MobileuserPreferences } from './components/MobileuserPreferences';
+export { MobileUserPreferences } from './components/MobileuserPreferences';
