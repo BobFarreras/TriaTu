@@ -13,7 +13,8 @@ export class AddToShoppingList {
     // ✅ NOUS ARGUMENTS
     productId?: string,
     productImage?: string,
-    estimatedCost?: number
+    estimatedCost?: number,
+    roomId?: string | null
   ): Promise<void> {
     
     console.log("🧠 [USECASE] Executing for:", { name, productId });
@@ -28,9 +29,14 @@ export class AddToShoppingList {
         false, // isChecked
         productId,
         productImage,
-        estimatedCost
+        estimatedCost,
+        roomId
     );
     
     await this.repo.upsertItem(item);
   }
 }
+
+
+
+

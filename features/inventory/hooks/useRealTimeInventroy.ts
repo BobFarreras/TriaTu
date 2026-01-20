@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/adapters/supabase/client';
+import { useEffect, useMemo, useRef } from 'react';
+import { createClient } from '@/adapters/supabase/browser';
 import { InventoryScope } from './useInventoryData';
 
 export function useRealtimeInventory(scope: InventoryScope, onRefresh: () => void) {
+  const supabase = useMemo(() => createClient(), []);
   
   // TRUC MESTRE: Guardem la funció en un Ref.
   // Això permet cridar l'última versió de 'onRefresh' sense haver de 

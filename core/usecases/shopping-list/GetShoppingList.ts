@@ -5,7 +5,7 @@ import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
 export class GetShoppingList {
   constructor(private readonly repo: ShoppingListRepository) {}
 
-  async execute(userId: string): Promise<ShoppingListItem[]> {
-    return this.repo.findAll(userId);
+  async execute(userId: string, roomId?: string | null): Promise<ShoppingListItem[]> {
+    return this.repo.findAll(userId, roomId);
   }
 }

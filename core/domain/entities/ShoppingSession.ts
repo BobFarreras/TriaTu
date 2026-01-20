@@ -14,6 +14,7 @@ export interface SnapshotItem {
 export interface ShoppingSessionProps {
     id: string;
     userId: string;
+    roomId?: string | null;
     createdAt: Date;
     totalCost: number;
     itemCount: number;

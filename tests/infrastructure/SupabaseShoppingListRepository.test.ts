@@ -9,6 +9,7 @@ type SupabaseResponse = { data: unknown; error: unknown };
 const mockBuilder = {
   select: vi.fn().mockReturnThis(),
   eq: vi.fn().mockReturnThis(),
+  is: vi.fn().mockReturnThis(),
   ilike: vi.fn().mockReturnThis(),
   order: vi.fn().mockReturnThis(),
   in: vi.fn().mockReturnThis(),
@@ -84,5 +85,26 @@ describe('SupabaseShoppingListRepository', () => {
 
     // 3. No hauria de fer insert
     expect(mockBuilder.insert).not.toHaveBeenCalled();
+  });
+
+  it('hauria de filtrar per roomId quan es passa context de sala', async () => {
+    const roomId = 'room-123';
+    (mockBuilder.then as unknown as (resolve: (value: SupabaseResponse) => void) => void) = (resolve) =>
+      resolve({ data: [], error: null });
+
+    await repo.findAll('u1', roomId);
+
+    expect(mockBuilder.eq).toHaveBeenCalledWith('room_id', roomId);
+    expect(mockBuilder.eq).not.toHaveBeenCalledWith('user_id', 'u1');
+  });
+
+  it('hauria de filtrar per llista personal quan no hi ha roomId', async () => {
+    (mockBuilder.then as unknown as (resolve: (value: SupabaseResponse) => void) => void) = (resolve) =>
+      resolve({ data: [], error: null });
+
+    await repo.findAll('u1');
+
+    expect(mockBuilder.eq).toHaveBeenCalledWith('user_id', 'u1');
+    expect(mockBuilder.is).toHaveBeenCalledWith('room_id', null);
   });
 });

@@ -23,6 +23,7 @@ export type RoomDTO = {
   history: HistoryItem[];
   votingMode: 'BLIND' | 'PUBLIC';
   enableInventory: boolean; // <--- ✅ AFEGEIX AIXÒ
+  enableShoppingList: boolean;
 };
 
 interface RoomDetailProps {
@@ -96,6 +97,7 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
           roomId={room.id}
           isHost={isHost}
           enableInventory={room.enableInventory}
+          enableShoppingList={room.enableShoppingList}
         />
       </div>
       {/* TOUR TRIGGER */}

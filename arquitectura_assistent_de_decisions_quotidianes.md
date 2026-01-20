@@ -1188,3 +1188,8 @@ Has definit una arquitectura:
 - `core/usecases` orquestra regles i usa ports.
 - `core/application/services` contenen serveis d'aplicacio que poden usar `lib/`.
 - `core/application/schemas` contenen DTOs i validacions.
+
+## Context compartit per sales
+- Inventari i llista de la compra poden ser personals o associades a una sala.
+- El host activa el context de sala via `enable_inventory` o `enable_shopping_list`.
+- La UI filtra per `room_id` i permet seleccionar el context actiu.

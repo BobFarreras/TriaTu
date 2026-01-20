@@ -9,6 +9,7 @@ import { addBatchToShoppingListAction } from '@/app/actions/shopping-list-action
 
 interface Props {
   onClose: () => void;
+  activeRoomId?: string;
 }
 
 interface CartItem {
@@ -16,7 +17,7 @@ interface CartItem {
   quantity: number;
 }
 
-export function BulkAddShoppingItemForm({ onClose }: Props) {
+export function BulkAddShoppingItemForm({ onClose, activeRoomId }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -54,7 +55,7 @@ export function BulkAddShoppingItemForm({ onClose }: Props) {
             estimatedCost: item.product.price // ✅ Important: Passem el preu!
         }));
 
-        const result = await addBatchToShoppingListAction(itemsPayload);
+        const result = await addBatchToShoppingListAction(itemsPayload, activeRoomId);
 
         if (result.success) {
            onClose();

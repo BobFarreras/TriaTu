@@ -26,3 +26,8 @@ Aquesta feature serà utilitzada principalment per:
 - __tests__/ (tests de feature)
 - index.ts (exports publices)
 
+
+## Comparticio de sala
+- La llista pot ser personal o de sala si el host activa `enable_shopping_list`.
+- El selector de context permet canviar entre personal i sales habilitades.
+- Les dades compartides es guarden amb `room_id` a `shopping_list_items` i `shopping_sessions`.

@@ -107,6 +107,8 @@ No saben res de negoci.
 - Cada feature ha de tenir un `README.md` amb objectiu, components clau i flux.
 Components llestos que coneixen el domini.
  - Estructura per feature: `features/<feature>/{components,hooks,logic,__tests__,index.ts}` (ex: `features/inventory`).
+ - Context compartit: inventari i llista de la compra poden ser personals o de sala quan el host activa el feature (enable_inventory, enable_shopping_list).
+ - La UI exposa un selector de context per canviar entre personal i sales habilitades.
 
 **Exemple:**  
 `ProfileForm` sap que existeix `updateProfile` i gestiona l’estat del formulari.

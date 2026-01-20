@@ -8,15 +8,17 @@ import { SupabaseClient } from '@supabase/supabase-js';
 const mockBuilder = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
     ilike: vi.fn().mockReturnThis(), // ✅ AFEGIT
     maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }), // ✅ AFEGIT
     single: vi.fn().mockResolvedValue({ data: null, error: null }),
-    order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    order: vi.fn().mockReturnThis(),
     upsert: vi.fn().mockResolvedValue({ error: null }),
     insert: vi.fn().mockResolvedValue({ error: null }), // ✅ AFEGIT (soluciona l'error .insert is not a function)
     update: vi.fn().mockResolvedValue({ error: null }), // ✅ AFEGIT
     delete: vi.fn().mockResolvedValue({ error: null }),
-    in: vi.fn().mockReturnThis()
+    in: vi.fn().mockReturnThis(),
+    then: (resolve: (value: { data: unknown; error: unknown }) => void) => resolve({ data: [], error: null })
 };
 
 const mockSupabase = {
@@ -35,7 +37,7 @@ describe('Shopping List Flow', () => {
 
     it('hauria de mapejar correctament els camps de snake_case a camelCase', async () => {
         // Preparem dades de retorn pel select
-        mockBuilder.order.mockResolvedValueOnce({
+        mockBuilder.then = (resolve) => resolve({
             data: [{
                 id: '123',
                 user_id: 'user-1',

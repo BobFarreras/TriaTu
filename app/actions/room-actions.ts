@@ -44,6 +44,7 @@ interface RoomParticipantRow {
     id: string;
     name: string;
     enable_inventory: boolean;
+    enable_shopping_list: boolean;
   } | null;
 }
 
@@ -375,6 +376,42 @@ export async function getMyInventoryRoomsAction() {
 
 
   return availableRooms;
+}
+
+export async function getMyShoppingRoomsAction() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('room_participants')
+    .select(`
+      room:decision_rooms (
+        id,
+        name,
+        enable_inventory,
+        enable_shopping_list
+      )
+    `)
+    .eq('user_id', user.id)
+    .returns<RoomParticipantRow[]>();
+
+  if (error) {
+    logError("Error fetching shopping rooms:", error);
+    return [];
+  }
+
+  if (!data) return [];
+  return data
+    .map((row) => row.room)
+    .filter((room): room is NonNullable<typeof room> =>
+      room !== null && room.enable_shopping_list === true
+    )
+    .map((room) => ({
+      id: room.id,
+      name: room.name
+    }));
 }
 
 export async function toggleRoomFeatureAction(roomId: string, feature: 'INVENTORY' | 'SHOPPING', isEnabled: boolean) {

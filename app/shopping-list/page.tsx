@@ -14,12 +14,22 @@ import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
 import { ShoppingSession } from '@/core/domain/entities/ShoppingSession';
 import { ShoppingItemUI } from '@/features/shoppingList/components/ShoppingListItem';
 import { HistorySession } from '@/features/shoppingList/components/ShoppingHistory';
+import { z } from 'zod';
 
-export default async function ShoppingListPage() {
+interface PageProps {
+  searchParams?: Promise<{ room?: string }>;
+}
+
+export default async function ShoppingListPage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect('/auth/login');
+
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const roomParam = resolvedSearchParams?.room;
+  const roomValidation = z.string().uuid().safeParse(roomParam);
+  const activeRoomId = roomValidation.success ? roomValidation.data : undefined;
 
   // Dependency Injection
   const getShoppingList = container.getGetShoppingList(supabase);
@@ -27,8 +37,8 @@ export default async function ShoppingListPage() {
 
   // Data Fetching
   const [items, history] = await Promise.all([
-    getShoppingList.execute(user.id),
-    getHistory.execute(user.id)
+    getShoppingList.execute(user.id, activeRoomId),
+    getHistory.execute(user.id, activeRoomId)
   ]);
 
   // Mapping
@@ -52,7 +62,12 @@ export default async function ShoppingListPage() {
           {/* L'Overlay ha d'estar DINS del provider però AL COSTAT del contingut */}
           <OnboardingOverlay />
 
-          <ShoppingListManager initialItems={plainItems} history={plainHistory} />
+          <ShoppingListManager
+            initialItems={plainItems}
+            history={plainHistory}
+            initialScope={activeRoomId}
+            userId={user.id}
+          />
         </OnboardingProvider>
 
       </div>

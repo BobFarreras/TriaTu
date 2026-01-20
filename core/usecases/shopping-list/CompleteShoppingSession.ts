@@ -12,9 +12,9 @@ export class CompleteShoppingSession {
     private readonly inventoryRepo: InventoryRepository
   ) { }
 
-  async execute(userId: string): Promise<{ added: number }> {
+  async execute(userId: string, roomId?: string | null): Promise<{ added: number }> {
     // 1. Obtenir tota la llista
-    const allItems = await this.shoppingListRepo.findAll(userId);
+    const allItems = await this.shoppingListRepo.findAll(userId, roomId);
 
     // 2. Filtrar només els marcats (Checked)
     const boughtItems = allItems.filter(item => item.props.isChecked);
@@ -32,6 +32,7 @@ export class CompleteShoppingSession {
     const session = new ShoppingSession({
       id: crypto.randomUUID(),
       userId,
+      roomId,
       createdAt: new Date(),
       totalCost,
       itemCount: boughtItems.length,
@@ -99,3 +100,5 @@ export class CompleteShoppingSession {
     return { added: inventoryItems.length };
   }
 }
+
+

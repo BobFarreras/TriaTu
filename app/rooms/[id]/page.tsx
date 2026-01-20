@@ -48,11 +48,12 @@ export default async function RoomPage({ params }: PageProps) {
 
   const { data: rawRoom } = await supabase
     .from('decision_rooms')
-    .select('enable_inventory')
+    .select('enable_inventory, enable_shopping_list')
     .eq('id', room.id)
     .single();
 
   const enableInventory = rawRoom?.enable_inventory ?? false;
+  const enableShoppingList = rawRoom?.enable_shopping_list ?? false;
 
   // 5. Mapeig a DTOs per a la UI (Presentation Layer)
   const roomDTO: RoomDTO = {
@@ -63,6 +64,7 @@ export default async function RoomPage({ params }: PageProps) {
     inviteCode: room.inviteCode,
     participants: room.participants.map(p => ({ userId: p.userId })),
     enableInventory: enableInventory, // <--- ✅ PASSEM LA DADA REAL F
+    enableShoppingList: enableShoppingList,
     // ✅ CORRECCIÓ CLAU: Ara passem la metadata al DTO
     // ✅ CORRECCIÓ: Tipem explícitament 'h'
     history: room.history.map((h) => {

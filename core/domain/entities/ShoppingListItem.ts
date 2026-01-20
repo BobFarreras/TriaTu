@@ -3,6 +3,7 @@
 export interface ShoppingListItemProps {
   id: string;
   userId: string;
+  roomId?: string | null;
   name: string;
   quantity: number;
   unit: string;
@@ -27,7 +28,8 @@ export class ShoppingListItem {
     // ✅ NOUS PARÀMETRES
     productId?: string,
     productImage?: string,
-    estimatedCost?: number
+    estimatedCost?: number,
+    roomId?: string | null
   ): ShoppingListItem {
     if (quantity <= 0) throw new Error("La quantitat ha de ser positiva");
     if (!name.trim()) throw new Error("El nom no pot estar buit");
@@ -35,6 +37,7 @@ export class ShoppingListItem {
     return new ShoppingListItem({
       id: crypto.randomUUID(), // Generació temporal d'ID si és nou
       userId,
+      roomId,
       name,
       quantity,
       unit,
@@ -58,3 +61,5 @@ export class ShoppingListItem {
     this.props.quantity += amount;
   }
 }
+
+

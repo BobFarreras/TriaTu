@@ -5,7 +5,7 @@ import { ShoppingSession } from "../domain/entities/ShoppingSession";
 
 export interface ShoppingListRepository {
   // --- Mètodes existents ---
-  findAll(userId: string): Promise<ShoppingListItem[]>;
+  findAll(userId: string, roomId?: string | null): Promise<ShoppingListItem[]>;
   upsertItem(item: ShoppingListItem): Promise<void>;
   delete(id: string): Promise<void>;
   toggleCheck(itemId: string, isChecked: boolean): Promise<void>;
@@ -13,5 +13,5 @@ export interface ShoppingListRepository {
 
   // ✅ NOUS MÈTODES QUE FALTAVEN:
   saveSession(session: ShoppingSession): Promise<void>;
-  getHistory(userId: string): Promise<ShoppingSession[]>;
+  getHistory(userId: string, roomId?: string | null): Promise<ShoppingSession[]>;
 }

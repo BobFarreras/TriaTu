@@ -1,13 +1,13 @@
 // ARXIU: src/features/shoppingList/components/ShoppingListManager.tsx
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 
 // Accions
-import { toggleShoppingItemAction, completeShoppingSessionAction} from '@/app/actions/shopping-list-actions';
+import { toggleShoppingItemAction, completeShoppingSessionAction } from '@/app/actions/shopping-list-actions';
 
 // Contextos
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -20,26 +20,49 @@ import { ShoppingHistory, HistorySession } from './ShoppingHistory';
 import { BulkAddShoppingItemForm } from './BulkAddShoppingItemForm';
 import { ShoppingHeader } from './ShoppingHeader';
 import { ShoppingStats } from './ShoppingStats';
+import { ShoppingListContextSelector } from './ShoppingListContextSelector';
+import { useShoppingListData } from '../hooks/useShoppingListData';
+import { useRealtimeShoppingList } from '../hooks/useRealtimeShoppingList';
 
 
 interface Props {
     initialItems: ShoppingItemUI[];
     history: HistorySession[];
+    initialScope?: string;
+    userId: string;
 }
 
-export function ShoppingListManager({ initialItems, history }: Props) {
+export function ShoppingListManager({ initialItems, history: initialHistory, initialScope, userId }: Props) {
     const router = useRouter();
     const { t } = useLanguage();
     const { startTour } = useOnboarding();
 
     // --- ESTAT ---
     const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
-    const [items, setItems] = useState<ShoppingItemUI[]>(initialItems);
+    const {
+        scope,
+        setScope,
+        items,
+        setItems,
+        history,
+        rooms,
+        isLoading,
+        refreshData
+    } = useShoppingListData(initialItems, initialHistory, initialScope);
     const [isCompleting, setIsCompleting] = useState(false);
     const [isAddMode, setIsAddMode] = useState(false);
 
-    // Sincronització
-    useEffect(() => { setItems(initialItems); }, [initialItems]);
+    const activeRoomId = scope === 'PERSONAL' ? undefined : scope;
+    useRealtimeShoppingList(scope, userId, refreshData);
+
+    useEffect(() => {
+        if (scope === 'PERSONAL') {
+            router.replace('/shopping-list', { scroll: false });
+        } else {
+            router.replace(`/shopping-list?room=${scope}`, { scroll: false });
+        }
+    }, [scope, router]);
+
 
     // --- CÀLCULS ---
     const cartTotal = items.filter(i => i.isChecked).reduce((acc, i) => acc + (i.estimatedCost || 0) * i.quantity, 0);
@@ -101,8 +124,9 @@ export function ShoppingListManager({ initialItems, history }: Props) {
     const handleFinish = async () => {
         if (checkedCount === 0) return;
         setIsCompleting(true);
-        const result = await completeShoppingSessionAction();
+        const result = await completeShoppingSessionAction(activeRoomId);
         if (result.success) {
+            await refreshData();
             toast.success(`🎉 Compra finalitzada!`, { description: `Cost total: ${cartTotal.toFixed(2)}€` });
         } else {
             toast.error("Error al finalitzar", { description: result.error });
@@ -114,13 +138,13 @@ export function ShoppingListManager({ initialItems, history }: Props) {
 
     const handleCloseModal = () => {
         setIsAddMode(false);
-        router.refresh();
+        refreshData();
     };
 
     return (
         <>
             <AnimatePresence>
-                {isAddMode && <BulkAddShoppingItemForm onClose={handleCloseModal} />}
+                {isAddMode && <BulkAddShoppingItemForm onClose={handleCloseModal} activeRoomId={activeRoomId} />}
             </AnimatePresence>
 
             <div className="space-y-6 pb-24">
@@ -134,6 +158,13 @@ export function ShoppingListManager({ initialItems, history }: Props) {
                                 onTabChange={setActiveTab} 
                                 onSearchClick={() => setIsAddMode(true)}
                                 tourId="tour-shopping-tabs"
+                                contextSelector={(
+                                    <ShoppingListContextSelector
+                                        scope={scope}
+                                        setScope={setScope}
+                                        rooms={rooms}
+                                    />
+                                )}
                             />
                         </div>
                         <TourTrigger 
@@ -153,6 +184,10 @@ export function ShoppingListManager({ initialItems, history }: Props) {
                         <div id="tour-shopping-stats">
                             <ShoppingStats grandTotal={grandTotal} cartTotal={cartTotal} />
                         </div>
+
+                        {isLoading && (
+                            <div className="text-xs text-slate-500">Carregant llista...</div>
+                        )}
 
          
 

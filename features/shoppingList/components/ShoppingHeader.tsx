@@ -6,9 +6,10 @@ interface Props {
     onTabChange: (tab: 'active' | 'history') => void;
     onSearchClick: () => void;
     tourId?: string; // ✅ Prop opcional
+    contextSelector?: React.ReactNode;
 }
 
-export function ShoppingHeader({ activeTab, onTabChange, onSearchClick, tourId }: Props) {
+export function ShoppingHeader({ activeTab, onTabChange, onSearchClick, tourId, contextSelector }: Props) {
     return (
         <div className="flex items-center gap-2 sticky top-2 z-30">
             {/* TABS (Ocupen tot l'espai possible) */}
@@ -26,6 +27,8 @@ export function ShoppingHeader({ activeTab, onTabChange, onSearchClick, tourId }
                     📜 Historial
                 </button>
             </div>
+
+            {contextSelector}
 
             {/* BOTÓ CERCA (Compacte al costat) */}
             {activeTab === 'active' && (

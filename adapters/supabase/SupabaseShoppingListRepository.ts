@@ -7,6 +7,7 @@ import { ShoppingSession, SnapshotItem } from '@/core/domain/entities/ShoppingSe
 interface ShoppingListItemRow {
   id: string;
   user_id: string;
+  room_id?: string | null;
   name: string;
   quantity: number;
   unit: string;
@@ -21,6 +22,7 @@ interface ShoppingListItemRow {
 interface ShoppingSessionRow {
     id: string;
     user_id: string;
+    room_id?: string | null;
     created_at: string;
     total_cost: number;
     item_count: number;
@@ -31,12 +33,19 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
   // Injectem el client (essencial per testejar amb mocks)
   constructor(private supabase: SupabaseClient) { }
 
-  async findAll(userId: string): Promise<ShoppingListItem[]> {
-    const { data, error } = await this.supabase
+  async findAll(userId: string, roomId?: string | null): Promise<ShoppingListItem[]> {
+    let query = this.supabase
       .from('shopping_list_items')
       .select('*')
-      .eq('user_id', userId)
       .order('added_at', { ascending: false });
+
+    if (roomId) {
+      query = query.eq('room_id', roomId);
+    } else {
+      query = query.eq('user_id', userId).is('room_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw new Error(`Error fetching shopping list: ${error.message}`);
 
@@ -45,13 +54,18 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
 
   async upsertItem(item: ShoppingListItem): Promise<void> {
     // 1. Busquem si existeix utilitzant maybeSingle() per evitar errors si no hi és
-    const { data: existing, error: fetchError } = await this.supabase
+    let findQuery = this.supabase
       .from('shopping_list_items')
       .select('*')
-      .eq('user_id', item.props.userId)
-      .ilike('name', item.props.name)
-      .maybeSingle(); // ✅ CANVI CRÍTIC: .single() peta si és null, .maybeSingle() no.
+      .ilike('name', item.props.name);
 
+    if (item.props.roomId) {
+      findQuery = findQuery.eq('room_id', item.props.roomId);
+    } else {
+      findQuery = findQuery.eq('user_id', item.props.userId).is('room_id', null);
+    }
+
+    const { data: existing, error: fetchError } = await findQuery.maybeSingle();
     if (fetchError) throw new Error(fetchError.message);
 
     if (existing) {
@@ -82,7 +96,8 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
           emoji: item.props.emoji,
           product_id: item.props.productId,
           product_image: item.props.productImage,
-          estimated_cost: item.props.estimatedCost
+          estimated_cost: item.props.estimatedCost,
+          room_id: item.props.roomId ?? null
         });
 
       if (error) throw error;
@@ -123,6 +138,7 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
       .insert({
         id: session.props.id,
         user_id: session.props.userId,
+        room_id: session.props.roomId ?? null,
         created_at: session.props.createdAt.toISOString(),
         total_cost: session.props.totalCost,
         item_count: session.props.itemCount,
@@ -131,12 +147,19 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
     if (error) throw new Error(error.message);
   }
 
-  async getHistory(userId: string): Promise<ShoppingSession[]> {
-    const { data, error } = await this.supabase
+  async getHistory(userId: string, roomId?: string | null): Promise<ShoppingSession[]> {
+    let query = this.supabase
       .from('shopping_sessions')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (roomId) {
+      query = query.eq('room_id', roomId);
+    } else {
+      query = query.eq('user_id', userId).is('room_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw new Error(error.message);
 
@@ -145,6 +168,7 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
     return rows.map((row) => new ShoppingSession({
       id: row.id,
       userId: row.user_id,
+      roomId: row.room_id ?? null,
       createdAt: new Date(row.created_at),
       totalCost: row.total_cost,
       itemCount: row.item_count,
@@ -156,6 +180,7 @@ export class SupabaseShoppingListRepository implements ShoppingListRepository {
     return new ShoppingListItem({
       id: raw.id,
       userId: raw.user_id,
+      roomId: raw.room_id ?? null,
       name: raw.name,
       quantity: Number(raw.quantity),
       unit: raw.unit,

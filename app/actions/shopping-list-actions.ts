@@ -13,12 +13,19 @@ const AddItemSchema = z.object({
   emoji: z.string().optional(),
   productId: z.string().optional().nullable(),
   productImage: z.string().optional().nullable(),
-  estimatedCost: z.number().optional().nullable()
+  estimatedCost: z.number().optional().nullable(),
+  roomId: z.string().uuid().optional().nullable()
 });
 // ✅ Schema per validació massiva
 const BatchItemSchema = z.object({
-  items: z.array(AddItemSchema)
+  items: z.array(AddItemSchema),
+  roomId: z.string().uuid().optional().nullable()
 });
+const ToggleItemSchema = z.object({
+  itemId: z.string().uuid(),
+  isChecked: z.boolean()
+});
+const RoomIdSchema = z.string().uuid().optional().nullable();
 // 1. ADD ITEM
 export async function addToShoppingListAction(
     name: string, 
@@ -27,7 +34,8 @@ export async function addToShoppingListAction(
     emoji?: string, 
     productId?: string,
     productImage?: string,
-    estimatedCost?: number
+    estimatedCost?: number,
+    roomId?: string | null
 ) {
   try {
     debug('[ACTION] addToShoppingList start');
@@ -37,7 +45,7 @@ export async function addToShoppingListAction(
     if (!user) throw new Error("Unauthorized");
 
     const validation = AddItemSchema.safeParse({ 
-        name, quantity, unit, emoji, productId, productImage, estimatedCost 
+        name, quantity, unit, emoji, productId, productImage, estimatedCost, roomId
     });
     
     if (!validation.success) {
@@ -54,7 +62,8 @@ export async function addToShoppingListAction(
         validation.data.emoji,
         validation.data.productId || undefined,
         validation.data.productImage || undefined,
-        validation.data.estimatedCost || undefined
+        validation.data.estimatedCost || undefined,
+        validation.data.roomId || undefined
     );
 
     revalidatePath('/shopping-list');
@@ -69,9 +78,12 @@ export async function addToShoppingListAction(
 // 2. TOGGLE ITEM
 export async function toggleShoppingItemAction(itemId: string, isChecked: boolean) {
   try {
+    const validation = ToggleItemSchema.safeParse({ itemId, isChecked });
+    if (!validation.success) return { success: false, error: "Dades invàlides" };
+
     const supabase = await createClient();
     const repo = container.getShoppingListRepo(supabase); 
-    await repo.toggleCheck(itemId, isChecked);
+    await repo.toggleCheck(validation.data.itemId, validation.data.isChecked);
 
     revalidatePath('/shopping-list');
     return { success: true };
@@ -82,14 +94,17 @@ export async function toggleShoppingItemAction(itemId: string, isChecked: boolea
 }
 
 // 3. COMPLETE SESSION
-export async function completeShoppingSessionAction() {
+export async function completeShoppingSessionAction(roomId?: string | null) {
   try {
+    const validation = RoomIdSchema.safeParse(roomId);
+    if (!validation.success) return { success: false, error: "Dades invàlides" };
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
     const useCase = container.getCompleteShoppingSession(supabase);
-    const result = await useCase.execute(user.id);
+    const result = await useCase.execute(user.id, validation.data || undefined);
 
     revalidatePath('/shopping-list');
     revalidatePath('/inventory');
@@ -99,14 +114,14 @@ export async function completeShoppingSessionAction() {
     return { success: false, error: "Error finalitzant la compra" };
   }
 }
-export async function addBatchToShoppingListAction(items: z.infer<typeof AddItemSchema>[]) {
+export async function addBatchToShoppingListAction(items: z.infer<typeof AddItemSchema>[], roomId?: string | null) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
     // Validar dades
-    const validation = BatchItemSchema.safeParse({ items });
+    const validation = BatchItemSchema.safeParse({ items, roomId });
     if (!validation.success) return { success: false, error: "Dades invàlides" };
 
     const useCase = container.getAddToShoppingList(supabase);
@@ -121,7 +136,8 @@ export async function addBatchToShoppingListAction(items: z.infer<typeof AddItem
         item.emoji,
         item.productId || undefined,
         item.productImage || undefined,
-        item.estimatedCost || undefined
+        item.estimatedCost || undefined,
+        validation.data.roomId || undefined
       )
     ));
 
@@ -132,4 +148,58 @@ export async function addBatchToShoppingListAction(items: z.infer<typeof AddItem
     logError("Error adding batch:", error);
     return { success: false, error: "Error guardant productes" };
   }
+}
+
+export async function getShoppingListDataAction(roomId?: string | null) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const validation = RoomIdSchema.safeParse(roomId);
+  if (!validation.success) return { success: false, error: "Dades invàlides" };
+
+  try {
+    const getShoppingList = container.getGetShoppingList(supabase);
+    const getHistory = container.getGetShoppingHistory(supabase);
+
+    const [items, history] = await Promise.all([
+      getShoppingList.execute(user.id, validation.data || undefined),
+      getHistory.execute(user.id, validation.data || undefined),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        items: mapItemsToViewModel(items),
+        history: mapHistoryToViewModel(history),
+      },
+    };
+  } catch (error) {
+    logError('getShoppingListDataAction failed', error);
+    return { success: false, error: "No s'ha pogut carregar la llista." };
+  }
+}
+
+function mapItemsToViewModel(items: import('@/core/domain/entities/ShoppingListItem').ShoppingListItem[]) {
+  return items.map((i) => ({
+    id: i.props.id,
+    name: i.props.name,
+    quantity: i.props.quantity,
+    unit: i.props.unit,
+    isChecked: i.props.isChecked,
+    emoji: i.props.emoji,
+    productId: i.props.productId ?? undefined,
+    productImage: i.props.productImage ?? undefined,
+    estimatedCost: i.props.estimatedCost ?? undefined
+  }));
+}
+
+function mapHistoryToViewModel(history: import('@/core/domain/entities/ShoppingSession').ShoppingSession[]) {
+  return history.map((h) => ({
+    id: h.props.id,
+    createdAt: h.props.createdAt,
+    totalCost: h.props.totalCost,
+    itemCount: h.props.itemCount,
+    itemsSnapshot: h.props.itemsSnapshot
+  }));
 }
