@@ -1,4 +1,4 @@
-# Ranking Feature
+# Feature: Ranking
 
 Objectiu:
 Visualitzar el ranking de receptes o usuaris segons el domini.
@@ -8,14 +8,14 @@ Responsabilitats:
 - Estadistiques i visualitzacio.
 
 Components clau:
-- `RankingView`, `RankingPodium`, `RankingList`
+- `RankingView`, `RankingPodium`, `RankingList`.
 
 Estructura:
-- `components/` UI de ranking
-- `hooks/` (quan cal)
-- `logic/` (sense dependencies d'infra)
-- `__tests__/` (tests de feature)
-- `index.ts` (exports publices)
+- `components/` UI de ranking.
+- `hooks/` (quan cal).
+- `logic/` (sense dependencies d'infra).
+- `__tests__/` (tests de feature).
+- `index.ts` (exports publics).
 
 Flux principal:
 UI -> Server Actions (si cal) -> Repositoris.

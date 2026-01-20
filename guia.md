@@ -1,193 +1,78 @@
-📘 2. Enciclopèdia de Carpetes (Què és cada cosa?)
-Aquí tens l'explicació detallada de cada carpeta, pensada perquè entenguis la responsabilitat de cada fitxer.
+# Guia d'estructura
 
----
+## 1. Objectiu
 
-📂 core/ (El Cervell 🧠)  
-Aquesta és la carpeta més important. Aquí viu la lògica pura.
+Aquest document descriu l'estructura del projecte, la responsabilitat de cada carpeta i el flux bàsic d'una acció.
 
-**Regla d'or:**  
-El codi aquí dins **NO pot importar res de React, Next o Supabase**.  
-Ha de ser JavaScript/TypeScript pur.
+## 2. Enciclopèdia de carpetes
 
-**Per què?**  
-Perquè si demà canviem Supabase per Firebase, o Next.js per una app mòbil, aquesta carpeta no s'hauria de tocar.
+### core/ (el cervell)
+Lògica pura de negoci. No pot importar React, Next ni Supabase.
 
----
+- `core/domain/`: entitats i regles de domini.
+- `core/usecases/`: casos d'ús (orquestració del domini).
+- `core/ports/`: contractes (interfaces) per infraestructura.
+- `core/application/`: serveis d'aplicació i DTOs/schemas.
+- `core/constants/`: constants compartides.
+- `core/prompts/`: prompts de la IA si els use cases els requereixen.
 
-📁 core/domain/entities  
-Són els objectes protagonistes. Defineixen com són les dades i quines regles tenen.
+### adapters/ (infraestructura)
+Implementacions concretes dels ports.
 
-**Exemple (DecisionRoom.ts):**  
-Defineix que una sala té un history, uns participants i mètodes com `addDecision()`.  
-No sap com es guarda a la DB, només sap com funciona a la memòria.
+- `adapters/supabase/`: repositoris i utilitats DB.
+- `adapters/openai/`, `adapters/gemini/`, `adapters/ai/`: IA i parsing.
+- `adapters/strategies/`: estratègies i fallback.
 
----
+### services/
+Injecció de dependències i wiring.
 
-📁 core/usecases  
-Són els **verbs de l'aplicació**. Cada acció que pot fer un usuari té un fitxer aquí.
+- `services/container.ts`: construcció d'instàncies i composició de use cases.
 
-**Exemple (MakeGroupDecision.ts):**  
-És un script que diu:
-1. Busca la sala  
-2. Busca els perfils  
-3. Calcula la decisió  
-4. Guarda-la  
+### app/ (Next.js)
+Routes, Server Actions i pàgines (App Router).
 
-**Nota:** Els Use Cases són els **directors d'orquestra**.
+- `app/actions/`: validació d'inputs, auth i crida a use cases.
+- `app/.../page.tsx`: càrrega de dades i rendering.
 
----
+### features/
+UI per feature, amb estructura pròpia i README.
 
-📁 core/ports  
-Són **contractes (interfaces)**. Aquí definim què necessitem, però no com es fa.
+- `features/<feature>/{components,hooks,logic,__tests__,index.ts,README.md}`
+- Features principals: `rooms`, `inventory`, `shoppingList`, `recipes`, `dashboard`, `profile`, `ranking`, `landing`, `decision`.
 
-**Exemple (DecisionRoomRepository.ts):**  
-Diu: “Necessito una classe amb un mètode `save(room)`”.  
-No diu si es guarda a Supabase o en un fitxer de text.  
-Això permet que el core no depengui de Supabase.
+### components/
+Components UI compartits i atòmics (`components/ui`).
 
----
+### lib/
+Utilitats compartides (logger, i18n, helpers).
 
-📂 adapters/ (El Traductor 🗣️)  
-Aquesta carpeta connecta el core (idealista) amb el món real (brut i complex).
+### hooks/ i context/
+Hooks o contextos globals compartits (només si són cross-feature).
 
-📁 adapters/supabase  
-Aquí és on realment escrivim codi SQL o cridem a l’API de Supabase.
+### tests/
+Tests per capes i tipus (veure `tests/README.md`).
 
-**Exemple (SupabaseDecisionRoomRepository.ts):**  
-Importa el client de Supabase i fa `insert`, `select`, etc.  
-Implementa el contracte definit a `core/ports`.
+## 3. El viatge d'una dada (exemple)
 
----
+L'usuari prem un botó en una feature:
 
-📂 app/ (La Web - Next.js 🖥️)  
-Aquí hi ha tot el que té a veure amb el navegador, les rutes i la interacció humana.
+1) **UI (Client Component)**: recull dades i crida una Server Action.
+2) **Server Action**: valida amb Zod, comprova auth i invoca un use case via container.
+3) **Use Case (core/usecases)**: aplica la lògica de domini i demana dades als ports.
+4) **Adapter (adapters/...)**: accedeix a Supabase o serveis externs.
+5) **Resposta**: la UI mostra el resultat.
 
-📁 app/actions (Server Actions)  
-Són les funcions que es criden des dels formularis o botons.  
-Són la porta d'entrada al servidor.
+## 4. Flux de treball (TDD)
 
-**Responsabilitat:**
-- Comprovar qui és l'usuari (Auth)
-- Llegir dades del formulari (FormData)
-- Cridar al container per obtenir el Use Case
-- Retornar èxit o error a la UI
+1) Escriu el test (RED).
+2) Implementa el use case (GREEN).
+3) Implementa l'adapter necessari.
+4) Connecta via container i Server Action.
+5) Actualitza la UI.
 
-**Seguretat i logs:**
-- Valida inputs amb Zod abans de tocar infraestructura
-- Evita logs amb PII; usa `lib/logger` i `debug` nomes en dev
+## 5. Notes de coherència
 
-📁 app/rooms/[id]/page.tsx  
-És la pàgina web. En Next.js (App Router), aquests fitxers s'executen al servidor.  
-La seva feina és carregar dades inicials i pintar els components.
+- Valida inputs amb Zod abans de tocar infraestructura.
+- Evita logs amb PII; usa `lib/logger` i `debug` només en dev.
+- Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 
----
-
-📂 services/ (La "Cola" 🧪)
-
-📄 container.ts  
-Aquest fitxer és clau: **Injecció de Dependències**.
-
-**Què fa?**  
-Crea les instàncies reals dels objectes.
-
-**Exemple:**  
-“Quan algú demani el Use Case `MakeGroupDecision`, li dono una instància amb el `SupabaseRepository` real”.
-
----
-
-📂 features/ i components/ (La UI 🎨)
-
-**components/ui**  
-Peces de Lego tontes (Botons, Inputs, Cards).  
-No saben res de negoci.
-
-**features/**  
-
-- Cada feature ha de tenir un `README.md` amb objectiu, components clau i flux.
-Components llestos que coneixen el domini.
- - Estructura per feature: `features/<feature>/{components,hooks,logic,__tests__,index.ts}` (ex: `features/inventory`).
- - Context compartit: inventari i llista de la compra poden ser personals o de sala quan el host activa el feature (enable_inventory, enable_shopping_list).
- - La UI exposa un selector de context per canviar entre personal i sales habilitades.
-
-**Exemple:**  
-`ProfileForm` sap que existeix `updateProfile` i gestiona l’estat del formulari.
-
----
-
-🚀 3. El Viatge d'una Dada (Exemple Pas a Pas)
-
-L’usuari prem **"Decidir Ara"**:
-
-1. **UI (Navegador)**  
-   `DecisionControls.tsx` recull opcions i crida `makeGroupDecisionAction`.
-
-2. **Next.js (Server Action)**  
-   La petició viatja al servidor.
-
-3. **Action (room-actions.ts)**  
-   - Verifica l’usuari amb Supabase Auth  
-   - Crida `container.getMakeGroupDecision()`
-
-4. **Container**  
-   - Prepara el Use Case  
-   - Injecta repositori i resolver
-
-5. **Use Case**  
-   - Demana la sala  
-   - Calcula la decisió  
-   - Guarda el resultat
-
-6. **Repository (Supabase)**  
-   - Executa `INSERT INTO group_decisions`
-
-7. **Retorn**  
-   - La UI rep `success: true` i mostra la decisió
-
----
-
-🛡️ 4. Guia de Desenvolupament (Com treballar)
-
-**NO comencis per la UI.**  
-Segueix aquest ordre (TDD):
-
-### Pas 1: Lògica
-- Escriu el test (RED)
-- Implementa el Use Case (GREEN)
-- Afegeix ports si cal
-
-### Pas 2: Infraestructura
-- Implementa el port a Supabase
-
-### Pas 3: Connexió
-- Afegeix el Use Case al container
-- Crea la Server Action
-
-### Pas 4: Interfície
-- Crea el botó i connecta’l
-
----
-
-🔑 Conceptes Clau
-
-**DTO**  
-Objecte simple per passar dades a la UI sense lògica.
-
-**Repository Pattern**  
-Una capa intermèdia per parlar amb la DB.
-
-**Dependency Injection**  
-Les dependències venen de fora (ideal per tests).
-
-**Server vs Client Components**
-- Server: DB, cookies, sense interactivitat
-- Client: `useState`, `onClick`, UI interactiva
-
----
-
-Aquesta guia cobreix tot el necessari per treballar amb seguretat al projecte **Assistent de Decisions**.  
-Guarda-la com a document de referència.
-
-Nota core/application
-- core/application/services: serveis d'orquestracio (poden usar `lib/` si cal).
-- core/application/schemas: DTOs i validacions de capa application.

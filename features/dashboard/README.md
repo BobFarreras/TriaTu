@@ -1,4 +1,4 @@
-# Dashboard Feature
+# Feature: Dashboard
 
 Objectiu:
 Mostrar una visio resum de l'estat de l'usuari i les seves sales actives.
@@ -10,9 +10,9 @@ Responsabilitats:
 Estructura:
 - `components/` UI del dashboard.
 - `hooks/` hooks de la feature.
-- `logic/` tipus i helpers de la feature.
+- `logic/` tipus i helpers locals.
 - `__tests__/` tests locals de la feature.
-- `index.ts` exports publicats.
+- `index.ts` exports publics.
 
 Components clau:
 - `DashboardHeader`, `DashboardContent`, `ActiveRoomsList`.
