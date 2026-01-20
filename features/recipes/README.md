@@ -16,6 +16,8 @@ Estructura:
 
 Components clau:
 - `RecipeGrid`, `RecipeDetailView`, `RecipeHeader`.
+- Editor: `RecipeEditor`, `MetaControls`, `IngredientsManager`, `StepsBuilder`.
+- Community: `RecipeFeed`, `FilterBar`, `CreateRecipeButton`.
 
 Flux principal:
 UI -> `recipe-actions` -> Use Cases/Serveis -> Repositoris.

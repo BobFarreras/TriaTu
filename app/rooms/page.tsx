@@ -2,9 +2,9 @@ import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
 import { BackButton } from '@/components/ui/BackButton';
-import { RoomQuickActions } from '@/components/rooms/RoomQuickActions';
-import { RoomsGrid, UserRoom } from '@/components/rooms/RoomsGrid';
-import { SocialHeader } from '@/components/rooms/SocialHeader'; // ✅ Import nou
+import { RoomQuickActions } from '@/features/rooms/components/RoomQuickActions';
+import { RoomsGrid, UserRoom } from '@/features/rooms/components/RoomsGrid';
+import { SocialHeader } from '@/features/rooms/components/SocialHeader'; // ✅ Import nou
 
 // Tipus per a la DB
 interface RoomFromDB {

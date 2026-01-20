@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { saveRecipeAction } from '@/app/actions/recipe-actions';
 import { Recipe, RecipeProps } from '@/core/domain/entities/Recipe';
 import { getDishEmoji } from '@/lib/utils/dish-emojis';
-import { EditorData } from '@/components/recipes/editor/types';
+import { EditorData } from '@/features/recipes/components/editor/types';
 
 interface Props {
   recipes: RecipeProps[];

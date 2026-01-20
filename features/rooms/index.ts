@@ -8,7 +8,10 @@ export { ParticipantsDock } from './components/ParticipantsDock';
 export { RoomDetail } from './components/RoomDetail';
 export { RoomFeaturesPanel } from './components/RoomFeaturesPanel';
 export { RoomHeader } from './components/RoomHeader';
+export { RoomQuickActions } from './components/RoomQuickActions';
+export { RoomsGrid } from './components/RoomsGrid';
 export { ShareRoomButton } from './components/ShareRoomButton';
+export { SocialHeader } from './components/SocialHeader';
 
 export { useRealtimeRoom } from './hooks/useRealtimeRoom';
 export { useRoomSimulation } from './hooks/useRoomSimulation';

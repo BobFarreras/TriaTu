@@ -10,7 +10,7 @@ import { StepsPanel } from './parts/StepsPanel';
 import { motion } from 'framer-motion';
 import { BackButton } from '@/components/ui/BackButton';
 import { Clock, Euro, Edit } from 'lucide-react';
-import { FavoriteButton } from '@/components/recipes/FavoriteButton';
+import { FavoriteButton } from '@/features/recipes/components/FavoriteButton';
 
 // Utilitzem un tipus compatible amb el que espera el Panel
 interface Props {

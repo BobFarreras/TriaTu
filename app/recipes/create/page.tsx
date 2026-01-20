@@ -1,8 +1,8 @@
 // app/recipes/new/page.tsx
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container'; // ✅ 1. Importem el container
-import { RecipeEditor } from '@/components/recipes/editor/RecipeEditor';
-import { InventoryItemUI } from '@/components/recipes/editor/types';
+import { RecipeEditor } from '@/features/recipes/components/editor/RecipeEditor';
+import { InventoryItemUI } from '@/features/recipes/components/editor/types';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { redirect } from 'next/navigation';

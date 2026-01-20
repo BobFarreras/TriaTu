@@ -1,6 +1,6 @@
 'use client';
 
-import { Ingredient } from '@/components/recipes/editor/types';
+import { Ingredient } from '@/features/recipes/components/editor/types';
 import { IngredientChip } from './IngredientChip';
 import { CountdownTimer } from '@/features/recipes/components/parts/CountdownTimer';
 

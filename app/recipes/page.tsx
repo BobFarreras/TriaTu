@@ -1,11 +1,11 @@
 import { createClient } from '@/adapters/supabase/server';
 import { SearchRecipes } from '@/core/usecases/community/SearchRecipes';
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
-import { RecipeFeed } from '@/components/recipes/RecipeFeed';
-import { FilterBar } from '@/components/recipes/FilterBar';
+import { RecipeFeed } from '@/features/recipes/components/RecipeFeed';
+import { FilterBar } from '@/features/recipes/components/FilterBar';
 import { BackButton } from '@/components/ui/BackButton';
-import { CreateRecipeButton } from '@/components/recipes/CreateRecipeButton';
-import { CommunityHeader } from '@/components/recipes/CommunityHeader';
+import { CreateRecipeButton } from '@/features/recipes/components/CreateRecipeButton';
+import { CommunityHeader } from '@/features/recipes/components/CommunityHeader';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>

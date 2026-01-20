@@ -1,4 +1,3 @@
-// src/components/recipes/editor/EditorTabs.tsx
 'use client';
 
 import { motion } from 'framer-motion';
@@ -27,28 +26,28 @@ export function EditorTabs({ activeTab, onChange, errors, counts }: Props) {
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
-        <TabButton 
-            active={activeTab === 'meta'} 
-            onClick={() => onChange('meta')} 
-            error={errors.name} 
-            icon={<Settings2 size={16} />} 
-            label="Info" 
+        <TabButton
+          active={activeTab === 'meta'}
+          onClick={() => onChange('meta')}
+          error={errors.name}
+          icon={<Settings2 size={16} />}
+          label="Info"
         />
-        <TabButton 
-            active={activeTab === 'ingredients'} 
-            onClick={() => onChange('ingredients')} 
-            error={errors.ingredients} 
-            icon={<ChefHat size={16} />} 
-            label="Ingredients" 
-            count={counts.ingredients} 
+        <TabButton
+          active={activeTab === 'ingredients'}
+          onClick={() => onChange('ingredients')}
+          error={errors.ingredients}
+          icon={<ChefHat size={16} />}
+          label="Ingredients"
+          count={counts.ingredients}
         />
-        <TabButton 
-            active={activeTab === 'steps'} 
-            onClick={() => onChange('steps')} 
-            error={errors.steps} 
-            icon={<ListChecks size={16} />} 
-            label="Passos" 
-            count={counts.steps} 
+        <TabButton
+          active={activeTab === 'steps'}
+          onClick={() => onChange('steps')}
+          error={errors.steps}
+          icon={<ListChecks size={16} />}
+          label="Passos"
+          count={counts.steps}
         />
       </div>
     </div>

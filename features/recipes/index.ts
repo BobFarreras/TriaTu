@@ -1,5 +1,17 @@
+export { CommunityHeader } from './components/CommunityHeader';
+export { CreateRecipeButton } from './components/CreateRecipeButton';
+export { CreateRecipeForm } from './components/CreateRecipeForm';
+export { CreateRecipeWizard } from './components/CreateRecipeWizard';
+export { FavoriteButton } from './components/FavoriteButton';
+export { FilterBar } from './components/FilterBar';
+export { MissingIngredientDialog } from './components/MissingIngredientDialog';
+export { RecipeCard } from './components/RecipeCard';
 export { RecipeDetailView } from './components/RecipeDetailView';
+export { RecipeEditor } from './components/editor/RecipeEditor';
+export { RecipeFeed } from './components/RecipeFeed';
 export { RecipeGrid } from './components/RecipeGrid';
+export { StarRating } from './components/StarRating';
+export type { InventoryItemUI } from './components/editor/types';
 export { CountdownTimer } from './components/parts/CountdownTimer';
 export { IngredientsPanel } from './components/parts/IngredientsPanel';
 export { RecipeHeader } from './components/parts/RecipeHeader';

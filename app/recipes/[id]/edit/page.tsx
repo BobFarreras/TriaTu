@@ -1,9 +1,9 @@
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
-import { RecipeEditor } from '@/components/recipes/editor/RecipeEditor';
+import { RecipeEditor } from '@/features/recipes/components/editor/RecipeEditor';
 import { redirect, notFound } from 'next/navigation';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
-import { InventoryItemUI } from '@/components/recipes/editor/types';
+import { InventoryItemUI } from '@/features/recipes/components/editor/types';
 
 // ✅ 1. CORRECCIÓ DE TIPUS: params és una Promise
 interface PageProps {

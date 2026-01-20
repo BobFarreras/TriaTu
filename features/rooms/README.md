@@ -16,6 +16,7 @@ Estructura:
 
 Components clau:
 - `RoomDetail`, `DecisionControls`, `ParticipantsDock`.
+- Llistats: `RoomsGrid`, `RoomQuickActions`, `SocialHeader`.
 
 Flux principal:
 UI -> `room-actions` -> Use Cases -> Repositoris.

@@ -5,7 +5,7 @@ import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { toggleIngredientStockAction } from '@/app/actions/inventory-quick-update';
 import { toast } from 'sonner';
 import { getIngredientEmoji } from '@/lib/utils/emojiUtils';
-import { MissingIngredientDialog, Ingredient as ModalIngredient } from '@/components/recipes/MissingIngredientDialog';
+import { MissingIngredientDialog, Ingredient as ModalIngredient } from '@/features/recipes/components/MissingIngredientDialog';
 import { ChevronDown } from 'lucide-react'; 
 import { AnimatePresence, motion } from 'framer-motion';
 

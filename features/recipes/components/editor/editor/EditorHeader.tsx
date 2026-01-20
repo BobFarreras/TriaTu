@@ -1,4 +1,3 @@
-// src/components/recipes/editor/EditorHeader.tsx
 'use client';
 
 import { BackButton } from '@/components/ui/BackButton';

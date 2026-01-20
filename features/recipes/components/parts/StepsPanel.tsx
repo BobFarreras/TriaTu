@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { HighlightedContent } from '@/components/recipes/editor/steps/list/HighlightedContent';
-import { Ingredient as EditorIngredient } from '@/components/recipes/editor/types';
+import { HighlightedContent } from '@/features/recipes/components/editor/steps/list/HighlightedContent';
+import { Ingredient as EditorIngredient } from '@/features/recipes/components/editor/types';
 import { IngredientWithMeta } from './IngredientsPanel';
 
 interface Props {
