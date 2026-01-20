@@ -8,6 +8,8 @@ Regles generals:
 - No afegir funcionalitat sense cas d'ús clar.
 - No accedir directament a infraestructura des del domini.
 - No usar estats globals no justificats (Zustand només per UI efímera).
+- Validar inputs amb Zod abans de tocar infraestructura.
+- Evitar logs amb PII; usa `lib/logger` i `debug` nomes en dev.
 
 Arquitectura:
 - Clean Architecture obligatòria.

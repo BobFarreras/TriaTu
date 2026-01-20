@@ -12,7 +12,8 @@ export class GenerateMenuService {
     private inventoryRepo: InventoryRepository,
     private recipeRepo: RecipeRepository,
     private generator: RecipeGenerator,
-    private profileRepo: UserProfileRepository
+    private profileRepo: UserProfileRepository,
+    private forceAiMode: boolean = false
   ) {}
 
   async execute(
@@ -35,11 +36,8 @@ export class GenerateMenuService {
     const finalRecipes: Recipe[] = [];
     const TARGET_COUNT = 4;
 
-    // Dev flag: force AI mode
-    const FORCE_AI_MODE = true;
-
     // 2. Phase 1: DB candidates (only in CHEF mode and if not forced)
-    if (!FORCE_AI_MODE && mode === 'CHEF') {
+    if (!this.forceAiMode && mode === 'CHEF') {
       try {
         const dbCandidates = await this.recipeRepo.findMatches({ userId, limit: 50 });
         const inventoryNames = inventory.map(i => i.name.toLowerCase());

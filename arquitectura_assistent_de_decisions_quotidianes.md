@@ -328,6 +328,8 @@ Principi: **feature-first + clean architecture**
 
 ## 12. Governança del projecte
 
+- Cada feature ha de tenir un README.md amb objectiu, components i flux.
+
 - PR petites
 - Commits semàntics
 - Zero "quick fixes"

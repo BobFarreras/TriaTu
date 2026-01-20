@@ -103,6 +103,8 @@ Peces de Lego tontes (Botons, Inputs, Cards).
 No saben res de negoci.
 
 **features/**  
+
+- Cada feature ha de tenir un `README.md` amb objectiu, components clau i flux.
 Components llestos que coneixen el domini.
 
 **Exemple:**  

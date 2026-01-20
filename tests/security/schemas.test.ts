@@ -98,7 +98,7 @@ describe('🛡️ SECURITY: Input Validation Schemas', () => {
         prepTimeMinutes: 25,
         tags: ['vegetaria'],
         dietaryTags: ['sense lactosa'],
-        steps: ['Bullir l'arros', 'Saltejar verdures'],
+        steps: ['Bullir l\'arros', 'Saltejar verdures'],
         ingredients: [
           { name: 'Arros', quantity: 200, unit: 'g' },
           { name: 'Carbasso', quantity: 1, unit: 'u' }

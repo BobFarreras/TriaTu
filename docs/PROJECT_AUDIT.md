@@ -39,6 +39,7 @@ El projecte està alineat amb Clean Architecture i disposa d'una base sòlida de
 - **Evolució d'arquitectura:** sense revisar `guia.md` i `arquitectura_assistent_de_decisions_quotidianes.md`, la divergència pot créixer.
 
 ## Accions prioritàries (curt termini)
+4. Mantenir README.md per feature per facilitar onboarding.
 
 1. Revisar la documentació a cada canvi estructural.
 2. Assegurar tests verds abans de cada PR.
