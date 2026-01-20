@@ -1,4 +1,4 @@
-import { LandingHero } from '@/features/landing/LandingHero';
+import { LandingHero } from '@/features/landing/components/LandingHero';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';

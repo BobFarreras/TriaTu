@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
 // ✅ 1. CANVI IMPORTANT: Importem el repositori nou
 import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
-import { ProfileContent } from '@/features/profile/ui/ProfileContent';
+import { ProfileContent } from '@/features/profile/components/ProfileContent';
 
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';

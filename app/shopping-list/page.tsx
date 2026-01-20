@@ -3,7 +3,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { redirect } from 'next/navigation';
 import { BackButton } from '@/components/ui/BackButton';
-import { ShoppingListManager } from '@/components/shopping/ShoppingListManager';
+import { ShoppingListManager } from '@/features/shoppingList/components/ShoppingListManager';
 
 // ✅ 1. IMPORTAR TOTS DOS: Provider (Lògica) i Overlay (Visual)
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
@@ -12,8 +12,8 @@ import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay'; /
 // Imports de domini i mappers
 import { ShoppingListItem } from '@/core/domain/entities/ShoppingListItem';
 import { ShoppingSession } from '@/core/domain/entities/ShoppingSession';
-import { ShoppingItemUI } from '@/components/shopping/ShoppingListItem';
-import { HistorySession } from '@/components/shopping/ShoppingHistory';
+import { ShoppingItemUI } from '@/features/shoppingList/components/ShoppingListItem';
+import { HistorySession } from '@/features/shoppingList/components/ShoppingHistory';
 
 export default async function ShoppingListPage() {
   const supabase = await createClient();

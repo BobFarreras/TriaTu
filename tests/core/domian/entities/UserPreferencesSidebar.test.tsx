@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { UserPreferencesSidebar } from '@/features/dashboard/ui/UserPreferencesSidebar';
+import { UserPreferencesSidebar } from '@/features/dashboard/components/UserPreferencesSidebar';
 
 // Mocks globals
 vi.mock('@/lib/i18n/LanguageContext', () => ({

@@ -10,6 +10,13 @@ Responsabilitats:
 Components clau:
 - `ProfileContent`, `ProfileFrom`
 
+Estructura:
+- `components/` UI del perfil (formulari i targetes)
+- `hooks/` (quan cal)
+- `logic/` (validacions/transformacions locals)
+- `__tests__/` (tests de feature)
+- `index.ts` (exports publices)
+
 Flux principal:
 UI -> `updateProfileAction` -> Use Case `UpdateUserProfile`.
 

@@ -123,3 +123,10 @@ He analitzat el codi que m'has passat i està **molt bé**. Tinc només un parel
 
 Necessites que t'ajudi a escriure el test unitari concret per a `MakeIndividualDecision` o prefereixes seguir amb una altra part de la documentació?
 ````
+
+## Estructura
+- components/ UI de decisions (formulari, views, overlays)
+- hooks/ hooks de la feature
+- logic/ logica local (sense infra)
+- __tests__/ tests de feature
+- index.ts exports publices

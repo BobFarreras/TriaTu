@@ -3,7 +3,7 @@ export { CreateRoomForm } from './components/CreateRoomForm';
 export { DecisionControls } from './components/DecisionControls';
 export { HistoryList } from './components/HistoryList';
 export { JoinRoomContent } from './components/JoinRoomContent';
-export { JoinRoomFrom } from './components/JoinRoomFrom';
+export { JoinRoomForm } from './components/JoinRoomFrom';
 export { ParticipantsDock } from './components/ParticipantsDock';
 export { RoomDetail } from './components/RoomDetail';
 export { RoomFeaturesPanel } from './components/RoomFeaturesPanel';

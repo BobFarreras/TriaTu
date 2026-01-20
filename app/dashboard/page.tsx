@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
-import { DashboardContent } from '@/features/dashboard/ui/DashboardContent'; 
+import { DashboardContent } from '@/features/dashboard/components/DashboardContent'; 
 import { container } from '@/services/container';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';

@@ -7,8 +7,15 @@ Responsabilitats:
 - Editor de receptes i feeds.
 - Guardar, publicar i materialitzar receptes.
 
+Estructura:
+- `components/` UI de receptes.
+- `hooks/` hooks de la feature.
+- `logic/` tipus i helpers de la feature.
+- `__tests__/` tests locals de la feature.
+- `index.ts` exports publicats.
+
 Components clau:
-- `RecipeGrid`, `RecipeDetailView`, `RecipeEditor`
+- `RecipeGrid`, `RecipeDetailView`, `RecipeHeader`.
 
 Flux principal:
 UI -> `recipe-actions` -> Use Cases/Serveis -> Repositoris.

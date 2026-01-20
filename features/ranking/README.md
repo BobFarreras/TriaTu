@@ -10,6 +10,13 @@ Responsabilitats:
 Components clau:
 - `RankingView`, `RankingPodium`, `RankingList`
 
+Estructura:
+- `components/` UI de ranking
+- `hooks/` (quan cal)
+- `logic/` (sense dependencies d'infra)
+- `__tests__/` (tests de feature)
+- `index.ts` (exports publices)
+
 Flux principal:
 UI -> Server Actions (si cal) -> Repositoris.
 

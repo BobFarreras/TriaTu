@@ -10,6 +10,13 @@ Responsabilitats:
 Components clau:
 - `LandingHero`, `TypewriterText`, `NavbarInstallbutton`
 
+Estructura:
+- `components/` UI de landing (hero, navbar, typewriter)
+- `hooks/` (quan cal)
+- `logic/` (sense dependencies d'infra)
+- `__tests__/` (tests de feature)
+- `index.ts` (exports publices)
+
 Flux principal:
 Nomes UI (sense dependencies de domini).
 

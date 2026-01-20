@@ -1,0 +1,9 @@
+export { DashboardContent } from './components/DashboardContent';
+export { DashboardHeader } from './components/DashboardHeader';
+export { ActiveRoomsList } from './components/ActiveRoomsList';
+export { QuickActionsPanel } from './components/QuickActionsPanel';
+export { NavigationPanel } from './components/NavigationPanel';
+export { RoomsEntryCard } from './components/RoomsEntryCard';
+export { UserDropdown } from './components/UserDropdown';
+export { UserPreferencesSidebar } from './components/UserPreferencesSidebar';
+export { MobileuserPreferences } from './components/MobileuserPreferences';

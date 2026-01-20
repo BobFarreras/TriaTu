@@ -1,6 +1,6 @@
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
-import { RankingView } from '@/features/ranking/ui/RankingView';
+import { RankingView } from '@/features/ranking/components/RankingView';
 import { Player } from '@/core/domain/entities/Player';
 
 export const revalidate = 60; 

@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
-import { RecipeDetailView } from '@/features/recipes/ui/RecipeDetailView';
+import { RecipeDetailView } from '@/features/recipes/components/RecipeDetailView';
 
 interface PageProps {
   params: Promise<{ id: string }>;
