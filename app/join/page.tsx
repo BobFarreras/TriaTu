@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
-import { JoinRoomContent } from '@/features/rooms/ui/JoinRoomContent';
+import { JoinRoomContent } from '@/features/rooms/components/JoinRoomContent';
 import { BackButton } from '@/components/ui/BackButton';
 
 export default async function JoinPage() {

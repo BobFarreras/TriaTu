@@ -1,4 +1,4 @@
-// =================== FILE: features/rooms/ui/ParticipantsDock.tsx ===================
+// =================== FILE: features/rooms/components/ParticipantsDock.tsx ===================
 'use client'
 
 import { Crown, X, Plus } from 'lucide-react';

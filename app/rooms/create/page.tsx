@@ -1,7 +1,7 @@
 // =================== FILE: app/rooms/create/page.tsx ===================
 import { redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
-import { CreateRoomContent } from '@/features/rooms/ui/CreateRoomContent';
+import { CreateRoomContent } from '@/features/rooms/components/CreateRoomContent';
 
 export default async function CreateRoomPage() {
   const supabase = await createClient();

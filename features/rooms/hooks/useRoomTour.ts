@@ -1,4 +1,4 @@
-// src/features/rooms/ui/components/useRoomTour.ts
+// src/features/rooms/hooks/useRoomTour.ts
 'use client';
 
 import { useMemo, useEffect } from 'react';

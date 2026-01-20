@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { HistoryItem } from './history/types'; // Importem tipus compartits
+import { HistoryItem } from '../logic/history-types'; // Importem tipus compartits
 import { HistoryHeader } from './history/HistoryHeader'; // Component extret
 import { HistoryDetails } from './history/HistoryDetails'; // Component extret
 
