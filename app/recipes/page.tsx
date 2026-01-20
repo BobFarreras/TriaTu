@@ -62,7 +62,7 @@ export default async function CommunityPage(props: PageProps) {
   return (
     <main className="container mx-auto px-4 py-6">
       <div className="flex flex-row justify-between items-start mb-6 gap-4">
-        <BackButton />
+        <BackButton preferReferrer fallbackHref="/dashboard" />
         <CommunityHeader />
 
       </div>

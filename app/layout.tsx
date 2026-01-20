@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 import { DecisionProvider } from '@/context/DecisionContext';
 import { Toaster } from 'sonner'; // 👈 IMPORTA AIXÒ
+import { RouteTracker } from '@/components/navigation/RouteTracker';
 const inter = Inter({ subsets: ["latin"] });
 
 // 1. Defineix la URL real de la teva web (si estàs en local, posa localhost)
@@ -85,6 +86,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-[#131f24] text-white bg-gamified-pattern antialiased`}>
         <LanguageProvider>
           <DecisionProvider>
+            <RouteTracker />
             
             {/* 2. CREEM UN WRAPPER PRINCIPAL 
                Aquí és on apliquem les restriccions d'alçada i overflow.

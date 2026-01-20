@@ -1,5 +1,4 @@
 'use client';
-
 import { useRouter } from 'next/navigation'; // 👈 Importem el router
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -8,10 +7,21 @@ interface BackButtonProps {
   href?: string; // Ara és opcional de veritat
   label?: string;
   className?: string;
+  preferReferrer?: boolean;
+  fallbackHref?: string;
 }
 
-export function BackButton({ href, label = "Tornar", className = "" }: BackButtonProps) {
+export function BackButton({
+  href,
+  label = "Tornar",
+  className = "",
+  preferReferrer = false,
+  fallbackHref
+}: BackButtonProps) {
   const router = useRouter();
+  const storageKey = typeof window !== 'undefined'
+    ? `back-origin:${window.location.pathname}`
+    : null;
 
   // Definim els estils comuns per no repetir codi
   const buttonStyles = `
@@ -56,11 +66,25 @@ export function BackButton({ href, label = "Tornar", className = "" }: BackButto
     );
   }
 
-  // CAS 2: Si no tenim ruta, fem servir router.back() (Historial dinàmic)
+
+  // CAS 2: Si volem tornar a l'origen (fora d'aquesta ruta), usem el referrer guardat
   return (
     <motion.button
       type="button"
-      onClick={() => router.back()} // 👈 La màgia està aquí
+      onClick={() => {
+        if (preferReferrer && typeof window !== "undefined" && storageKey) {
+          const storedOrigin = sessionStorage.getItem(storageKey);
+          if (storedOrigin) {
+            router.push(storedOrigin);
+            return;
+          }
+          if (fallbackHref) {
+            router.push(fallbackHref);
+            return;
+          }
+        }
+        router.back();
+      }} // back navigation
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       className={buttonStyles}
