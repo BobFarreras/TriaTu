@@ -94,4 +94,75 @@ test.describe('recipes', () => {
       }
     });
   });
+
+  test('filter and search community recipes', async ({ page }) => {
+    test.setTimeout(90_000);
+    test.skip(!baseUrl || !serviceRoleKey, 'Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL');
+
+    const runId = Date.now();
+    const email = `e2e_recipe_filter_${runId}@example.com`;
+    const password = `E2E!${runId}a`;
+    const recipeName = `E2E Recipe Filter ${runId}`;
+
+    const admin = getAdminClient();
+    if (!admin) throw new Error('Admin client not configured');
+
+    await test.step('register', async () => {
+      await page.goto('/register');
+      await page.locator('input[type="email"]').fill(email);
+      await page.locator('input[type="password"]').fill(password);
+      await page.locator('button[type="submit"]').click();
+      await page.waitForURL('**/dashboard');
+      await expect(page.locator('#tour-dash-header')).toBeVisible();
+    });
+
+    await test.step('confirm user (if needed)', async () => {
+      const userId = await findUserIdByEmail(email);
+      if (!userId) return;
+      await admin.auth.admin.updateUserById(userId, { email_confirm: true });
+    });
+
+    let recipeId = '';
+
+    await test.step('create recipe', async () => {
+      await page.goto('/recipes');
+      await page.locator('[data-testid="create-recipe-button"]').click();
+      await page.waitForURL('**/recipes/create');
+
+      await page.locator('[data-testid="recipe-title-input"]').fill(recipeName);
+      await page.locator('[data-testid="recipe-tab-ingredients"]').click();
+      await page.locator('[data-testid="recipe-ingredient-f1"]').click();
+
+      await page.locator('[data-testid="recipe-tab-steps"]').click();
+      await page.locator('[data-testid="recipe-step-input"]').fill('Pas 1: Barreja tots els ingredients.');
+      await page.locator('[data-testid="recipe-step-save"]').click();
+
+      await page.locator('[data-testid="recipe-save-button"]').click();
+      await page.waitForURL(/\/recipes\/[0-9a-f-]{36}$/);
+
+      const url = new URL(page.url());
+      const parts = url.pathname.split('/').filter(Boolean);
+      recipeId = parts[1] || '';
+    });
+
+    await test.step('filter and search', async () => {
+      await page.goto('/recipes');
+      await page.locator('[data-testid="recipe-mode-mine"]').click();
+      await page.locator('[data-testid="recipe-search-input"]').fill(recipeName);
+
+      const card = page.locator(`[data-testid="recipe-card-${recipeId}"]`);
+      await expect(card).toBeVisible();
+    });
+
+    await test.step('cleanup', async () => {
+      if (recipeId) {
+        await admin.from('community_recipes').delete().eq('id', recipeId);
+      }
+      const userId = await findUserIdByEmail(email);
+      if (userId) {
+        await admin.from('preference_profiles').delete().eq('user_id', userId);
+        await admin.auth.admin.deleteUser(userId);
+      }
+    });
+  });
 });

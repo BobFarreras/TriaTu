@@ -13,7 +13,11 @@ interface Props {
 
 export function ShoppingSessionDetail({ session, onClose }: Props) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+            data-testid="shopping-history-detail"
+        >
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -85,6 +89,7 @@ export function ShoppingSessionDetail({ session, onClose }: Props) {
                     
                     <button 
                         onClick={onClose}
+                        data-testid="shopping-history-close"
                         className="w-full mt-5 bg-slate-800 hover:bg-slate-700 py-3.5 rounded-xl font-bold transition-colors text-slate-200"
                     >
                         Tancar Rebut

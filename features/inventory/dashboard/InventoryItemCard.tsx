@@ -74,6 +74,8 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
     <>
       <div
         onClick={handleClick}
+        data-testid="inventory-item-card"
+        data-item-id={item.id}
         className={`
             relative rounded-xl border ${borderClass} ${bgClass} 
             transition-all duration-200 cursor-pointer group 

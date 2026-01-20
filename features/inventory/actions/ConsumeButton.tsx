@@ -51,6 +51,7 @@ export function ConsumeButton({ itemId, currentQty, onRefresh }: Props) {
     <button
       onClick={handleConsume}
       disabled={isPending}
+      data-testid="inventory-consume-button"
       className={`${baseStyles} ${colorStyles} 
         /* MÒBIL: Cercle petit (32px) */
         w-8 h-8 rounded-full 

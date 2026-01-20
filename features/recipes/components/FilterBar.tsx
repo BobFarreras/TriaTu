@@ -60,18 +60,21 @@ export function FilterBar({ currentFilter, currentSearch, currentMode = 'ALL' }:
       <div className="flex p-1 bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800 w-full sm:w-fit self-start shadow-lg">
          <button 
             onClick={() => handleModeChange('ALL')}
+            data-testid="recipe-mode-all"
             className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all ${currentMode === 'ALL' ? 'bg-slate-800 text-white shadow ring-1 ring-slate-700' : 'text-slate-500 hover:text-slate-300'}`}
          >
             🌍 Comunitat
          </button>
          <button 
             onClick={() => handleModeChange('FAVORITES')}
+            data-testid="recipe-mode-favorites"
             className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all ${currentMode === 'FAVORITES' ? 'bg-slate-800 text-purple-400 shadow ring-1 ring-purple-900/50' : 'text-slate-500 hover:text-slate-300'}`}
          >
             ❤️ Favorits
          </button>
          <button 
             onClick={() => handleModeChange('MINE')}
+            data-testid="recipe-mode-mine"
             className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all ${currentMode === 'MINE' ? 'bg-slate-800 text-emerald-400 shadow ring-1 ring-emerald-900/50' : 'text-slate-500 hover:text-slate-300'}`}
          >
             👨‍🍳 Les Meves
@@ -108,6 +111,7 @@ export function FilterBar({ currentFilter, currentSearch, currentMode = 'ALL' }:
                 placeholder={t.community.search_placeholder}
                 defaultValue={currentSearch}
                 onChange={(e) => handleSearch(e.target.value)}
+                data-testid="recipe-search-input"
                 className="w-full bg-black/40 border border-slate-700/50 rounded-full pl-10 pr-6 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-inner"
             />
          </div>

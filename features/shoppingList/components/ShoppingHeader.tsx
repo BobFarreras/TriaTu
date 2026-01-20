@@ -16,12 +16,14 @@ export function ShoppingHeader({ activeTab, onTabChange, onSearchClick, tourId, 
             <div id={tourId} className="flex-1 flex p-1 bg-slate-900 rounded-xl border border-slate-800 shadow-xl shadow-black/20">
                 <button
                     onClick={() => onTabChange('active')}
+                    data-testid="shopping-tab-active"
                     className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'active' ? 'bg-slate-800 text-white shadow ring-1 ring-slate-700' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     🛒 Llista
                 </button>
                 <button
                     onClick={() => onTabChange('history')}
+                    data-testid="shopping-tab-history"
                     className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'history' ? 'bg-slate-800 text-white shadow ring-1 ring-slate-700' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     📜 Historial
