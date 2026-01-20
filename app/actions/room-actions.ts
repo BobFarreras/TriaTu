@@ -6,6 +6,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
+import { debug, error as logError } from '@/lib/logger';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
 import { Dictionary } from '@/lib/i18n/dictionaries';
 import { checkRoomDailyLimit } from '@/lib/security/decision-limit';
@@ -82,7 +83,7 @@ export async function createRoomAction(userId: string, roomName: string): Promis
     const newRoomId = await createRoomUseCase.execute({ hostUserId: validation.data.hostUserId, name: validation.data.name });
     return { success: true, roomId: newRoomId };
   } catch (error) {
-    console.error("Error creating room:", error);
+    logError('createRoomAction failed', error);
     return { success: false, error: "No s'ha pogut crear la sala." };
   }
 }
@@ -166,14 +167,13 @@ export async function addCandidateAction(roomId: string, candidateName: string) 
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    console.error(error);
+    logError('addCandidateAction failed', error);
     return { success: false, error: 'Error intern al guardar.' };
   }
 }
 
 
 // ---------------------------------------------------------
-// 7. MAKE GROUP DECISION (FINAL AMB TOTES LES FEATURES)
 // ---------------------------------------------------------
 
 export async function makeGroupDecisionAction(
@@ -181,7 +181,6 @@ export async function makeGroupDecisionAction(
   mode: 'magic' | 'manual',
   locale: string = 'ca'
 ) {
-  console.log(`⚡ GROUP DECISION [${mode}] Room: ${roomId}`);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -233,9 +232,9 @@ export async function makeGroupDecisionAction(
         vibe = `Estil ${randomPref} (Consens Grupal)`;
       }
 
-      console.log(`👥 [GROUP AI] Generant menú per a ${userIds.length} persones.`);
-      console.log(`   🚫 Restriccions: ${finalRestrictions.join(', ') || 'CAP'}`);
-      console.log(`   ✨ Vibe triat: "${vibe}"`);
+      debug('[ACTION] group AI generate');
+
+
 
       // Generar Receptes
       const generator = container.getRecipeGenerator();
@@ -262,13 +261,14 @@ export async function makeGroupDecisionAction(
 
       // 🔥 ENRIQUIMENT MÀGIC (Buscar fotos i preus)
       try {
-        console.log(`✨ [ENRICH] Millorant la recepta guanyadora: "${winnerRecipe.name}"...`);
-        winnerRecipe = await RecipeEnricherService.enrichRecipe(winnerRecipe);
+        debug('[ACTION] enrich winner recipe');
+        const enricher = new RecipeEnricherService(container.getProductCatalogRepo(supabase));
+        winnerRecipe = await enricher.enrichRecipe(winnerRecipe);
 
         const finalCost = winnerRecipe.estimatedCost || 0;
-        console.log(`   💰 Cost calculat: ${finalCost.toFixed(2)}€`);
+
       } catch (err) {
-        console.error("⚠️ Error enriquint recepta:", err);
+        logError("⚠️ Error enriquint recepta:", err);
       }
 
       outcomeChoice = winnerRecipe.name;
@@ -319,7 +319,7 @@ export async function makeGroupDecisionAction(
       const idsToDelete = allHistory.slice(10).map(d => d.id);
 
       if (idsToDelete.length > 0) {
-        console.log(`🧹 [AUTO-CLEANUP] Eliminant ${idsToDelete.length} decisions antigues...`);
+        debug('[ACTION] cleanup old decisions');
         await supabase
           .from('group_decisions')
           .delete()
@@ -331,7 +331,7 @@ export async function makeGroupDecisionAction(
     return { success: true, outcome: { choice: outcomeChoice, reason: outcomeReason } };
 
   } catch (error) {
-    console.error("❌ Room Action Error:", error);
+    logError("❌ Room Action Error:", error);
     return { success: false, error: "Error en la decisió grupal" };
   }
 
@@ -356,7 +356,7 @@ export async function getMyInventoryRoomsAction() {
     .returns<RoomParticipantRow[]>(); // <--- Tipatge fort
 
   if (error) {
-    console.error("Error fetching rooms:", error);
+    logError("Error fetching rooms:", error);
     return [];
   }
 

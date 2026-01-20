@@ -29,6 +29,8 @@ El projecte està alineat amb Clean Architecture i disposa d'una base sòlida de
 - Arquitectura neta i explícita.
 - Bones pràctiques de validació i seguretat.
 - Test suite ja organitzada per domini.
+- Logs de servidor centralitzats amb `lib/logger` i sanejats de PII.
+- Validacio Zod ampliada per entrades IA (materialitzacio de receptes).
 
 ## Riscos i deute tècnic
 

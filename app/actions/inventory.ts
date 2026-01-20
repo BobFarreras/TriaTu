@@ -10,6 +10,7 @@ import { InventoryItem } from '@/core/domain/entities/InventoryItem'; // Assegur
 import { FOOD_PRESETS } from '@/lib/food-presets';
 import { ExpirySafetyService } from '@/core/services/ExpirySafetyService';
 import { EmojiMatcherService } from '@/core/services/EmojiMarcherService';
+import { error as logError } from '@/lib/logger';
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
@@ -156,7 +157,7 @@ export async function addItemAction(formData: FormData) {
     return { success: true };
 
   } catch (error: unknown) {
-    console.error("💥 Error fatal a addItemAction:", error);
+    logError("💥 Error fatal a addItemAction:", error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -283,7 +284,7 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
     return { success: true };
 
   } catch (error: unknown) {
-    console.error('Error in addBatchItemsAction:', error);
+    logError('Error in addBatchItemsAction:', error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -329,7 +330,7 @@ export async function quickAddInventoryAction(
     return { success: true };
 
   } catch (error) {
-    console.error("Error quick adding to inventory:", error);
+    logError("Error quick adding to inventory:", error);
     return { success: false, error: "Error afegint a l'inventari." };
   }
 }
@@ -357,7 +358,7 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
 
     return { success: true, data: serialized };
   } catch (error) {
-    console.error("Error cercant productes:", error);
+    logError("Error cercant productes:", error);
     return { success: false, error: "No s'ha pogut completar la cerca." };
   }
 }

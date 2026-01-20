@@ -2,14 +2,16 @@ import { NextResponse } from 'next/server';
 import { enrichProduct } from '@/experiments/product-mapper';
 // ✅ Importem els tipus
 import { BonpreuSearchResponse } from '@/experiments/bonpreu-types';
+import { error as logError } from '@/lib/logger';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
+  const query = searchParams.get('q')?.trim();
 
   if (!query) return NextResponse.json({ products: [] });
+  if (query.length > 100) return NextResponse.json({ error: 'Query massa llarga' }, { status: 400 });
 
-  const url = `https://www.compraonline.bonpreuesclat.cat/api/webproductpagews/v6/product-pages/search?includeAdditionalPageInfo=true&maxPageSize=50&maxProductsToDecorate=30&q=${query}`;
+  const url = `https://www.compraonline.bonpreuesclat.cat/api/webproductpagews/v6/product-pages/search?includeAdditionalPageInfo=true&maxPageSize=50&maxProductsToDecorate=30&q=${encodeURIComponent(query)}`;
 
   try {
     const response = await fetch(url, {
@@ -33,7 +35,7 @@ export async function GET(request: Request) {
 
   } catch (e) {
     // Gestió d'errors neta
-    console.error(e);
+    logError('Bonpreu fetch failed', e);
     return NextResponse.json({ error: 'Error fetching Bonpreu' }, { status: 500 });
   }
 }

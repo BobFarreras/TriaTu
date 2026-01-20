@@ -3,9 +3,10 @@
 import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { debug, error as logError } from '@/lib/logger';
 
 export async function joinRoomByCode(inviteCode: string) {
-  console.log("🚀 [ACTION] Intentant unir-se amb codi:", inviteCode); // <--- LOG 1
+  debug('[ACTION] joinRoomByCode start');
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -19,48 +20,37 @@ export async function joinRoomByCode(inviteCode: string) {
     .eq('invite_code', inviteCode)
     .single();
 
-  // 🗑️ ESBORRA tot el bloc de logs d'error i èxit
-  /*
-  if (roomError) { console.error(...) } 
-  else if (!room) { ... } 
-  else { console.log(...) }
-  */
-  // -----------------------------------------------
-
   if (roomError || !room) {
-    return { error: 'invalid_code', message: 'Codi invàlid' };
+    return { error: 'invalid_code', message: 'Codi invalid' };
   }
 
-  // 3. Comprovem si l'usuari JA està a 'room_participants'
-  // (Per evitar error de clau duplicada)
+  // Comprovem si l'usuari ja es a 'room_participants'
   const { data: existingParticipant } = await supabase
-    .from('room_participants') // ✅ La teva taula de relació
+    .from('room_participants')
     .select('user_id')
     .eq('room_id', room.id)
     .eq('user_id', user.id)
     .single();
 
   if (existingParticipant) {
-    // Si ja és dins, perfecte, l'enviem cap a la sala
     redirect(`/rooms/${room.id}`);
   }
 
-  // 4. Si no hi és, fem l'INSERT a 'room_participants'
+  // Si no hi es, fem l'INSERT a 'room_participants'
   const { error: joinError } = await supabase
     .from('room_participants')
     .insert({
       room_id: room.id,
-      user_id: user.id,
-      // joined_at s'omple sol amb default now() segons el teu SQL
+      user_id: user.id
     });
 
   if (joinError) {
-    console.error("Error joining room:", joinError);
-    return { error: 'db_error', message: 'No s\'ha pogut unir a la sala' };
+    logError('joinRoomByCode insert failed', joinError);
+    return { error: 'db_error', message: "No s'ha pogut unir a la sala" };
   }
 
-  // 5. Èxit! Netegem la caché i redirigim
-  revalidatePath('/rooms'); // Actualitza la llista de "Les meves sales"
+  // Exit: netegem la cache i redirigim
+  revalidatePath('/rooms');
   revalidatePath(`/rooms/${room.id}`);
   redirect(`/rooms/${room.id}`);
 }

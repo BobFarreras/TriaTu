@@ -1,85 +1,79 @@
 'use server'
 
-import { container } from "@/services/container";
-import { createClient } from "@/adapters/supabase/server";
-import { revalidatePath } from "next/cache";
+import { container } from '@/services/container';
+import { createClient } from '@/adapters/supabase/server';
+import { revalidatePath } from 'next/cache';
+import { debug, error as logError } from '@/lib/logger';
 
-// 1. Acció per afegir un candidat (Restaurant, plat, etc.)
+// 1. Accio per afegir un candidat (Restaurant, plat, etc.)
 export async function addCandidateAction(roomId: string, content: string) {
-  console.log(`🚀 [ACTION] Iniciant addCandidateAction...`);
-  console.log(`📥 [INPUT] Room: ${roomId}, Content: "${content}"`);
+  debug('[ACTION] addCandidateAction start');
 
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    console.error("❌ [AUTH ERROR] No hi ha usuari autenticat:", authError);
-    return { success: false, error: "Unauthorized" };
-  }
 
-  console.log(`👤 [USER] ID: ${user.id} (Email: ${user.email})`);
+  if (authError || !user) {
+    logError('Auth error in addCandidateAction', authError);
+    return { success: false, error: 'Unauthorized' };
+  }
 
   try {
     const useCase = container.getAddCandidate();
-    
-    console.log(`🔄 [USECASE] Executant UseCase...`);
+    debug('[ACTION] addCandidateAction execute');
     await useCase.execute(roomId, user.id, content);
-    
-    console.log(`✅ [SUCCESS] Candidat afegit correctament.`);
+
+    debug('[ACTION] addCandidateAction success');
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    // Aquest log és el que ens dirà la veritat
-    console.error("❌ [CRITICAL ERROR] Error en l'execució:", error);
-    
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    logError('addCandidateAction failed', error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: msg };
   }
 }
 
-// 2. Acció per canviar el mode (Cego / Públic)
+// 2. Accio per canviar el mode (Cego / Public)
 export async function toggleVotingModeAction(roomId: string, mode: 'BLIND' | 'PUBLIC') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!user) return { success: false, error: 'Unauthorized' };
 
   try {
     const useCase = container.getSetVotingMode();
-    // Passem l'ID de l'usuari perquè el Use Case verifiqui si és Host
+    // Passem l'ID de l'usuari perque el Use Case verifiqui si es Host
     await useCase.execute(user.id, roomId, mode);
-    
+
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: msg };
   }
 }
 
-// ✅ FIX: Afegim 'roomId' com a segon paràmetre per poder refrescar
+// FIX: Afegim 'roomId' com a segon parametre per poder refrescar
 export async function removeCandidateAction(candidateId: string, roomId: string) {
-  console.log(`🗑️ [ACTION] removeCandidate START. ID: ${candidateId}, Room: ${roomId}`);
-  
+  debug('[ACTION] removeCandidate start');
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-      console.error("❌ [ACTION] Unauthorized: No user session");
-      return { success: false, error: "Unauthorized" };
-  }
 
-  console.log(`👤 [ACTION] User attempting delete: ${user.id}`);
+  if (!user) {
+    logError('removeCandidate unauthorized');
+    return { success: false, error: 'Unauthorized' };
+  }
 
   try {
     const useCase = container.getRemoveCandidate();
     await useCase.execute(candidateId, user.id);
-    
-    console.log(`✅ [ACTION] Remove Success! Revalidating path...`);
+
+    debug('[ACTION] removeCandidate success');
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    console.error("❌ [ACTION ERROR] Remove Failed:", error);
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    logError('removeCandidate failed', error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: msg };
   }
 }

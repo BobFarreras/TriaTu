@@ -35,12 +35,9 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │       │   │   └── audit-project-and-create-documentation
 │   │       │   ├── develop
 │   │       │   ├── feature
-│   │       │   │   ├── Api-de-supers
-│   │       │   │   ├── codex
 │   │       │   │   ├── Generador-de-decicions
 │   │       │   │   ├── inventary-compartit
-│   │       │   │   ├── llista-de-compre-compartida
-│   │       │   │   └── room-decicion
+│   │       │   │   └── llista-de-compre-compartida
 │   │       │   ├── main
 │   │       │   └── release
 │   │       ├── remotes
@@ -49,12 +46,9 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │       │       │   └── audit-project-and-create-documentation
 │   │       │       ├── develop
 │   │       │       ├── feature
-│   │       │       │   ├── Api-de-supers
-│   │       │       │   ├── codex
 │   │       │       │   ├── Generador-de-decicions
-│   │       │       │   ├── Github-actions
 │   │       │       │   ├── inventary-compartit
-│   │       │       │   └── room-decicion
+│   │       │       │   └── llista-de-compre-compartida
 │   │       │       ├── HEAD
 │   │       │       ├── main
 │   │       │       └── release
@@ -129,6 +123,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── b1e16d913c11213a08212af4950006e22d54c6
 │   │   │   ├── d1abfe6662cb9fb6ce6c63240a0de09bb91bd0
 │   │   │   ├── ee4667909af7d5658cb1cea1a7e783e51b6eff
+│   │   │   ├── f235a0358e5a2c206748def5d0bf627a57b27f
 │   │   │   └── fe638e26bae3b30370b35f02f102f2776445f0
 │   │   ├── 05
 │   │   │   ├── 243e9846c90433e6319a41bec3eaa427253b3c
@@ -257,6 +252,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 2cd401f376367728a0a275132488a3075a7dac
 │   │   │   ├── 3e3190b58dd79602b9ad242c4c6de8b778eafb
 │   │   │   ├── 55112cf91f68558e88112c087c971106e535b8
+│   │   │   ├── 650d39d21df519b42a2fe67bdf60b6613b8df9
 │   │   │   ├── 6e134fccd4f02ef9e089ce785e4379c2dcdd3f
 │   │   │   ├── 712acf1ac6e3c3f8fe080bd930b47e0c7b033e
 │   │   │   ├── 88766e13927b9a4c90d459eecd231d34fb6b38
@@ -273,6 +269,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 4a8e591f5569991af531a8fed2e80d3b030d79
 │   │   │   ├── 5d9ee803107fd55dc7456b7f73474c394adee9
 │   │   │   ├── 653f6abdd2d0ca7f68a04d3d253c9425565298
+│   │   │   ├── 6ef106b4af156db5cb9350af248e60ace9b7d6
 │   │   │   ├── 728eb7ecb533d176edddff08fa0634669f16fa
 │   │   │   ├── cacf7cf09854767c3da0e5bcfb459137b52c30
 │   │   │   ├── d259746f56f060f658416aa14edb1c077d71fe
@@ -345,6 +342,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── ae435ec2ac92825cb0649e4335c9b49eb2172e
 │   │   │   ├── cd145da2805fd0292a28dc4d4457e81c495dc6
 │   │   │   ├── d199fea2832fe947cfbcd361f1f29dfcddb399
+│   │   │   ├── d626cab1b9d168dd6d15becc62212364687ddb
 │   │   │   ├── e42057a40706924cef99f1fe99af28550b3a81
 │   │   │   └── f7810ec6d7728101bb90c6a07ef6c7e2fe433a
 │   │   ├── 17
@@ -397,6 +395,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── bfb857382e7389e6b9678fbc091b06153f682a
 │   │   │   └── fa517db7e67828730a67458278561547a1fd90
 │   │   ├── 1a
+│   │   │   ├── 0b52388e8315d43ae7a39afb89370d888146b1
 │   │   │   ├── 2778a31fa2ed9a95e2b27638455b7d5e41cfbb
 │   │   │   ├── 33acb0ae6e38f74f54ecc41e0757d490c5260b
 │   │   │   ├── 3bb068303ca0138bd39a774369049c5431c581
@@ -433,6 +432,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 78ee7e9ab2dd374861a5b3058246bf7403652a
 │   │   │   ├── 7f0f4b064585d36081b8abc8333ce486a2961f
 │   │   │   ├── a9b3ea1e95b648df05b405609e822d2b235a31
+│   │   │   ├── b8aa34d09e2e834429cdd599bc7fada2029d52
 │   │   │   ├── b9c30979ddd03bd775067543235b0074d8d7f6
 │   │   │   ├── c26ad9c1567b779dbf9c7884ff0e0cfcf4a876
 │   │   │   ├── edcf13000907ba36b749cb7ac6a0e3e4b00312
@@ -473,6 +473,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 7a610f68d729a9adb3830e661f1e28c098f80e
 │   │   │   ├── 86e3bd9486a57187625187a97db9b4911f65e4
 │   │   │   ├── 87649b3c6402660cf4f1b89c198f6f2a5e87e7
+│   │   │   ├── 8c67516aa35fef2f9c183fd3b7a9572aadc94d
 │   │   │   ├── b25e4a85839527d67d56159599325ce971a84d
 │   │   │   ├── d5f2817f3fccd3c100a7798dcd6ccebfb40cb0
 │   │   │   └── effcaf7b531c4adbdfc06ac0381b90de761281
@@ -480,6 +481,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 52335f8714b5113130f96dd561b082aeaca77b
 │   │   │   ├── 62deeaf0fe37dd763314284ee3d711a9081d5d
 │   │   │   ├── 672307be8b40abf53b46c417b97c194285fb40
+│   │   │   ├── 6a57a8a3d93ad893bc4fe82ea8adcd2aa260ac
 │   │   │   ├── 6e3487bd879f1ceb0f6ea7de653ff8d394f9a1
 │   │   │   ├── 99a18cbc6ce75746e02012064278febfa50855
 │   │   │   ├── 9a2ec21da0e772f069f5119d6dc04169b24e67
@@ -562,6 +564,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 885da6811ac3269ca1d8c75ca9ca72e6cc47b9
 │   │   │   └── db5ca6702c4afecd975e409b879b5bca3dfee8
 │   │   ├── 27
+│   │   │   ├── 1c227534c8f5b2fb57ee745b9017bca55f71c6
 │   │   │   ├── 23ba7249fe8118bcdd0285b00402d02f8b6bf1
 │   │   │   ├── 5f830e2d3ba56c488df780ab77ae5295aee242
 │   │   │   ├── 62e318c6efb751a14c8b16bd97d3a6b046518d
@@ -696,6 +699,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 001900069f92d437ea2378853c3b84a46ca96f
 │   │   │   ├── 1334c86f51fc30b2788f49df3bf2fee37fbd38
 │   │   │   ├── 180c3f073a4c0f3e894cd7eb1bf886f2d2814c
+│   │   │   ├── 5dcd45d7c1e8ad86c63530a788b42dcf0ddc8a
 │   │   │   ├── 6b36b374d297a5b9288b7627bcd9a22a26ace2
 │   │   │   ├── 74e659e98fe75948671394995c47f3ec783592
 │   │   │   ├── cf5bdda3b64ee1ee97edbade17843e679ca7ee
@@ -793,6 +797,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   ├── 39
 │   │   │   ├── 0d3d02b301d84c9585586753379759aece9b06
 │   │   │   ├── 13c9dab3bf0746b17e6bae89bc20d2e1accc99
+│   │   │   ├── 26ac188bb93232f0cc0fd8c4a407b762ddd153
 │   │   │   ├── 71d0afad138ffa58fa27d24707b51ab8ad48d8
 │   │   │   ├── 7ca88f73a3b3648991449c285fa9e5af259fc0
 │   │   │   ├── 8cd14b2ce54da96981817ff3f9972370f87c30
@@ -812,6 +817,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 85760a57dc993a4519299bcf45df4b2910d02d
 │   │   │   ├── 9015841b09e45c26a78b08f85388c785d30470
 │   │   │   ├── 918162c0a7e6822e0e71f8d93bb61d2e076677
+│   │   │   ├── 94810b6ad6f44a57684a21809ddadf442bc527
 │   │   │   ├── 99bb28da553ef60ed47a4eb12f1e7c6db97a7b
 │   │   │   ├── a6ae18ef2374de8a860c47b9fb620bc71c5f67
 │   │   │   ├── ef0851910b06357a0b1a69172f208fd028e375
@@ -877,6 +883,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 233938063d0c5aa75a00fbe2439dbe8cfc2ddd
 │   │   │   ├── 7ebe24ab633a96df8d51f928488e6fc6339906
 │   │   │   ├── accf0bab245f5e6675af9744aa1fc95856ebda
+│   │   │   ├── b26aa68c02c14d4d0de7b173caeb1ae67cd311
 │   │   │   ├── c5db7d46e8ac2d9a1199471193bf96e521da7c
 │   │   │   ├── d8bff01f250fccee90da36daec21ff90792c57
 │   │   │   └── fe4aee25457d6fc5eb43a366ea023d01db633d
@@ -1246,6 +1253,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 46228f45bc201b67cf48d09609b0357c2fcddc
 │   │   │   ├── 7d56c0a6fafe5333deddd143564c5911cb204c
 │   │   │   ├── 8b0d065915d2f53072a82c130aebb1b7bbb4ab
+│   │   │   ├── 9469b1a89df81869b3200a6161a81dedfe7001
 │   │   │   ├── b58b207b61164e2e65e292bf6cd594c7b50ed1
 │   │   │   ├── cdd52f4f758a94ab20e1097e92aebf5e46cd28
 │   │   │   └── fed46a4e73f0daf4b01796e838502b7e7ffd57
@@ -1322,6 +1330,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── f7d44e8ca11e177138da6a3d84e26db0f339e3
 │   │   │   └── fbcde64a9fb0ac337d7e5d65a450e7a3237a1f
 │   │   ├── 61
+│   │   │   ├── 092eb64926abe7ff5faafb5ec7755eca5dc16d
 │   │   │   ├── 101b4929c4a83b991d49f042ad88b30f171138
 │   │   │   ├── 49b7119694bdf6b38c7c8e11f2a625d47e34b1
 │   │   │   ├── 50239534f8ad552668c2bae5d75ec38821bf3f
@@ -1354,6 +1363,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 8ac33136cf780ff3385e155042ebf55983fad8
 │   │   │   ├── a9a864a78d81042500afb4e184b8e25a553b16
 │   │   │   ├── b8b2dccf32e7224154532ba30e2eaba49e53a3
+│   │   │   ├── d491547fe4f663175d1b0ca9723443059f9e65
 │   │   │   └── d4b3606a6460cca313d773fcf5a45b9675f57f
 │   │   ├── 64
 │   │   │   ├── 2e386d71d68081acf471ea871a5002a3acc457
@@ -1387,6 +1397,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   ├── 66
 │   │   │   ├── 004e6583917aa4b3fd33d6b70da0d4749e9ad9
 │   │   │   ├── 033ce469e0b9e802ee97e918fc94af26753b67
+│   │   │   ├── 073b62c68172e23fefa942ad90d2b24b47bc51
 │   │   │   ├── 30d69904434a708c2b0bacebef04dd43c52df8
 │   │   │   ├── 34fd85ad34f8b7092187157576099f4734c0ff
 │   │   │   ├── 60035c8b44af6e5e4166f97a5b51fd90ede4f9
@@ -1484,6 +1495,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 38547ab68b2ab02b1bc4e58e4feb9afaadc69f
 │   │   │   ├── 463dcde819b381a8e46d7eca9931712d57a7ff
 │   │   │   ├── 5c80f4b592903aa6e731dd7aa221247ed89611
+│   │   │   ├── c3da24b25a4b97fd4dc79096ac3db3282567ba
 │   │   │   ├── c746720f56a43c7faa3becf22c1bbd855e354f
 │   │   │   ├── d8223d12c31297b23ccd3817005ea03b5a8065
 │   │   │   ├── d8aaa4e6e4160304e14870068d124603285633
@@ -1491,6 +1503,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── ebcbfae5044eadb183152b79cbfa7f90a1d039
 │   │   │   └── f7b3565645e2c4e99c52f9d55a6dda98db842d
 │   │   ├── 6d
+│   │   │   ├── 0721bb76705bea268b185ae7e2bf36d4e007b5
 │   │   │   ├── 2d93e7786a58d69816b3a127556b104c081d10
 │   │   │   ├── 3e126dad2b0612601dfe1329b4383713a7a6b6
 │   │   │   ├── 750a4bca5f7eea50a00cc478a561e3754e7fad
@@ -1528,6 +1541,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 10c0c259dd7123e7b098d5ded052ec1a6866de
 │   │   │   ├── 2005b8916c771a8e46c9165f58dc5245f23f49
 │   │   │   ├── 220ed0bd8080de66313a9c2c882aca009765d2
+│   │   │   ├── 314a37db9a2e7b262a1a4db840c0543e055afa
 │   │   │   ├── 316ecc6b9f8909b751f04a054ff6035d3b2dc2
 │   │   │   ├── 6f6482d5ac749643e8bdbd07d7aab0b6c150ff
 │   │   │   ├── 7493b12d9cd9797b88ce40f173926a043af398
@@ -1610,6 +1624,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   └── ecadb05100669dd4199468df8dc6ad6a4d8370
 │   │   ├── 76
 │   │   │   ├── 0fb511a44869222ba9f801491ff1a58b50fb6d
+│   │   │   ├── 217ed085d60b8c54485ee8c06da0ded6958470
 │   │   │   ├── 236df024800c157315603cefe366f99d6851b0
 │   │   │   ├── 4bb840c6201de0401e3e2c799f67ad3838a16b
 │   │   │   ├── a83046856522902f613877a5263a5dee162611
@@ -1808,6 +1823,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── e8060ce2da26b36ccf15152cac8552020120e9
 │   │   │   └── f3164e267327ed05877e936d018ffc1a8079f3
 │   │   ├── 85
+│   │   │   ├── 0c80e17655f7976ca4a270fc8dae30cd8aecaa
 │   │   │   ├── 1187ddab67b954eb8d0dbadac401fa9184d2ec
 │   │   │   ├── 1566b390c4276aa46368fdf756bd53c1ebfeca
 │   │   │   ├── 20130d7724a447d110e67d9330f9544e95b084
@@ -1900,6 +1916,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 9bc9f73b2cf22aa2076f8bdc3b2dbf6f457a5e
 │   │   │   ├── 9bcc9c510f868c237e1e0570f65d29f150e9d7
 │   │   │   ├── a9134cdfc1c5c38c4a0801bd1c6fdeb1d3e25d
+│   │   │   ├── ae57f946cdb080721b2082ef50c392423785c0
 │   │   │   ├── bb9f32b62f91cd854c8396f201e624cefed034
 │   │   │   ├── c8d02881e78b87f87e5c641b9d3f1a5f710a40
 │   │   │   ├── d31a8cbaa41b37b91fe315c23824ba03b5caed
@@ -2036,6 +2053,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── c9e18db97191e587b5a7adf05ead9c5e8561c2
 │   │   │   ├── d4be22437fca81329aad0ad626a698baf4c4f2
 │   │   │   ├── d97e14f468b9e7519fdc5190ac1d2345ba4977
+│   │   │   ├── db0c3b310a2398577dc555175faf0cbd2b6d21
 │   │   │   ├── e84b90a371c6bcab17f7673829f4a5235a3f3d
 │   │   │   └── f2c56aaf4fae06c622457c3153a8c73d1af549
 │   │   ├── 95
@@ -2069,6 +2087,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── c2da3760aa4af2dd515b92d3d89f560214ba49
 │   │   │   ├── c372843a10b23e230f5fe1d447f9de262cc4c7
 │   │   │   ├── c7fdc4b4e020ba8081a782d37dc6b8e09c0038
+│   │   │   ├── d5cfc07ac02bfa9f48f74aaa730990721241f4
 │   │   │   └── f7ce475a51d7713e6844e26d60d0a639a2c155
 │   │   ├── 97
 │   │   │   ├── 0358aea5fc91dcc03b9d2db4bd1ba8b0ca3114
@@ -2228,6 +2247,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   └── c922b6a730c07cb3b1edff5013dea0f91c1792
 │   │   ├── a2
 │   │   │   ├── 093b158522ca277cfd566df41d9eec6db35e18
+│   │   │   ├── 18a2b4a2fd4699178cffa5772bac1b9f832fe3
 │   │   │   ├── 3309cf84fb41f0d65dea69f52a7851b4e28c80
 │   │   │   ├── 3b9a8b1647e974ad70a35140ff2a4e0ad46ff6
 │   │   │   ├── 60fc595f4b10b173fb43e0a0951c005ef2524f
@@ -2289,6 +2309,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   └── fc16d834fd277390258d47ce3be97187963ee8
 │   │   ├── a6
 │   │   │   ├── 067feeff355ee5333ad416178a301e494c8bc6
+│   │   │   ├── 2453f982d10f333c8604c037286a8fc31a1a3d
 │   │   │   ├── 31dd8b59c9a6fe6a00576c90f4830e31bc6935
 │   │   │   ├── 63423cc3e7c2fd23f7eaba61e96f1161c0ab60
 │   │   │   ├── 6f5b8a28b40d50fc1add1c656c66e6731e5111
@@ -2341,6 +2362,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   └── f03b466cdd0571c0b885bcbb97c5938a3dafce
 │   │   ├── ab
 │   │   │   ├── 02cff56417cd64cc88530a339f8320e15a01ae
+│   │   │   ├── 11c7a1954d0619f95be8d7f902ea34d86d42e2
 │   │   │   ├── 170a3336fff88bfc1c58c5676484f1900af46b
 │   │   │   ├── 292b8e299756211f17d9c450d1b80b9fd0ff36
 │   │   │   ├── 382b2c00993d4070b50a2e5e3f3b95663a4433
@@ -2465,6 +2487,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 594809de249505a174ac1c9e7c8b06014f09e4
 │   │   │   ├── 6d322318273b960fadc07b45bf5007079f238e
 │   │   │   ├── 9120571894bd11823f77edd571602e27e50edf
+│   │   │   ├── b49e3c2bf71495191808888cc130495869dc21
 │   │   │   ├── e8a50e909c8ea8880cfe93dfcfbd2792b53c10
 │   │   │   └── eec453cb7e4504b990d3a41a43ff07086cb3b6
 │   │   ├── b4
@@ -2575,6 +2598,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 4aa083ef49428e140d2c6e213e72f1392f9e49
 │   │   │   ├── 88cbe17646a8e029a80fdf39767529683a8d67
 │   │   │   ├── 8c5a56e3969876916a9339d8ac4853c7cd8bb7
+│   │   │   ├── 9c628ae463edb8fc02bc0715235688336f62a4
 │   │   │   ├── bf38ac4408aa810c90a28db71a518df5081082
 │   │   │   ├── c9ded92b5e9f10c271ea93b2a6b9c97169a9c6
 │   │   │   ├── d6b048fe542dda9e458acbbf3c2b0ccec64803
@@ -2665,6 +2689,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 0562b5431c13bbd6960889f8e8878309f0ce2e
 │   │   │   ├── 09791f2f06d66c6a7bdb261e731a46059e6008
 │   │   │   ├── 11e4349960e8ff3455ade906fe3892667756a4
+│   │   │   ├── 23c1cb89a52dc4fcd87411e2dd8f6a7f6b86ec
 │   │   │   ├── 59e393505ce0c959b31eb40acc7d1e90a0fb14
 │   │   │   ├── 70ac3c654d1a15f16d86a04751df10ec254100
 │   │   │   ├── b4ca7d6b6245030c36cb8d3e3f297bccd90093
@@ -3232,6 +3257,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 19f8ec74b18b8be566aba8479945e6c369b5f5
 │   │   │   ├── 24ec925dc294d6cf1bb6716369213ad21571c0
 │   │   │   ├── 35e1c51ce19dd17f51f97c0f3464ab6baababc
+│   │   │   ├── 361d6f90c9081026d5c15ff2ce897cee5b3fd4
 │   │   │   ├── 5ec50443df09698083c78c10894a34f1aecaad
 │   │   │   ├── 6472b79f9dd7fd183e0eb9851b753fe40bd93a
 │   │   │   ├── 6b65375dd79a3087999493f6be7cf05663b24b
@@ -3298,6 +3324,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │   │   ├── 746488def612e2257f2961ed073949aa50b5b2
 │   │   │   ├── 95802e5fe916ab342b1a5f2e4c8da02a336bb4
 │   │   │   ├── ab976e04c88618b92a30e2e49f0c98f67673f0
+│   │   │   ├── b107413ec06a5fd78b433d062251bc16816999
 │   │   │   ├── bda448a622879d8184cf14c3168b1fd4945a1d
 │   │   │   └── e0e3c88d5ff2f1104b4f4659df316910c0e90d
 │   │   ├── f2
@@ -3504,12 +3531,9 @@ ESTRUCTURA DEL PROJECTE (./src)
 │       │   │   └── audit-project-and-create-documentation
 │       │   ├── develop
 │       │   ├── feature
-│       │   │   ├── Api-de-supers
-│       │   │   ├── codex
 │       │   │   ├── Generador-de-decicions
 │       │   │   ├── inventary-compartit
-│       │   │   ├── llista-de-compre-compartida
-│       │   │   └── room-decicion
+│       │   │   └── llista-de-compre-compartida
 │       │   ├── main
 │       │   └── release
 │       ├── remotes
@@ -3518,12 +3542,9 @@ ESTRUCTURA DEL PROJECTE (./src)
 │       │       │   └── audit-project-and-create-documentation
 │       │       ├── develop
 │       │       ├── feature
-│       │       │   ├── Api-de-supers
-│       │       │   ├── codex
 │       │       │   ├── Generador-de-decicions
-│       │       │   ├── Github-actions
 │       │       │   ├── inventary-compartit
-│       │       │   └── room-decicion
+│       │       │   └── llista-de-compre-compartida
 │       │       ├── HEAD
 │       │       ├── main
 │       │       └── release
@@ -3753,6 +3774,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │       ├── Card.tsx
 │       ├── FeedbackModal.tsx
 │       ├── Input.tsx
+│       ├── product-image.tsx
 │       ├── SearchableSectionGrid.tsx
 │       ├── SelectionGrid.tsx
 │       ├── StackedEmoji.tsx
@@ -3870,6 +3892,7 @@ ESTRUCTURA DEL PROJECTE (./src)
 │           ├── CompleteShoppingSession.ts
 │           └── GetShoppingList.ts
 ├── docs
+│   ├── ADR-004-image-proxy-strategy.md
 │   ├── CONTRIBUTING.md
 │   ├── DEVELOPMENT.md
 │   ├── PROJECT_AUDIT.md
@@ -3983,6 +4006,8 @@ ESTRUCTURA DEL PROJECTE (./src)
 │   │       ├── ca.ts
 │   │       ├── en.ts
 │   │       └── es.ts
+│   ├── imageUtils.test.ts
+│   ├── imageUtils.ts
 │   ├── inventoryUtils.ts
 │   ├── presetMatcher.ts
 │   ├── security
@@ -11322,7 +11347,7 @@ import { FOOD_PRESETS } from '@/lib/food-presets';
 import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
-
+import { getSafeImageUrl } from '@/lib/imageUtils'; // 👈 IMPORTA AIXÒ
 const getUnitEmoji = (unit: string) => {
   const u = unit.toLowerCase();
   if (['kg', 'g', 'mg'].includes(u)) return '⚖️';
@@ -11362,7 +11387,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
     p.name.toLowerCase() === item.name.toLowerCase() || p.emoji === item.emoji
   );
   const itemTranslations = t.food?.items as Record<string, string> | undefined;
-  
+
   const displayName = matchedPreset && itemTranslations?.[matchedPreset.id]
     ? itemTranslations[matchedPreset.id]
     : item.name;
@@ -11383,7 +11408,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
     borderClass = 'border-amber-500/50';
     bgClass = 'bg-amber-950/20';
   }
-
+  const safeImageSrc = getSafeImageUrl(item.image);
   return (
     <>
       <div
@@ -11419,7 +11444,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
               <ConsumeButton
                 itemId={item.id}
                 currentQty={item.quantity}
-                onRefresh={onRefresh} 
+                onRefresh={onRefresh}
               />
             </div>
           )}
@@ -11436,10 +11461,11 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
           {item.image && !imageError ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={item.image}
-              alt={displayName} // Usem displayName pel ALT també
+              src={safeImageSrc} // 👈 Canviat
+              alt={displayName}
               className="w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg"
               onError={() => setImageError(true)}
+            // Ja no cal referrerPolicy perquè ve de wsrv.nl
             />
           ) : (
             <div className="text-4xl md:text-6xl filter drop-shadow-md select-none">{displayEmoji}</div>
@@ -11450,7 +11476,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
         <div className="text-center mt-auto md:mb-2 z-10">
           <h4 className="text-[10px] md:text-xs font-bold text-slate-300 leading-tight line-clamp-2">
             {/* ✅ AQUÍ SOLUCIONEM L'ERROR TS: Fem servir la variable displayName */}
-            {displayName} 
+            {displayName}
           </h4>
         </div>
 
@@ -11458,10 +11484,10 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
         {!isSelectionMode && (
           <div className="hidden md:block mt-1">
             {/* 🚨🚨🚨 L'ERROR ERA AQUÍ: Faltava passar onRefresh!! 🚨🚨🚨 */}
-            <ConsumeButton 
-                itemId={item.id} 
-                currentQty={item.quantity} 
-                onRefresh={onRefresh} // ✅ ARA SÍ!
+            <ConsumeButton
+              itemId={item.id}
+              currentQty={item.quantity}
+              onRefresh={onRefresh} // ✅ ARA SÍ!
             />
           </div>
         )}
@@ -12183,7 +12209,7 @@ export function CategoryGrid({ onSelect }: Props) {
 // =================== FILE: components/inventory/products/components/ProductCard.tsx ===================
 
 import { ProductResult } from '@/app/actions/inventory';
-
+import { getSafeImageUrl } from '@/lib/imageUtils';
 interface Props {
   product: ProductResult;
   quantity: number;
@@ -12191,52 +12217,52 @@ interface Props {
 }
 
 export function ProductCard({ product, quantity, onSelect }: Props) {
-  
+
   // ✅ 1. LÒGICA DE NETEJA: Treiem la marca "Bonpreu" per guanyar espai
   // Això elimina "BONPREU ", "BON PREU ", "Bonpreu " del principi.
   const cleanName = product.name.replace(/^(BON\s?PREU)\s+/i, '');
-
+  const safeImageSrc = getSafeImageUrl(product.image);
   return (
     <button
       onClick={() => onSelect(product)}
       className={`
         relative flex flex-col w-full h-full
         bg-slate-900 border rounded-xl overflow-hidden transition-all text-left shadow-md active:scale-95
-        ${quantity > 0 
-          ? 'border-emerald-500 ring-1 ring-emerald-500' 
+        ${quantity > 0
+          ? 'border-emerald-500 ring-1 ring-emerald-500'
           : 'border-slate-800 hover:border-slate-600'}
       `}
     >
       {/* Comptador flotant */}
       {quantity > 0 && (
-         <div className="absolute top-1 right-1 z-20 bg-emerald-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in">
-           {quantity}
-         </div>
+        <div className="absolute top-1 right-1 z-20 bg-emerald-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in">
+          {quantity}
+        </div>
       )}
 
       {/* Imatge (Ajustada) */}
       <div className="aspect-square w-full bg-white p-2 flex items-center justify-center relative overflow-hidden">
-         {product.image ? (
-           /* eslint-disable-next-line @next/next/no-img-element */
-           <img 
-             src={product.image} 
-             alt="" 
-             className="w-full h-full object-contain"
-             loading="lazy"
-           />
-         ) : (
-           <span className="text-4xl">{product.emoji}</span>
-         )}
-         
-         {/* Tag Source (Petit) */}
-         <div className="absolute bottom-1 left-1 px-1 bg-slate-100 text-[8px] text-slate-500 rounded border border-slate-200">
-            {product.source === 'BONPREU' ? 'BP' : 'DB'}
-         </div>
+        {product.image ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={safeImageSrc} // 👈 Canviat
+            alt=""
+            className="w-full h-full object-contain"
+            loading="lazy"
+          />
+        ) : (
+          <span className="text-4xl">{product.emoji}</span>
+        )}
+
+        {/* Tag Source (Petit) */}
+        <div className="absolute bottom-1 left-1 px-1 bg-slate-100 text-[8px] text-slate-500 rounded border border-slate-200">
+          {product.source === 'BONPREU' ? 'BP' : 'DB'}
+        </div>
       </div>
 
       {/* Info */}
       <div className="flex-1 w-full p-2 flex flex-col justify-between bg-slate-900 gap-1">
-        
+
         {/* ✅ 2. NOM: 
             - Mòbil: text-[11px] (més llegible) i fins a 3 línies (line-clamp-3)
             - Desktop: text-sm (molt més gran) i leading normal
@@ -12244,14 +12270,14 @@ export function ProductCard({ product, quantity, onSelect }: Props) {
         <h4 className="text-[11px] leading-tight line-clamp-3 md:text-sm md:leading-snug font-medium text-slate-300">
           {cleanName}
         </h4>
-        
+
         {/* Preu */}
         <div className="flex items-center justify-between mt-auto pt-1">
           {/* ✅ 3. PREU: Més gran en desktop */}
           <span className="text-xs md:text-sm font-bold text-emerald-400">
             {product.price}€
           </span>
-          
+
           {/* Botó + */}
           <div className="w-5 h-5 rounded bg-slate-800 flex items-center justify-center text-xs text-slate-400 md:w-6 md:h-6 md:text-sm">
             +
@@ -19067,6 +19093,37 @@ export function Input({ label, className = '', ...props }: InputProps) {
   );
 }
 
+// =================== FILE: components/ui/product-image.tsx ===================
+
+// =================== FILE: src/components/ui/product-image.tsx ===================
+import Image from 'next/image';
+
+interface ProductImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+}
+
+export const ProductImage = ({ src, alt, className }: ProductImageProps) => {
+  // Detectem si la imatge ve de Bonpreu per aplicar l'estratègia
+  const isExternalRestricted = src.includes('bonpreuesclat.cat');
+
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-cover"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        // 👇 SOLUCIÓ: Si és de Bonpreu, saltem l'optimitzador de Vercel
+        // Això fa que el navegador la demani directament a Bonpreu.
+        unoptimized={isExternalRestricted} 
+      />
+    </div>
+  );
+};
+
 // =================== FILE: components/ui/SearchableSectionGrid.tsx ===================
 
 'use client'
@@ -23353,7 +23410,7 @@ export class GetShoppingList {
 // =================== FILE: esquema.sql ===================
 
 
-\restrict P62LHc9JyFBtQNu0ValxdPdmtZULvxufTRf2jCmnCohmkAeJtMdhYIEVWbOlTzT
+\restrict YRoDmoNmIBW7mMswUcFEwHAdwVbmpLbbjdxeVgrk0KXmFEWnmlEfX5d1YS7HPvC
 
 
 SET statement_timeout = 0;
@@ -23462,6 +23519,24 @@ $$;
 
 
 ALTER FUNCTION "public"."has_room_access"("_room_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_member_of_room"("_room_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM room_participants
+    WHERE room_id = _room_id
+    AND user_id = auth.uid()
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."is_member_of_room"("_room_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."is_room_member"("_room_id" "uuid") RETURNS boolean
@@ -23602,6 +23677,7 @@ CREATE TABLE IF NOT EXISTS "public"."decision_rooms" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "voting_mode" "text" DEFAULT 'BLIND'::"text",
     "invite_code" "text" DEFAULT "encode"("extensions"."gen_random_bytes"(4), 'hex'::"text"),
+    "enable_inventory" boolean DEFAULT false,
     CONSTRAINT "decision_rooms_voting_mode_check" CHECK (("voting_mode" = ANY (ARRAY['BLIND'::"text", 'PUBLIC'::"text"])))
 );
 
@@ -23648,8 +23724,11 @@ CREATE TABLE IF NOT EXISTS "public"."inventory_items" (
     "expiry_date" timestamp with time zone,
     "added_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "emoji" "text",
-    "product_id" "uuid"
+    "product_id" "uuid",
+    "room_id" "uuid"
 );
+
+ALTER TABLE ONLY "public"."inventory_items" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."inventory_items" OWNER TO "postgres";
@@ -23839,20 +23918,28 @@ ALTER TABLE "public"."shopping_sessions" OWNER TO "postgres";
 
 
 CREATE OR REPLACE VIEW "public"."user_leaderboard" AS
- SELECT "user_id",
-    COALESCE("username", ('Chef '::"text" || "substr"(("user_id")::"text", 1, 4))) AS "display_name",
-    COALESCE("avatar_emoji", '👨‍🍳'::"text") AS "avatar_emoji",
-    (COALESCE(( SELECT "sum"("rr"."value") AS "sum"
-           FROM ("public"."recipe_ratings" "rr"
-             JOIN "public"."saved_recipes" "r" ON (("r"."id" = "rr"."recipe_id")))
-          WHERE (("r"."user_id" = "p"."user_id") AND ("rr"."user_id" <> "p"."user_id"))), (0)::bigint) * 2) AS "quality_score",
-    LEAST(( SELECT "count"(*) AS "count"
-           FROM "public"."inventory_items" "i"
-          WHERE ("i"."user_id" = "p"."user_id")), (50)::bigint) AS "pantry_score",
-    (( SELECT "count"(*) AS "count"
-           FROM "public"."recipe_ratings" "rr"
-          WHERE ("rr"."user_id" = "p"."user_id")) * 5) AS "community_score"
-   FROM "public"."preference_profiles" "p";
+ SELECT "p"."user_id",
+    COALESCE("p"."username", ('Chef '::"text" || "substr"(("p"."user_id")::"text", 1, 4))) AS "display_name",
+    COALESCE("p"."avatar_emoji", '👨‍🍳'::"text") AS "avatar_emoji",
+    (COALESCE("quality_data"."score", (0)::bigint) * 2) AS "quality_score",
+    LEAST(COALESCE("inventory_data"."count", (0)::bigint), (50)::bigint) AS "pantry_score",
+    (COALESCE("community_data"."count", (0)::bigint) * 5) AS "community_score",
+    (((COALESCE("quality_data"."score", (0)::bigint) * 2) + LEAST(COALESCE("inventory_data"."count", (0)::bigint), (50)::bigint)) + (COALESCE("community_data"."count", (0)::bigint) * 5)) AS "total_score"
+   FROM ((("public"."preference_profiles" "p"
+     LEFT JOIN ( SELECT "r"."user_id",
+            "sum"("rr"."value") AS "score"
+           FROM ("public"."saved_recipes" "r"
+             JOIN "public"."recipe_ratings" "rr" ON (("r"."id" = "rr"."recipe_id")))
+          WHERE ("rr"."user_id" <> "r"."user_id")
+          GROUP BY "r"."user_id") "quality_data" ON (("p"."user_id" = "quality_data"."user_id")))
+     LEFT JOIN ( SELECT "inventory_items"."user_id",
+            "count"(*) AS "count"
+           FROM "public"."inventory_items"
+          GROUP BY "inventory_items"."user_id") "inventory_data" ON (("p"."user_id" = "inventory_data"."user_id")))
+     LEFT JOIN ( SELECT "recipe_ratings"."user_id",
+            "count"(*) AS "count"
+           FROM "public"."recipe_ratings"
+          GROUP BY "recipe_ratings"."user_id") "community_data" ON (("p"."user_id" = "community_data"."user_id")));
 
 
 ALTER VIEW "public"."user_leaderboard" OWNER TO "postgres";
@@ -23973,6 +24060,10 @@ CREATE INDEX "idx_group_decisions_room_id" ON "public"."group_decisions" USING "
 
 
 
+CREATE INDEX "idx_inventory_items_room_id" ON "public"."inventory_items" USING "btree" ("room_id");
+
+
+
 CREATE INDEX "idx_inventory_items_user_id" ON "public"."inventory_items" USING "btree" ("user_id");
 
 
@@ -24057,6 +24148,11 @@ ALTER TABLE ONLY "public"."group_decisions"
 
 ALTER TABLE ONLY "public"."inventory_items"
     ADD CONSTRAINT "inventory_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "public"."product_catalog"("id");
+
+
+
+ALTER TABLE ONLY "public"."inventory_items"
+    ADD CONSTRAINT "inventory_items_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
 
 
 
@@ -24156,6 +24252,28 @@ CREATE POLICY "Dev policy profiles" ON "public"."preference_profiles" USING (tru
 
 
 
+CREATE POLICY "Enable Delete for Members" ON "public"."inventory_items" FOR DELETE TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM "public"."room_participants"
+  WHERE (("room_participants"."room_id" = "inventory_items"."room_id") AND ("room_participants"."user_id" = "auth"."uid"())))))));
+
+
+
+CREATE POLICY "Enable Insert for Members" ON "public"."inventory_items" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM "public"."room_participants"
+  WHERE (("room_participants"."room_id" = "inventory_items"."room_id") AND ("room_participants"."user_id" = "auth"."uid"())))))));
+
+
+
+CREATE POLICY "Enable Modify for Members" ON "public"."inventory_items" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM "public"."room_participants"
+  WHERE (("room_participants"."room_id" = "inventory_items"."room_id") AND ("room_participants"."user_id" = "auth"."uid"())))))));
+
+
+
+CREATE POLICY "Enable Read for Authenticated Users" ON "public"."inventory_items" FOR SELECT TO "authenticated" USING (true);
+
+
+
 CREATE POLICY "Enable delete for owners and hosts" ON "public"."room_candidates" FOR DELETE USING ((("auth"."uid"() = "user_id") OR (( SELECT "decision_rooms"."host_user_id"
    FROM "public"."decision_rooms"
   WHERE ("decision_rooms"."id" = "room_candidates"."room_id")) = "auth"."uid"())));
@@ -24170,6 +24288,10 @@ CREATE POLICY "Enable insert for authenticated" ON "public"."room_candidates" FO
 
 
 
+CREATE POLICY "Enable insert for authenticated users" ON "public"."room_participants" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
 CREATE POLICY "Enable insert for authenticated users only" ON "public"."security_logs" FOR INSERT TO "authenticated" WITH CHECK (true);
 
 
@@ -24179,6 +24301,10 @@ CREATE POLICY "Enable read access for all" ON "public"."room_candidates" FOR SEL
 
 
 CREATE POLICY "Enable read access for authenticated users" ON "public"."decision_rooms" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable read access for authenticated users" ON "public"."room_participants" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -24198,6 +24324,10 @@ CREATE POLICY "Ratings are viewable by everyone" ON "public"."recipe_ratings" FO
 
 
 
+CREATE POLICY "Read Participants" ON "public"."room_participants" FOR SELECT TO "authenticated" USING (true);
+
+
+
 CREATE POLICY "Read group decisions" ON "public"."group_decisions" USING (true);
 
 
@@ -24210,10 +24340,6 @@ CREATE POLICY "Users can delete from their own shopping list" ON "public"."shopp
 
 
 
-CREATE POLICY "Users can delete their own inventory" ON "public"."inventory_items" FOR DELETE USING (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can delete their own recipes" ON "public"."saved_recipes" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
 
@@ -24223,10 +24349,6 @@ CREATE POLICY "Users can insert into their own shopping list" ON "public"."shopp
 
 
 CREATE POLICY "Users can insert own history" ON "public"."shopping_sessions" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can insert their own inventory" ON "public"."inventory_items" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -24250,19 +24372,11 @@ CREATE POLICY "Users can rate recipes" ON "public"."recipe_ratings" FOR INSERT W
 
 
 
-CREATE POLICY "Users can update their own inventory" ON "public"."inventory_items" FOR UPDATE USING (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own shopping list" ON "public"."shopping_list_items" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Users can view own history" ON "public"."shopping_sessions" FOR SELECT USING (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can view their own inventory" ON "public"."inventory_items" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -24278,15 +24392,7 @@ CREATE POLICY "allow_host_all" ON "public"."decision_rooms" USING (("auth"."uid"
 
 
 
-CREATE POLICY "allow_join" ON "public"."room_participants" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "allow_participant_read" ON "public"."decision_rooms" FOR SELECT USING ("public"."has_room_access"("id"));
-
-
-
-CREATE POLICY "allow_read_participants" ON "public"."room_participants" FOR SELECT USING ("public"."has_room_access"("room_id"));
 
 
 
@@ -24360,6 +24466,12 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."has_room_access"("_room_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_member_of_room"("_room_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_member_of_room"("_room_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_member_of_room"("_room_id" "uuid") TO "service_role";
 
 
 
@@ -24531,7 +24643,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict P62LHc9JyFBtQNu0ValxdPdmtZULvxufTRf2jCmnCohmkAeJtMdhYIEVWbOlTzT
+\unrestrict YRoDmoNmIBW7mMswUcFEwHAdwVbmpLbbjdxeVgrk0KXmFEWnmlEfX5d1YS7HPvC
 
 RESET ALL;
 
@@ -33598,6 +33710,66 @@ export const es = {
 
 };
 
+// =================== FILE: lib/imageUtils.test.ts ===================
+
+import { describe, it, expect } from 'vitest';
+import { getSafeImageUrl } from './imageUtils';
+
+describe('getSafeImageUrl (Image Proxy Adapter)', () => {
+
+  it('hauria de retornar undefined si la URL és buida o null', () => {
+    expect(getSafeImageUrl(null)).toBeUndefined();
+    expect(getSafeImageUrl(undefined)).toBeUndefined();
+    expect(getSafeImageUrl('')).toBeUndefined();
+  });
+
+  it('hauria de deixar passar URLs segures sense modificar-les', () => {
+    const safeUrl = 'https://via.placeholder.com/150';
+    const result = getSafeImageUrl(safeUrl);
+    
+    expect(result).toBe(safeUrl);
+    expect(result).not.toContain('wsrv.nl');
+  });
+
+  it('hauria de transformar URLs de Bonpreu per passar pel proxy', () => {
+    const restrictedUrl = 'https://www.compraonline.bonpreuesclat.cat/images/producte123.jpg';
+    const result = getSafeImageUrl(restrictedUrl);
+
+    // 1. Ha de fer servir el domini del proxy
+    expect(result).toContain('https://wsrv.nl/?url=');
+    
+    // 2. La URL original ha d'estar codificada (URL Encoded) dins
+    expect(result).toContain(encodeURIComponent(restrictedUrl));
+    
+    // 3. Ha d'incloure paràmetres d'optimització (opcional, segons la teva impl)
+    expect(result).toContain('output=webp');
+  });
+
+  it('hauria de gestionar correctament caràcters especials en la URL original', () => {
+    // Simulem una URL amb espais o caràcters estranys
+    const trickyUrl = 'https://www.compraonline.bonpreuesclat.cat/images/foto del pa.jpg';
+    const result = getSafeImageUrl(trickyUrl);
+
+    // Verifiquem que s'ha codificat bé (espai -> %20)
+    expect(result).toContain('foto%20del%20pa.jpg');
+  });
+
+});
+
+// =================== FILE: lib/imageUtils.ts ===================
+
+// =================== FILE: src/lib/imageUtils.ts ===================
+export function getSafeImageUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+
+  // Si és Bonpreu, el passem pel proxy que neteja el rastre i afegeix CORS
+  if (url.includes('bonpreuesclat.cat')) {
+    return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=600&output=webp`;
+  }
+
+  return url;
+}
+
 // =================== FILE: lib/inventoryUtils.ts ===================
 
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
@@ -34741,6 +34913,20 @@ const withPWA = withPWAInit({
   disable: isDev,
   workboxOptions: {
     disableDevLogs: true,
+    // Això evita que la PWA intenti cachejar imatges que donen error
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/wsrv\.nl\/.*/i,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'external-images',
+          expiration: {
+            maxEntries: 50,
+            maxAgeSeconds: 60 * 60 * 24 * 30, // 30 dies
+          },
+        },
+      },
+    ],
   },
 });
 
@@ -34750,10 +34936,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '5mb',
     },
   },
-
-  // ✅ 1. Permetre optimització d'imatges de Bonpreu
+  
   images: {
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'wsrv.nl', // ✅ Afegim el proxy aquí
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: 'www.compraonline.bonpreuesclat.cat',
@@ -34776,14 +34966,14 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'geolocation=(), interest-cohort=()' }, 
           {
             key: 'Content-Security-Policy',
-            // ✅ 2. Afegim el domini de Bonpreu a img-src
+            // ✅ AFEGIM 'https://wsrv.nl' tant a img-src com a connect-src
             value: `
               default-src 'self';
               script-src 'self' 'unsafe-eval' 'unsafe-inline';
               style-src 'self' 'unsafe-inline';
-              img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in https://www.compraonline.bonpreuesclat.cat;
+              img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in https://wsrv.nl https://www.compraonline.bonpreuesclat.cat;
               font-src 'self' data:;
-              connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in;
+              connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://wsrv.nl;
             `.replace(/\s{2,}/g, ' ').trim()
           }
         ],

@@ -4,6 +4,7 @@ import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { ProductMatcherService } from '@/core/services/ProductMatcher'; // Import nou
+import { error as logError } from '@/lib/logger';
 
 export type ScanResult = 
   | { success: true; items: ScannedItem[] }
@@ -34,13 +35,13 @@ export async function scanImageAction(formData: FormData): Promise<ScanResult> {
     // 2. ENRIQUIMENT DE DADES (Matcher)
     // "El paquet de llet correspon a l'ID 5543 de Bonpreu"
     // (Instancia el servei aquí o al container)
-    const matcher = new ProductMatcherService(); 
+    const matcher = new ProductMatcherService(container.getProductCatalogRepo(supabase));
     const enrichedItems = await matcher.enrichItems(genericItems);
 
     return { success: true, items: enrichedItems };
 
   } catch (error) {
-    console.error('Scan Action Error:', error);
+    logError('Scan action failed', error);
     return { success: false, error: 'Failed to analyze image' };
   }
 }

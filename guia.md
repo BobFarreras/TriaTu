@@ -73,6 +73,10 @@ Són la porta d'entrada al servidor.
 - Cridar al container per obtenir el Use Case
 - Retornar èxit o error a la UI
 
+**Seguretat i logs:**
+- Valida inputs amb Zod abans de tocar infraestructura
+- Evita logs amb PII; usa `lib/logger` i `debug` nomes en dev
+
 📁 app/rooms/[id]/page.tsx  
 És la pàgina web. En Next.js (App Router), aquests fitxers s'executen al servidor.  
 La seva feina és carregar dades inicials i pintar els components.

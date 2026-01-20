@@ -1,46 +1,39 @@
 // =================== FILE: src/core/usecases/decisions/ResolveAutoDecision.ts ===================
 
-import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
-import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
-import { RuleBasedDecisionProvider } from '@/adapters/ai/RuleBaseDecisionProvider';
-import { PreferenceAggregator } from '@/core/domain/services/PreferenceAggregator';
+import { DecisionRoomRepository } from '@/core/ports/DecisionRoomRepository';
+import { UserProfileRepository } from '@/core/ports/UserProfileRepository';
+import { GroupDecisionResolver } from '@/core/ports/GroupDecisionResolver';
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 
 export class ResolveAutoDecision {
   constructor(
-    private roomRepo: SupabaseDecisionRoomRepository,
-    private profileRepo: SupabaseUserProfileRepository,
-    private decisionProvider: RuleBasedDecisionProvider
+    private roomRepo: DecisionRoomRepository,
+    private profileRepo: UserProfileRepository,
+    private decisionResolver: GroupDecisionResolver
   ) {}
 
-  async execute(roomId: string, userId: string): Promise<DecisionOutcome> {
+  async execute(roomId: string, _userId: string): Promise<DecisionOutcome> {
     // 1. Carreguem la sala
     const room = await this.roomRepo.findById(roomId);
-    if (!room) throw new Error("Room not found");
+    if (!room) throw new Error('Room not found');
 
-    // 2. ✅ VALIDACIÓ INVARIANT DE TEMPS (La teva lògica de Cooldown)
+    // 2. Validacio invariant de temps (cooldown)
     if (!room.canGenerateNewDecision()) {
-        const remainingMs = room.getTimeRemainingForNextDecision();
-        const remainingSec = Math.ceil(remainingMs / 1000);
-        throw new Error(`Wait ${remainingSec}s before deciding again.`);
+      const remainingMs = room.getTimeRemainingForNextDecision();
+      const remainingSec = Math.ceil(remainingMs / 1000);
+      throw new Error(`Wait ${remainingSec}s before deciding again.`);
     }
 
     // 3. Obtenim els IDs dels participants
     const participantIds = room.participants.map(p => p.userId);
 
-    // 4. Carreguem perfils (El teu Repo)
+    // 4. Carreguem perfils
     const profiles = await this.profileRepo.getProfilesByIds(participantIds);
 
-    // 5. Agreguem Preferències (El teu Service)
-    const { commonInterests, hardRestrictions } = PreferenceAggregator.aggregate(profiles);
+    // 5. Decidim
+    const outcome = await this.decisionResolver.resolve(room, profiles);
 
-    // 6. Decidim
-    const outcome = this.decisionProvider.decide({
-        interests: commonInterests,
-        restrictions: hardRestrictions
-    });
-
-    // 7. Guardem resultats
+    // 6. Guardem resultats
     await this.roomRepo.saveDecision(roomId, outcome);
 
     return outcome;

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   AddCandidateSchema,
   GenerateRecipeSchema,
-  InventoryItemSchema
+  InventoryItemSchema,
+  MaterializeRecipeSchema
 } from '@/core/application/schemas/inputSchemas';
 
 describe('🛡️ SECURITY: Input Validation Schemas', () => {
@@ -83,6 +84,43 @@ describe('🛡️ SECURITY: Input Validation Schemas', () => {
         name: 'Patates'.repeat(100),
         quantity: 1,
         unit: 'kg'
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+
+  // 4. TEST MATERIALIZE RECIPE (Sanititzacio IA)
+  describe('Materialize Recipe Input', () => {
+    it("hauria d'acceptar una recepta valida", () => {
+      const result = MaterializeRecipeSchema.safeParse({
+        name: 'Arros amb verdures',
+        prepTimeMinutes: 25,
+        tags: ['vegetaria'],
+        dietaryTags: ['sense lactosa'],
+        steps: ['Bullir l'arros', 'Saltejar verdures'],
+        ingredients: [
+          { name: 'Arros', quantity: 200, unit: 'g' },
+          { name: 'Carbasso', quantity: 1, unit: 'u' }
+        ]
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('hauria de bloquejar HTML dins del nom o passos', () => {
+      const result = MaterializeRecipeSchema.safeParse({
+        name: 'Sopa <script>alert(1)</script>',
+        steps: ['Pas <img src=x onerror=alert(1)>'],
+        ingredients: [{ name: 'Aigua', quantity: 1, unit: 'l' }]
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('hauria de bloquejar quantitats negatives o zero', () => {
+      const result = MaterializeRecipeSchema.safeParse({
+        name: 'Amanida',
+        steps: ['Barrejar'],
+        ingredients: [{ name: 'Enciam', quantity: 0, unit: 'g' }]
       });
       expect(result.success).toBe(false);
     });

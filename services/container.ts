@@ -65,6 +65,7 @@ import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingLi
 import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
 import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
 import { GetShoppingHistory } from '@/core/application/shopping-list/GetShoppingHistory';
+import { debug } from '@/lib/logger';
 
 
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
@@ -121,6 +122,9 @@ export const container = {
   getInventoryRepo: (client: SupabaseClient) =>
     new SupabaseInventoryRepository(client),
 
+  getProductCatalogRepo: (client: SupabaseClient) =>
+    new SupabaseProductCatalogRepository(client),
+
   getSearchAndCacheProducts: (client: SupabaseClient) =>
     new SearchAndCacheProducts(
       bonpreuAdapter,
@@ -152,7 +156,8 @@ export const container = {
     new GenerateMenuService(
       new SupabaseInventoryRepository(client),
       recipeRepo,
-      getRecipeGenerator()
+      getRecipeGenerator(),
+      userProfileRepo
     ),
 
   getGetRecipe: () => new GetRecipe(recipeRepo),

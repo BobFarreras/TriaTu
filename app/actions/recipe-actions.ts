@@ -7,9 +7,10 @@ import { revalidatePath } from 'next/cache';
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 import { container } from '@/services/container';
 import { EmojiMatcherService } from '@/core/services/EmojiMarcherService'; // ✅ Importem el Matcher
-import { GenerateRecipeSchema } from '@/core/application/schemas/inputSchemas';
+import { GenerateRecipeSchema, MaterializeRecipeSchema } from '@/core/application/schemas/inputSchemas';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
+import { debug, error as logError } from '@/lib/logger';
 
 // ✅ FIX: Definició robusta de la resposta
 export type ActionResponse = {
@@ -40,29 +41,10 @@ export interface SaveRecipeInput {
   isAiGenerated?: boolean;
 }
 
-// Interfícies per tipar el JSON que ve de la IA (metadata)
-interface RawAiIngredient {
-  name: string;
-  quantity: number;
-  unit: string;
-  emoji?: string;
-  estimatedCost?: number;
-  linkedProductId?: string | null;
-  linkedProductImage?: string | null;
-}
-
-interface RawAiRecipeData {
-  name: string;
-  prepTimeMinutes?: number;
-  tags?: string[];
-  dietaryTags?: string[];
-  steps?: (string | { id: string; content: string })[];
-  ingredients?: RawAiIngredient[];
-}
 // --- ACCIÓ PRINCIPAL: SAVE ---
 // Aquesta conté tota la lògica "intel·ligent" (preus, imatges, emojis...)
 export async function saveRecipeAction(data: SaveRecipeInput): Promise<ActionResponse> {
-  console.log(`\n💾 [SAVE ACTION] Guardant: "${data.name}"...`);
+  debug('[SAVE ACTION] saveRecipeAction');
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -173,7 +155,7 @@ export async function saveRecipeAction(data: SaveRecipeInput): Promise<ActionRes
     return { success: true, recipeId: resultId };
 
   } catch (error) {
-    console.error("❌ Error saving:", error);
+    logError('saveRecipeAction failed', error);
     return { success: false, error: "Error intern." };
   }
 }
@@ -195,7 +177,7 @@ export async function toggleFavoriteAction(recipeId: string) {
 
     return { success: true, isFavorite: isFav };
   } catch (error) {
-    console.log("Error updating favorite:", error)
+    logError('Error updating favorite', error);
     return { success: false, error: "Error updating favorite" };
   }
 
@@ -211,7 +193,7 @@ export async function generateMenuAction(
   time: number = 30,
   lang: string = 'ca'
 ) {
-  console.log(`🚀 [ACTION] Generant Menú. User: ${userId}, Mode: ${mode}`);
+  debug('[ACTION] generateMenuAction');
 
   // 1. VALIDACIÓ (Zod)
   const validation = GenerateRecipeSchema.safeParse({ userId, dishName, lang });
@@ -250,29 +232,13 @@ export async function generateMenuAction(
     // 2. ⚠️ ASSEGURA'T QUE estimatedCost EXISTEIX AQUÍ ⚠️
     // Si plainRecipes[0].estimatedCost és undefined, JSON.stringify l'esborrarà!
     if (plainRecipes.length > 0 && plainRecipes[0].estimatedCost === undefined) {
-      console.error("⚠️ ALERTA: estimatedCost és undefined abans d'enviar al client!");
+      logError("⚠️ ALERTA: estimatedCost és undefined abans d'enviar al client!");
     }
 
     // 3. Sanitització
     const cleanRecipes = JSON.parse(JSON.stringify(plainRecipes));
 
-
-    // 👇 DETECCIÓ DE L'ESTRATÈGIA UTILITZADA 👇
-    // Si la primera recepta té isAiGenerated a true, és que hem usat el Generador.
-    // Si no, és que hem recuperat de la BD (Basic/Legacy).
-    const isAi = plainRecipes.length > 0 && plainRecipes[0].isAiGenerated;
-    const strategyUsed = isAi ? "✨ GEN (IA Generativa)" : "📚 BASIC (Recuperat de BD)";
-
-    console.log(`✅ [ACTION] Finalitzat. ${plainRecipes.length} receptes.`);
-    console.log(`   🛠️ ESTRATÈGIA FINAL: [ ${strategyUsed} ]`);
-
-    if (plainRecipes.length > 0) {
-      // Validem visualment que el preu arriba
-      const cost = plainRecipes[0].estimatedCost;
-      console.log(`   💰 Cost 1a recepta: ${cost ? cost.toFixed(2) + '€' : 'MISSING ⚠️'}`);
-    }
-
-
+    debug('[ACTION] generateMenuAction done');
 
     return {
       success: true,
@@ -280,18 +246,18 @@ export async function generateMenuAction(
     };
 
   } catch (error) {
-    console.error('❌ [ACTION ERROR]:', error);
+    logError('❌ [ACTION ERROR]:', error);
     return { success: false, error: "Error generant el menú." };
   }
 }
-// --- NOVA ACCIÓ MATERIALIZE (AMB DEDUPLICACIÓ) ---
 export async function materializeRecipeAction(rawAiRecipe: unknown): Promise<ActionResponse> {
-  const supabase = await createClient(); 
-  const recipeData = rawAiRecipe as RawAiRecipeData;
-
-  if (!recipeData || !recipeData.name) {
-      return { success: false, error: "Invalid recipe data" };
+  const parsed = MaterializeRecipeSchema.safeParse(rawAiRecipe);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
   }
+
+  const recipeData = parsed.data;
+  const supabase = await createClient();
 
   // 🔍 1. PAS DE DEDUPLICACIÓ: Busquem si ja existeix
   try {
@@ -305,11 +271,11 @@ export async function materializeRecipeAction(rawAiRecipe: unknown): Promise<Act
           .single();
 
       if (existing) {
-          console.log(`♻️ [DEDUPLICATE] Recepta ja existent trobada: ${existing.id}`);
+          debug('[ACTION] deduplicate hit');
           return { success: true, recipeId: existing.id };
       }
   } catch (err) {
-    console.log(err)
+    logError('MaterializeRecipeAction error', err);
       // Ignorem errors de consulta (ex: no trobat), seguim endavant per crear-la
   }
 
@@ -329,7 +295,6 @@ export async function materializeRecipeAction(rawAiRecipe: unknown): Promise<Act
               .single();
 
           if (match) {
-              console.log(`✨ [MATERIALIZE] Auto-vinculat: "${ing.name}" -> ID: ${match.id}`);
               linkedProductId = match.id;
               linkedProductImage = match.image_url;
               if (!estimatedCost && match.price) estimatedCost = match.price; 
@@ -376,7 +341,7 @@ export async function materializeRecipeAction(rawAiRecipe: unknown): Promise<Act
           .update({ is_public: true })
           .eq('id', saveResult.recipeId);
           
-      console.log(`🌍 [SHARE] Recepta ${saveResult.recipeId} feta pública per compartir.`);
+      debug('[ACTION] recipe shared');
   }
 
   return saveResult;

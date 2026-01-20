@@ -2,29 +2,37 @@
 
 import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
+import { GroupDecisionResolver } from '@/core/ports/GroupDecisionResolver';
+import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
+import { UserProfile } from '@/core/domain/entities/UserProfile';
+import { PreferenceAggregator } from '@/core/domain/services/PreferenceAggregator';
 
-// Estructura simple de l'input que surt del teu Agregador
+// Estructura simple de l'input que surt del teu agregador
 interface DecisionInput {
   interests: string[];
   restrictions: DietaryRestriction[];
 }
 
-export class RuleBasedDecisionProvider {
-  
-  decide(input: DecisionInput): DecisionOutcome {
-    let choice = "Opció Sorpresa";
-    let reason = "No hi havia prou dades per decidir.";
+export class RuleBasedDecisionProvider implements GroupDecisionResolver {
+  async resolve(_room: DecisionRoom, profiles: UserProfile[]): Promise<DecisionOutcome> {
+    const { commonInterests, hardRestrictions } = PreferenceAggregator.aggregate(profiles);
 
-    // 1. Si tenim interessos comuns, en triem un a l'atzar
+    const input: DecisionInput = {
+      interests: commonInterests,
+      restrictions: hardRestrictions
+    };
+
+    let choice = 'Opcio sorpresa';
+    let reason = 'No hi havia prou dades per decidir.';
+
     if (input.interests.length > 0) {
       const randomIndex = Math.floor(Math.random() * input.interests.length);
       const winner = input.interests[randomIndex];
-      
-      choice = winner.charAt(0).toUpperCase() + winner.slice(1); // Capitalitzem
-      reason = `Basat en la coincidència de gustos del grup (${input.interests.length} coincidències).`;
+
+      choice = winner.charAt(0).toUpperCase() + winner.slice(1);
+      reason = `Basat en la coincidencia de gustos del grup (${input.interests.length} coincidencies).`;
     }
 
-    // 2. Afegim nota sobre restriccions si n'hi ha
     if (input.restrictions.length > 0) {
       const restrictionsText = input.restrictions.join(', ');
       reason += ` Tenint en compte: ${restrictionsText}.`;

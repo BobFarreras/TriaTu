@@ -896,6 +896,8 @@ Rebre esdeveniments externs.
 - Els use cases **només depenen de ports**
 - Cap port pot retornar dades en format infraestructura
 - Cap port pot llançar errors no definits al domini
+- Els serveis del core no creen clients d'infra; reben ports o repositoris
+- Logs sensibles: usa `lib/logger` i evita PII en entorns no dev
 
 ---
 

@@ -70,6 +70,24 @@ export const GenerateRecipeSchema = z.object({
   lang: z.enum(['ca', 'es', 'en']).default('ca')
 });
 
+// --- 3.b. MATERIALITZAR RECEPTA (IA -> BD) ---
+export const MaterializeRecipeSchema = z.object({
+  name: SafeText.max(100, "El nom de la recepta es massa llarg"),
+  prepTimeMinutes: z.number().int().min(1).max(600).optional(),
+  tags: z.array(SafeText.max(50)).optional(),
+  dietaryTags: z.array(SafeText.max(50)).optional(),
+  steps: z.array(SafeText.max(500)).min(1, "Cal almenys un pas"),
+  ingredients: z.array(z.object({
+    name: SafeText.max(200),
+    quantity: z.number().positive("La quantitat ha de ser positiva"),
+    unit: SafeText.max(20),
+    emoji: z.string().max(5).regex(/^[^<>]*$/).optional().or(z.literal('')),
+    estimatedCost: z.number().nonnegative().optional(),
+    linkedProductId: z.string().uuid().optional().nullable(),
+    linkedProductImage: z.string().url().optional().nullable()
+  })).min(1, "Cal almenys un ingredient")
+});
+
 // --- 4. DECISIONS INDIVIDUALS ---
 export const IndividualDecisionSchema = z.object({
   userId: UuidSchema,

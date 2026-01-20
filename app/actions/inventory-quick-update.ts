@@ -126,7 +126,7 @@ export async function toggleIngredientStockAction(
     }
 
   } catch (error) {
-    console.error("Error en toggleIngredient:", error);
+    logError("Error en toggleIngredient:", error);
     return { success: false, error: "Error actualitzant l'estoc." };
   }
 }

@@ -3,6 +3,7 @@
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { revalidatePath } from 'next/cache';
+import { debug, error as logError } from '@/lib/logger';
 import { z } from 'zod';
 
 const AddItemSchema = z.object({
@@ -29,7 +30,7 @@ export async function addToShoppingListAction(
     estimatedCost?: number
 ) {
   try {
-    console.log("🚀 [ACTION] Adding item:", { name, productId });
+    debug('[ACTION] addToShoppingList start');
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -60,7 +61,7 @@ export async function addToShoppingListAction(
     return { success: true };
 
   } catch (error) {
-    console.error("Error adding to list:", error);
+    logError('addToShoppingList failed', error);
     return { success: false, error: "No s'ha pogut afegir a la llista." };
   }
 }
@@ -75,7 +76,7 @@ export async function toggleShoppingItemAction(itemId: string, isChecked: boolea
     revalidatePath('/shopping-list');
     return { success: true };
   } catch (error) {
-    console.error("Error toggling item:", error);
+    logError('toggleShoppingItem failed', error);
     return { success: false, error: "Error actualitzant" };
   }
 }
@@ -94,7 +95,7 @@ export async function completeShoppingSessionAction() {
     revalidatePath('/inventory');
     return { success: true, count: result.added };
   } catch (error) {
-    console.error("Error completing shopping session:", error);
+    logError("Error completing shopping session:", error);
     return { success: false, error: "Error finalitzant la compra" };
   }
 }
@@ -128,7 +129,7 @@ export async function addBatchToShoppingListAction(items: z.infer<typeof AddItem
     return { success: true };
 
   } catch (error) {
-    console.error("Error adding batch:", error);
+    logError("Error adding batch:", error);
     return { success: false, error: "Error guardant productes" };
   }
 }

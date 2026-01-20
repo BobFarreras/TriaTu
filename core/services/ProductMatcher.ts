@@ -1,47 +1,31 @@
-import { createClient } from '@/adapters/supabase/server';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
+import { ProductCatalogRepository } from '@/core/ports/ProductCatalogRepository';
+import { debug } from '@/lib/logger';
 
 export class ProductMatcherService {
-  
+  constructor(private catalogRepo: ProductCatalogRepository) {}
+
   /**
-   * Rep una llista d'items genèrics (de Gemini) i intenta trobar
-   * el producte real al catàleg de Bonpreu.
+   * Rep una llista d'items generics i intenta trobar el producte real al cataleg.
    */
   async enrichItems(items: ScannedItem[]): Promise<ScannedItem[]> {
-    const supabase = await createClient();
-    
-    // Fem les cerques en paral·lel per velocitat
     const promises = items.map(async (item) => {
       if (!item.name) return item;
 
-      // 1. Cerca Fuzzy a Supabase
-      // Busquem productes que tinguin paraules similars al nom detectat
-      // Utilitzem 'websearch_to_tsquery' o 'ilike' segons configuració
-      const { data: matches, error } = await supabase
-        .from('product_catalog')
-        .select('*')
-        .textSearch('name', `'${item.name}'`, { 
-            type: 'websearch', 
-            config: 'catalan' 
-        })
-        .limit(1); // Ens quedem amb el millor candidat
-
-      if (error || !matches || matches.length === 0) {
-        // Si no trobem res, retornem l'item genèric tal qual
-        console.log(`⚠️ No s'ha trobat match per: ${item.name}`);
+      const matches = await this.catalogRepo.searchByName(item.name);
+      if (!matches || matches.length === 0) {
+        debug('[Matcher] no match');
         return item;
       }
 
       const match = matches[0];
-      console.log(`✅ MATCH TROBAT: ${item.name} -> ${match.name}`);
+      debug('[Matcher] match found');
 
-      // 2. Fusionem les dades
       return {
         ...item,
-        // Sobreescrivim amb dades reals si volem, o les guardem a part
-        name: match.name, // Posem el nom oficial (ex: "LLET SEMI BONPREU")
+        name: match.name,
         productId: match.id,
-        catalogImage: match.image_url,
+        catalogImage: match.props.image,
         price: Number(match.price),
         matchConfidence: 1.0
       };
