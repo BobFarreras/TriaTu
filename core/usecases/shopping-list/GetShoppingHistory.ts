@@ -1,4 +1,4 @@
-// ARXIU: src/core/application/shopping-list/GetShoppingHistory.ts
+// ARXIU: src/core/usecases/shopping-list/GetShoppingHistory.ts
 import { ShoppingListRepository } from "@/core/ports/ShoppingListRepository";
 import { ShoppingSession } from "@/core/domain/entities/ShoppingSession";
 

@@ -27,7 +27,7 @@ import { FoodKnowledgeService } from '@/core/domain/services/FoodKnowledgeServic
 import { RecipeMatcher } from '@/core/domain/services/RecipeMatcher';
 
 // ✅ NOU SERVICE HÍBRID
-import { GenerateMenuService } from '@/core//services/GenerateMenuService';
+import { GenerateMenuService } from '@/core/application/services/GenerateMenuService';
 
 // PORTS
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
@@ -64,7 +64,7 @@ import { GetRandomInspiration } from '@/core/usecases/recipes/GetRandomInspirati
 import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingList';
 import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
 import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
-import { GetShoppingHistory } from '@/core/application/shopping-list/GetShoppingHistory';
+import { GetShoppingHistory } from '@/core/usecases/shopping-list/GetShoppingHistory';
 import { debug } from '@/lib/logger';
 
 

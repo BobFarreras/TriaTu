@@ -185,3 +185,7 @@ Les dependències venen de fora (ideal per tests).
 
 Aquesta guia cobreix tot el necessari per treballar amb seguretat al projecte **Assistent de Decisions**.  
 Guarda-la com a document de referència.
+
+Nota core/application
+- core/application/services: serveis d'orquestracio (poden usar `lib/` si cal).
+- core/application/schemas: DTOs i validacions de capa application.

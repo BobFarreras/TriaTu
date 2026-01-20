@@ -71,7 +71,7 @@ Crearem dos casos d'ús:
 
 ConsumeIngredientUseCase: S'encarrega de restar quantitats exactes (matemàtiques de domini). Si no n'hi ha prou, llançarà l'error que hem definit abans.
 
-AddToShoppingListUseCase: S'encarrega de l'acció de "fallback" (afegir el que falta a la llista).
+AddToShoppingList: S'encarrega de l'acció de "fallback" (afegir el que falta a la llista).
 
 📂 Nous Arxius
 🆕 NOU: core/ports/InventoryRepository.ts (Contracte necessari pel UseCase).
@@ -80,4 +80,4 @@ AddToShoppingListUseCase: S'encarrega de l'acció de "fallback" (afegir el que f
 
 🆕 NOU: core/application/use-cases/ConsumeIngredientUseCase.ts (Lògica).
 
-🆕 NOU: core/application/use-cases/AddToShoppingListUseCase.ts (Lògica).
+🆕 NOU: core/application/use-cases/AddToShoppingList.ts (Lògica).

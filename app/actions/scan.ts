@@ -3,7 +3,7 @@
 import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
-import { ProductMatcherService } from '@/core/services/ProductMatcher'; // Import nou
+import { ProductMatcherService } from '@/core/application/services/ProductMatcherService'; // Import nou
 import { error as logError } from '@/lib/logger';
 
 export type ScanResult = 

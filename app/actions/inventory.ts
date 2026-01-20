@@ -8,8 +8,8 @@ import { container } from '@/services/container';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem'; // Assegura't que l'Entity ja té roomId al constructor!
 import { FOOD_PRESETS } from '@/lib/food-presets';
-import { ExpirySafetyService } from '@/core/services/ExpirySafetyService';
-import { EmojiMatcherService } from '@/core/services/EmojiMarcherService';
+import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService';
+import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
 import { error as logError } from '@/lib/logger';
 import {
   InventoryItemSchema,

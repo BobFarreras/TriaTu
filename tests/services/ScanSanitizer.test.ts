@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ScanSanitizer } from '@/core/domain/services/ScanSanitizer'; // Ajusta la ruta segons on tinguis la classe (ex: core/domain/services o services/)
+import { ScanSanitizer } from '@/core/application/services/ScanSanitizer'; // Ajusta la ruta segons on tinguis la classe (ex: core/domain/services o services/)
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 
 describe('ScanSanitizer Service', () => {

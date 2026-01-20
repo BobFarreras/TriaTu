@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 // ✅ FIX: Importem el repositori que faltava
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 import { container } from '@/services/container';
-import { EmojiMatcherService } from '@/core/services/EmojiMarcherService'; // ✅ Importem el Matcher
+import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService'; // ✅ Importem el Matcher
 import { GenerateRecipeSchema, MaterializeRecipeSchema } from '@/core/application/schemas/inputSchemas';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
@@ -346,3 +346,4 @@ export async function materializeRecipeAction(rawAiRecipe: unknown): Promise<Act
 
   return saveResult;
 }
+

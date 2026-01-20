@@ -4123,7 +4123,7 @@ CONTINGUT DELS FITXERS
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { GenerationContext } from '@/core/domain/types/GenerationContext';
-import { EmojiMatcherService } from '@/core/services/EmojiMarcherService';
+import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
 
 interface AIRecipeDTO {
   name: string;
@@ -4480,7 +4480,7 @@ export class BonpreuAdapter implements GroceryProvider {
 import { GoogleGenAI } from "@google/genai";
 import { ImageRecognitionService } from '@/core/ports/ImageRecognitionService';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
-import { ScanSanitizer } from '@/core/domain/services/ScanSanitizer';
+import { ScanSanitizer } from '@/core/application/services/ScanSanitizer';
 import { getScanSystemPrompt } from '@/core/prompts/scan-prompts'; // ✅ IMPORTAT
 
 export class GeminiImageRecognizer implements ImageRecognitionService {
@@ -4587,7 +4587,7 @@ export class GeminiRecipeGenerator extends BaseAIRecipeGenerator {
 import OpenAI from 'openai';
 import { ImageRecognitionService } from '@/core/ports/ImageRecognitionService';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
-import { ScanSanitizer } from '@/core/domain/services/ScanSanitizer';
+import { ScanSanitizer } from '@/core/application/services/ScanSanitizer';
 import { getScanSystemPrompt } from '@/core/prompts/scan-prompts'; // ✅ IMPORTAT
 
 export class OpenAIImageRecognizer implements ImageRecognitionService {
@@ -7024,8 +7024,8 @@ import { container } from '@/services/container';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem'; // Assegura't que l'Entity ja té roomId al constructor!
 import { FOOD_PRESETS } from '@/lib/food-presets';
-import { ExpirySafetyService } from '@/core/services/ExpirySafetyService';
-import { EmojiMatcherService } from '@/core/services/EmojiMarcherService';
+import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService';
+import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
@@ -7581,7 +7581,7 @@ import { revalidatePath } from 'next/cache';
 // ✅ FIX: Importem el repositori que faltava
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 import { container } from '@/services/container';
-import { EmojiMatcherService } from '@/core/services/EmojiMarcherService'; // ✅ Importem el Matcher
+import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService'; // ✅ Importem el Matcher
 import { GenerateRecipeSchema } from '@/core/application/schemas/inputSchemas';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
@@ -7977,7 +7977,7 @@ import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestricti
 import { ca } from '@/lib/i18n/locales/ca';
 import { es } from '@/lib/i18n/locales/es';
 import { en } from '@/lib/i18n/locales/en';
-import { RecipeEnricherService } from '@/core/services/RecipeEnrocherSercie';
+import { RecipeEnricherService } from '@/core/application/services/RecipeEnricherService';
 
 
 
@@ -8377,7 +8377,7 @@ export async function toggleRoomFeatureAction(roomId: string, feature: 'INVENTOR
 import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
-import { ProductMatcherService } from '@/core/services/ProductMatcher'; // Import nou
+import { ProductMatcherService } from '@/core/application/services/ProductMatcherService'; // Import nou
 
 export type ScanResult = 
   | { success: true; items: ScannedItem[] }
@@ -10566,7 +10566,7 @@ import { CartDock } from '@/features/inventory/products/CartDock'; // ✅ Import
 import { ProductResult, addBatchItemsAction } from '@/app/actions/inventory';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 // ✅ 1. IMPORTAR EL SERVEI DE SEGURETAT
-import { ExpirySafetyService } from '@/core/services/ExpirySafetyService'; // ✅ Importar
+import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService'; // ✅ Importar
 
 interface Props {
   onClose: () => void;
@@ -23296,8 +23296,8 @@ import { InventoryRepository } from "@/core/ports/InventoryRepository";
 import { InventoryItem } from "@/core/domain/entities/InventoryItem";
 import { ShoppingSession } from "@/core/domain/entities/ShoppingSession";
 import { StorageLocation } from "@/core/domain/entities/StorageLocation";
-import { ExpirySafetyService } from "@/core/services/ExpirySafetyService";
-import { EmojiMatcherService } from "@/core/services/EmojiMarcherService";
+import { ExpirySafetyService } from "@/core/application/services/ExpirySafetyService";
+import { EmojiMatcherService } from "@/core/application/services/EmojiMatcherService";
 
 export class CompleteShoppingSession {
   constructor(
@@ -37390,7 +37390,7 @@ describe('BasicGroupResolver (Smart V2)', () => {
 // =================== FILE: tests/services/GenerateMenuSercie.test.ts ===================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GenerateMenuService } from '@/core/services/GenerateMenuService';
+import { GenerateMenuService } from '@/core/application/services/GenerateMenuService';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
@@ -37538,7 +37538,7 @@ describe('GenerateMenuService', () => {
 // =================== FILE: tests/services/ScanSanitizer.test.ts ===================
 
 import { describe, it, expect } from 'vitest';
-import { ScanSanitizer } from '@/core/domain/services/ScanSanitizer'; // Ajusta la ruta segons on tinguis la classe (ex: core/domain/services o services/)
+import { ScanSanitizer } from '@/core/application/services/ScanSanitizer'; // Ajusta la ruta segons on tinguis la classe (ex: core/domain/services o services/)
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 
 describe('ScanSanitizer Service', () => {
@@ -38472,3 +38472,5 @@ vi.mock('next/navigation', () => ({
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
+
+

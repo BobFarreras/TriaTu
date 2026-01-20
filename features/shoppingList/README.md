@@ -17,7 +17,7 @@ Sistema que gestiona els ingredients que falten. Actua com a "fallback" quan l'i
 
 ## Ús Tècnic
 Aquesta feature serà utilitzada principalment per:
-- `AddToShoppingListUseCase` (nou).
+- `AddToShoppingList` (nou).
 - `CookRecipeUseCase` (quan faltin ingredients).
 ## Estructura
 - components/ UI de la llista i historial
@@ -25,3 +25,4 @@ Aquesta feature serà utilitzada principalment per:
 - logic/ (sense dependencies d'infra)
 - __tests__/ (tests de feature)
 - index.ts (exports publices)
+

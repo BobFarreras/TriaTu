@@ -1182,3 +1182,9 @@ Has definit una arquitectura:
 - Cada feature viu a `features/<feature>` amb `components/`, `hooks/`, `logic/`, `__tests__/`, `index.ts`.
 - UI compartida viu a `components/`.
 - Les pages de `app/` importen des de `features/` o `components/` segons sigui compartit o especific.
+
+## Annex: Core (application vs domain)
+- `core/domain` es logica pura i no depen de infraestructura.
+- `core/usecases` orquestra regles i usa ports.
+- `core/application/services` contenen serveis d'aplicacio que poden usar `lib/`.
+- `core/application/schemas` contenen DTOs i validacions.

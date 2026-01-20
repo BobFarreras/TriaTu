@@ -3,8 +3,8 @@ import { InventoryRepository } from "@/core/ports/InventoryRepository";
 import { InventoryItem } from "@/core/domain/entities/InventoryItem";
 import { ShoppingSession } from "@/core/domain/entities/ShoppingSession";
 import { StorageLocation } from "@/core/domain/entities/StorageLocation";
-import { ExpirySafetyService } from "@/core/services/ExpirySafetyService";
-import { EmojiMatcherService } from "@/core/services/EmojiMarcherService";
+import { ExpirySafetyService } from "@/core/application/services/ExpirySafetyService";
+import { EmojiMatcherService } from "@/core/application/services/EmojiMatcherService";
 
 export class CompleteShoppingSession {
   constructor(

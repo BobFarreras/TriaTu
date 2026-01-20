@@ -17,7 +17,7 @@ import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestricti
 import { ca } from '@/lib/i18n/locales/ca';
 import { es } from '@/lib/i18n/locales/es';
 import { en } from '@/lib/i18n/locales/en';
-import { RecipeEnricherService } from '@/core/services/RecipeEnrocherSercie';
+import { RecipeEnricherService } from '@/core/application/services/RecipeEnricherService';
 
 
 
@@ -408,3 +408,4 @@ export async function toggleRoomFeatureAction(roomId: string, feature: 'INVENTOR
   revalidatePath(`/rooms/${roomId}`);
   return { success: true };
 }
+

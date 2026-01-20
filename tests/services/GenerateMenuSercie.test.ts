@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GenerateMenuService } from '@/core/services/GenerateMenuService';
+import { GenerateMenuService } from '@/core/application/services/GenerateMenuService';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
@@ -121,3 +121,4 @@ describe('GenerateMenuService', () => {
     expect(mockRecipeRepo.findMatches).toHaveBeenCalled();
   });
 });
+

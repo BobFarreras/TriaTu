@@ -1,7 +1,7 @@
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { GenerationContext } from '@/core/domain/types/GenerationContext';
-import { EmojiMatcherService } from '@/core/services/EmojiMarcherService';
+import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
 
 interface AIRecipeDTO {
   name: string;

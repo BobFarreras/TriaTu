@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { ImageRecognitionService } from '@/core/ports/ImageRecognitionService';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
-import { ScanSanitizer } from '@/core/domain/services/ScanSanitizer';
+import { ScanSanitizer } from '@/core/application/services/ScanSanitizer';
 import { getScanSystemPrompt } from '@/core/prompts/scan-prompts'; // ✅ IMPORTAT
 
 export class OpenAIImageRecognizer implements ImageRecognitionService {

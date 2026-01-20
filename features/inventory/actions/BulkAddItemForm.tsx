@@ -6,7 +6,7 @@ import { CartDock } from '@/features/inventory/products/CartDock'; // ✅ Import
 import { ProductResult, addBatchItemsAction } from '@/app/actions/inventory';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 // ✅ 1. IMPORTAR EL SERVEI DE SEGURETAT
-import { ExpirySafetyService } from '@/core/services/ExpirySafetyService'; // ✅ Importar
+import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService'; // ✅ Importar
 
 interface Props {
   onClose: () => void;
@@ -119,3 +119,4 @@ export function BulkAddItemForm({ onClose, activeRoomId }: BulkAddItemFormProps)
     </div>
   );
 }
+
