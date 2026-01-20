@@ -35,6 +35,7 @@ export function ShoppingHeader({ activeTab, onTabChange, onSearchClick, tourId, 
                 <button
                     id="tour-shopping-add-btn"
                     onClick={onSearchClick}
+                    data-testid="shopping-add-button"
                     className="h-11.5 w-11.5 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 active:scale-95 transition-all border border-emerald-500/50"
                     aria-label="Buscar productes"
                 >

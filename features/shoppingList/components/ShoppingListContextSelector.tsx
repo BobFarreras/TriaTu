@@ -17,6 +17,7 @@ export function ShoppingListContextSelector({ scope, setScope, rooms }: Props) {
       <select
         value={scope}
         onChange={(e) => setScope(e.target.value)}
+        data-testid="shopping-scope-select"
         className="appearance-none bg-slate-950/70 hover:bg-slate-900 text-slate-100 text-xs font-semibold py-2 pl-9 pr-8 rounded-full border border-amber-400/20 hover:border-amber-400/60 shadow-[0_0_0_1px_rgba(251,191,36,0.08)] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400/30"
       >
         <option value="PERSONAL">Compra Personal</option>

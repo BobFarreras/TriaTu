@@ -32,6 +32,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [currentTourId, setCurrentTourId] = useState<string>('');
 
   const startTour = useCallback((tourId: string, newSteps: TourStep[], options: { force?: boolean } = {}) => {
+    if (process.env.NEXT_PUBLIC_E2E === 'true') return;
     // Generem una clau única per aquest tour (ex: triatu_tour_seen_profile-setup)
     const storageKey = `triatu_tour_seen_${tourId}`;
     const hasSeen = localStorage.getItem(storageKey);

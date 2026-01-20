@@ -9,6 +9,7 @@ export function useRoomTour() {
     const { t } = useLanguage();
     // ✅ Exportem tot el que necessitem per la lògica de simulació
     const { startTour, isActive, currentStepIndex, nextStep } = useOnboarding();
+    const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 
     const steps: TourStep[] = useMemo(() => [
         { 
@@ -48,8 +49,10 @@ export function useRoomTour() {
 
     // Inici automàtic (amb force: false per producció, true per dev)
     useEffect(() => {
-        startTour('room-guide', steps);
-    }, [startTour, steps]);
+        if (!isE2E) {
+            startTour('room-guide', steps);
+        }
+    }, [startTour, steps, isE2E]);
 
     return { steps, isActive, currentStepIndex, nextStep };
 }

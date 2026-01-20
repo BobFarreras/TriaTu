@@ -36,6 +36,7 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
     const router = useRouter();
     const { t } = useLanguage();
     const { startTour } = useOnboarding();
+    const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 
     // --- ESTAT ---
     const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
@@ -109,11 +110,14 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
 
     // Auto-start del tour
     useEffect(() => {
-        const timer = setTimeout(() => {
-            startTour('shopping-list-v1', activeSteps);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [startTour, activeSteps]);
+        if (!isE2E) {
+            const timer = setTimeout(() => {
+                startTour('shopping-list-v1', activeSteps);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+        return;
+    }, [startTour, activeSteps, isE2E]);
 
     // --- HANDLERS ---
     const handleToggle = async (id: string, currentStatus: boolean) => {
@@ -167,11 +171,13 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
                                 )}
                             />
                         </div>
-                        <TourTrigger 
-                            tourId="shopping-list-v1" 
-                            steps={activeSteps}
-                            className="bg-slate-900 border-slate-800 text-purple-400 hover:bg-slate-800 shrink-0"
-                        />
+                        {!isE2E && (
+                            <TourTrigger 
+                                tourId="shopping-list-v1" 
+                                steps={activeSteps}
+                                className="bg-slate-900 border-slate-800 text-purple-400 hover:bg-slate-800 shrink-0"
+                            />
+                        )}
                     </div>
                 </div>
 

@@ -58,6 +58,7 @@ export function InputHeader({ isEditing, isListening, hasContent, labels, onSave
               initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
               whileTap={{ scale: 0.9 }}
               onClick={onSave}
+              data-testid="recipe-step-save"
               className={`
                 h-8 px-3 rounded-lg flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-all border shadow-lg
                 ${isEditing

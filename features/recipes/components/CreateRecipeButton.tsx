@@ -13,6 +13,7 @@ export function CreateRecipeButton() {
       <motion.button
         whileHover={{ scale: 1.1, rotate: 90 }}
         whileTap={{ scale: 0.9 }}
+        data-testid="create-recipe-button"
         // Nota: Assegura't de fer servir 'bg-gradient-to-r' en lloc de 'bg-linear-to-r' si uses Tailwind standard
         className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-xl shadow-purple-900/40 flex items-center justify-center border-2 border-white/20"
       >

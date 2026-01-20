@@ -37,7 +37,7 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
   useRealtimeRoom(room.id);
 
   const { t } = useLanguage();
-
+  const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 
   // 2. Local UI State
   const [mode, setMode] = useState<'magic' | 'manual'>('manual');
@@ -101,9 +101,11 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
         />
       </div>
       {/* TOUR TRIGGER */}
-      <div className="fixed top-4 right-4 z-50">
-        <TourTrigger tourId="room-guide" steps={steps} />
-      </div>
+      {!isE2E && (
+        <div className="fixed top-4 right-4 z-50">
+          <TourTrigger tourId="room-guide" steps={steps} />
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-6 flex-1 items-start">
 

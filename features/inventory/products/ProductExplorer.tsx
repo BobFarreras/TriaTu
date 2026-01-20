@@ -48,6 +48,7 @@ export function ProductExplorer({ onSelect, quantities, onClose }: Props) {
                     value={manualSearch}
                     onChange={(e) => handleManualInput(e.target.value)}
                     placeholder="🔎 Què afegim avui?"
+                    data-testid="product-search-input"
                     className="w-full h-12 pl-12 pr-4 rounded-2xl bg-slate-900 border border-slate-800 text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-base font-medium shadow-inner"
                     autoFocus={false}
                   />
@@ -75,6 +76,7 @@ export function ProductExplorer({ onSelect, quantities, onClose }: Props) {
             {/* BOTÓ TANCAR (Sempre visible a la dreta) */}
             <button 
                onClick={onClose} 
+               data-testid="product-search-close"
                className="h-12 w-12 shrink-0 rounded-full bg-slate-900/50 text-slate-400 hover:text-white hover:bg-red-500/10 hover:border-red-500/50 border border-transparent flex items-center justify-center transition-all active:scale-90"
             >
                ✕

@@ -27,6 +27,23 @@ GEMINI_API_KEY=
 - `pnpm lint` - lint.
 - `pnpm test` - tests.
 - `pnpm test:ci` - tests en mode CI.
+- `pnpm test:e2e` - tests end-to-end (Playwright).
+
+## E2E (Playwright)
+
+Variables d'entorn per executar login en e2e:
+
+```
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Notes:
+- Sense aquestes variables, el test de login es marca com a "skipped".
+- Playwright aixeca el servidor amb `pnpm dev` (port 3010).
+- Playwright carrega `.env.local` automaticament.
+- L'E2E fa servir `NEXT_PUBLIC_SUPABASE_URL` de `.env.local`.
+- El mode E2E desactiva el Tour al dashboard amb `NEXT_PUBLIC_E2E=true`.
+- Pots sobreescriure la URL amb `PLAYWRIGHT_BASE_URL`.
 
 ## Flux de treball (TDD)
 

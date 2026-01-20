@@ -111,6 +111,7 @@ export function StepsInput({ data, currentText, onChangeText, onSave, onCancel, 
           onChange={(e) => onChangeText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={isListening ? "Parla ara..." : labels.placeholder}
+          data-testid="recipe-step-input"
           className={`
                     flex-1 w-full bg-slate-900 border rounded-2xl p-4 text-base text-white outline-none resize-none transition-all leading-relaxed custom-scrollbar
                     ${isListening

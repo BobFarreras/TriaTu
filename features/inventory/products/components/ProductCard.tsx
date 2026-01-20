@@ -15,6 +15,7 @@ export function ProductCard({ product, quantity, onSelect }: Props) {
   return (
     <button
       onClick={() => onSelect(product)}
+      data-testid={`product-card-${product.id}`}
       className={`
         relative flex flex-col w-full h-full
         bg-slate-900 border rounded-xl overflow-hidden transition-all text-left shadow-md active:scale-95

@@ -33,6 +33,7 @@ interface InventoryManagerProps {
 
 export function InventoryManager({ initialItems }: InventoryManagerProps) {
   const { t } = useLanguage();
+  const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 
   // 1. Hook de Dades (Tota la lògica complexa està aquí)
   const {
@@ -150,7 +151,7 @@ export function InventoryManager({ initialItems }: InventoryManagerProps) {
 
       <div id="tour-inv-header" className="sticky top-2 z-40 bg-slate-950/80 backdrop-blur-md pb-2">
         <InventoryHeader
-          extraActions={<TourTrigger tourId="inventory" steps={onboardingSteps} />}
+          extraActions={isE2E ? null : <TourTrigger tourId="inventory" steps={onboardingSteps} />}
           items={items}
           activeFilter={filter}
           onFilterChange={(f) => { setFilter(f); setShowAddForm(false); }}

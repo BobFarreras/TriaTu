@@ -36,6 +36,7 @@ export function UserDropdown({ userName }: Props) {
       {/* BOTÓ HAMBURGUESA ANIMAT (Sempre Fosc) */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
+        data-testid="user-menu-toggle"
         className="group bg-zinc-900 p-3 rounded-2xl border-2 border-zinc-700 hover:border-zinc-500 transition-all active:scale-95 shadow-sm"
       >
         <div className="w-5 h-5 flex flex-col justify-center items-end gap-1">
@@ -104,6 +105,7 @@ export function UserDropdown({ userName }: Props) {
           {/* LOGOUT */}
           <button
             onClick={() => signOutAction()}
+            data-testid="logout-button"
             className="w-full flex items-center justify-center gap-2 bg-red-900/10 hover:bg-red-900/20 text-red-400 py-3 rounded-2xl font-black text-xs transition-colors border border-transparent hover:border-red-900/50"
           >
             TANCAR SESSIÓ

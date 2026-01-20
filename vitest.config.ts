@@ -10,7 +10,12 @@ export default defineConfig({
     globals: true,
     // 👇 ASSEGURA'T QUE AIXÒ ESTÀ AIXÍ
     setupFiles: ['./vitest.setup.ts'],
-    include: ['tests/**/*.{test,spec}.{ts,tsx}', '**/*.{test,spec}.{ts,tsx}'],
+    include: [
+      'tests/**/*.{test,spec}.{ts,tsx}',
+      'features/**/*.{test,spec}.{ts,tsx}',
+      'lib/**/*.{test,spec}.{ts,tsx}'
+    ],
+    exclude: ['tests/e2e/**', 'node_modules/**'],
     alias: {
       '@': path.resolve(__dirname, './')
     }
