@@ -2,12 +2,13 @@ import { GoogleGenAI } from "@google/genai";
 import { ImageRecognitionService } from '@/core/ports/ImageRecognitionService';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { ScanSanitizer } from '@/core/application/services/ScanSanitizer';
-import { getScanSystemPrompt } from '@/core/prompts/scan-prompts'; // ✅ IMPORTAT
+import { buildScanSystemPrompt, getScanSystemPrompt } from '@/core/prompts/scan-prompts';
+import type { PromptService } from '@/core/application/services/PromptService';
 
 export class GeminiImageRecognizer implements ImageRecognitionService {
   private client: GoogleGenAI;
 
-  constructor() {
+  constructor(private promptService?: PromptService) {
     this.client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
 
@@ -15,11 +16,17 @@ export class GeminiImageRecognizer implements ImageRecognitionService {
     try {
       const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-      // ✅ USEM EL PROMPT CENTRALITZAT
-      const prompt = getScanSystemPrompt();
+      const today = new Date().toISOString().split('T')[0];
+      const prompt = this.promptService
+        ? await this.promptService.getPrompt({
+            name: 'triatu-scan',
+            variables: { today },
+            fallback: () => buildScanSystemPrompt(today),
+          })
+        : getScanSystemPrompt();
 
       const response = await this.client.models.generateContent({
-        model: 'gemini-2.5-flash', // El model Pro és millor per a coordenades
+        model: 'gemini-2.5-flash',
 
         contents: [
           {
@@ -36,7 +43,7 @@ export class GeminiImageRecognizer implements ImageRecognitionService {
           }
         ],
         config: {
-          responseMimeType: 'application/json', // Forcem JSON
+          responseMimeType: 'application/json',
           temperature: 0.1,
         }
       });
@@ -47,9 +54,8 @@ export class GeminiImageRecognizer implements ImageRecognitionService {
       let rawItems: unknown[] = [];
       try {
         const parsed = JSON.parse(text);
-        // ✅ Adapta al nou format { items: [...] }
         rawItems = Array.isArray(parsed) ? parsed : (parsed.items || []);
-        console.log("🔍 [GEMINI OUTPUT]:", rawItems.length, "items");
+        console.log("?? [GEMINI OUTPUT]:", rawItems.length, "items");
       } catch (e) {
         console.error("Gemini JSON Error:", e);
         return [];
@@ -57,7 +63,7 @@ export class GeminiImageRecognizer implements ImageRecognitionService {
 
       return rawItems.map((item: unknown) => ScanSanitizer.sanitize(item as ScannedItem));
     } catch (error) {
-      console.warn("⚠️ Gemini ha fallat:", error);
+      console.warn("?? Gemini ha fallat:", error);
       throw error;
     }
   }

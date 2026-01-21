@@ -13,6 +13,16 @@ LANGSMITH_PROJECT=triatu-nextjs
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 ```
 
+## Prompts de Triatu (noms)
+
+- `triatu-scan`
+- `triatu-recipe-chef`
+- `triatu-recipe-fate`
+
+Variables habituals:
+- `triatu-scan`: `today`
+- `triatu-recipe-chef` i `triatu-recipe-fate`: `count`, `mode`, `vibe`, `restrictions`, `language`, `inventoryList`, `focusDish`
+
 ## Estrategia
 
 - Prompts versionats a LangSmith (nom + versio).
@@ -36,3 +46,11 @@ LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 
 - `docs/SECURITY.md`
 - `docs/DEVELOPMENT.md`
+
+## Guia rapida (UI LangSmith)
+
+1) Crea o obre el projecte de LangSmith.
+2) Afegeix un prompt amb el nom exacte (veure llista).
+3) Defineix el template amb variables `{{variable}}`.
+4) Desa i versiona els canvis.
+5) Actualitza `docs/releases/vX.Y.Z.md` quan canviis prompts en produccio.

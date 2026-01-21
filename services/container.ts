@@ -19,6 +19,7 @@ import { GeminiRecipeGenerator } from '@/adapters/gemini/GeminiRecipeGenerator';
 import { OpenAIRecipeGenerator } from '@/adapters/openai/OpenAIRecipeGenerator';
 import { FallbackRecipeGenerator } from '@/adapters/strategies/FallbackRecipeGenerator';
 import { BonpreuAdapter } from '@/adapters/external/BonpreuAdapter';
+import { LangSmithPromptRepository } from '@/adapters/langsmith/LangSmithPromptRepository';
 
 // DOMAIN SERVICES
 import { BasicDecisionEngine } from '@/services/decision/BasicDecisionEngine';
@@ -27,6 +28,7 @@ import { FoodKnowledgeService } from '@/core/domain/services/FoodKnowledgeServic
 
 // ✅ NOU SERVICE HÍBRID
 import { GenerateMenuService } from '@/core/application/services/GenerateMenuService';
+import { PromptService } from '@/core/application/services/PromptService';
 
 // PORTS
 import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
@@ -72,8 +74,21 @@ const foodKnowledgeService = new FoodKnowledgeService();
 const individualEngine = new BasicDecisionEngine();
 const groupResolver = new BasicGroupResolver(foodKnowledgeService);
 
-const geminiAdapter = new GeminiImageRecognizer();
-const openAIAdapter = new OpenAIImageRecognizer();
+let promptServiceInstance: PromptService | null | undefined = undefined;
+const getPromptService = (): PromptService | null => {
+  if (promptServiceInstance !== undefined) return promptServiceInstance;
+  try {
+    const repo = new LangSmithPromptRepository();
+    promptServiceInstance = new PromptService(repo);
+  } catch {
+    promptServiceInstance = null;
+  }
+  return promptServiceInstance;
+};
+
+const promptService = getPromptService() || undefined;
+const geminiAdapter = new GeminiImageRecognizer(promptService);
+const openAIAdapter = new OpenAIImageRecognizer(promptService);
 const robustRecognizer = new FallbackImageRecognizer(geminiAdapter, openAIAdapter);
 
 const bonpreuAdapter = new BonpreuAdapter();
@@ -82,8 +97,8 @@ const bonpreuAdapter = new BonpreuAdapter();
 let recipeGeneratorInstance: RecipeGenerator | null = null;
 const getRecipeGenerator = (): RecipeGenerator => {
   if (!recipeGeneratorInstance) {
-    const gemini = new GeminiRecipeGenerator();
-    const openai = new OpenAIRecipeGenerator();
+    const gemini = new GeminiRecipeGenerator(promptService);
+    const openai = new OpenAIRecipeGenerator(promptService);
     recipeGeneratorInstance = new FallbackRecipeGenerator(gemini, openai);
   }
   return recipeGeneratorInstance;
@@ -212,8 +227,8 @@ export const container = {
   // ✅ CORRECCIÓ FINAL: Sense arguments als constructors
   getRecipeGenerator() {
     // 1. Instanciem els motors directament (sense repo, ja que l'inventari ve pel Context)
-    const primary = new GeminiRecipeGenerator();
-    const secondary = new OpenAIRecipeGenerator();
+    const primary = new GeminiRecipeGenerator(promptService);
+    const secondary = new OpenAIRecipeGenerator(promptService);
 
     // 2. Retornem l'estratègia robusta amb Fallback
     console.log("🛡️ [Container] Inicialitzant Generador amb Fallback (Gemini -> OpenAI)");

@@ -20,3 +20,4 @@ Testing (TDD):
 Notes:
 - Variables d'entorn a `docs/DEVELOPMENT.md`.
 - Observabilitat: errors a Sentry via `UseCaseError`.
+- Prompts: `triatu-scan`, `triatu-recipe-chef`, `triatu-recipe-fate`.

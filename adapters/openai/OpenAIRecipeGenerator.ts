@@ -1,13 +1,14 @@
 // adapters/openai/OpenAIRecipeGenerator.ts
 
 import { BaseAIRecipeGenerator } from '@/adapters/ai/BaseAIRecipeGenerator';
+import type { PromptService } from '@/core/application/services/PromptService';
 import OpenAI from "openai";
 
 export class OpenAIRecipeGenerator extends BaseAIRecipeGenerator {
   private client: OpenAI;
 
-  constructor() {
-    super();
+  constructor(promptService?: PromptService) {
+    super(promptService);
     if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
     this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }

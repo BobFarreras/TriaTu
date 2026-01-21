@@ -2,6 +2,8 @@ import { RecipeGenerator } from '@/core/ports/RecipeGenerator';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { GenerationContext } from '@/core/domain/types/GenerationContext';
 import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
+import { PromptService } from '@/core/application/services/PromptService';
+import { getRecipeChefPrompt, getRecipeFatePrompt, getRecipePromptVariables } from '@/core/prompts/recipe-prompts';
 
 interface AIRecipeDTO {
   name: string;
@@ -17,7 +19,7 @@ interface AIRecipeDTO {
   dietary_tags?: string[];
 }
 
-// Interfície auxiliar per evitar 'any' quan busquem preus i imatges
+// Interficie auxiliar per evitar 'any' quan busquem preus i imatges
 interface InventoryProductMetadata {
     id: string;
     name: string;
@@ -29,10 +31,15 @@ interface InventoryProductMetadata {
 }
 
 export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
+  protected promptService?: PromptService;
+
+  constructor(promptService?: PromptService) {
+    this.promptService = promptService;
+  }
 
   async generate(ctx: GenerationContext): Promise<Recipe[]> {
-    console.log(`\n🤖 [AI START] Generating ${ctx.count} recipes...`);
-    const prompt = this.buildPrompt(ctx);
+    console.log(`\n?? [AI START] Generating ${ctx.count} recipes...`);
+    const prompt = await this.resolvePrompt(ctx);
 
     try {
       const rawJsonString = await this.callAIModel(prompt, ctx.focusDish);
@@ -42,7 +49,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
       return dtos.map(dto => this.mapToDomain(dto, ctx)).filter((r): r is Recipe => r !== null);
 
     } catch (e) {
-      console.error("❌ Generator Error:", e);
+      console.error("? Generator Error:", e);
       throw e;
     }
   }
@@ -50,67 +57,24 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
   protected abstract callAIModel(prompt: string, focusDish?: string): Promise<string | null>;
   protected abstract getModelName(): string;
 
-  private buildPrompt(ctx: GenerationContext): string {
-    const inventoryList = ctx.inventory.map(i => {
-      const cleanName = i.name.replace(/"/g, '').trim();
-      return `- [ID: "${i.id}"] ${cleanName} (${i.quantity} ${i.unit})`;
-    }).join('\n');
+  private async resolvePrompt(ctx: GenerationContext): Promise<string> {
+    const variables = getRecipePromptVariables(ctx);
+    const isChef = ctx.mode === 'CHEF';
+    const promptName = isChef ? 'triatu-recipe-chef' : 'triatu-recipe-fate';
 
-    // 🔀 BRANCHING DE PROMPTS MILLORAT
-    let instructions = "";
-    
-    if (ctx.mode === 'CHEF') {
-        // ✅ CORRECCIÓ: El Chef ara té en compte el Vibe i les Al·lèrgies
-        instructions = `
-        MODO: 👨‍🍳 CHEF (Gestió de Nevera Intel·ligent)
-        OBJECTIU: Minimitzar residus però cuinant amb ESTIL.
-        ESTIL PREFERENT: ${ctx.vibe || "Equilibrat"} (Intenta donar aquest toc als ingredients disponibles).
-        
-        1. Prioritza ABSOLUTAMENT l'ús dels ingredients de la llista "INVENTARI REAL".
-        2. Intenta no afegir ingredients extra si no són bàsics (sal, oli, espècies).
-        3. RESPECTA ELS GUSTOS: Encara que sigui cuina d'aprofitament, intenta que s'assembli a l'estil "${ctx.vibe}".
-        4. SEGURETAT: Si tens un ingredient a l'inventari que incompleix les RESTRICCIONS (ex: pasta amb gluten per a un celíac), NO L'USIS.
-        `;
-    } else {
-        // MODO FATE
-        instructions = `
-        MODO: ✨ FATE (Inspiració i Gustos)
-        ESTIL CULINARI OBLIGATORI: ${ctx.vibe}
-        OBJECTIU: Satisfer els gustos de l'usuari ignorant les limitacions de la nevera.
-        1. IGNORA l'inventari. Crea les millors receptes possibles per l'estil "${ctx.vibe}".
-        2. Sigues creatiu i autèntic amb l'estil de cuina demanat.
-        3. Si (i només si) un ingredient coincideix casualment amb l'inventari, fes servir el seu ID.
-        `;
+    if (this.promptService) {
+      return this.promptService.getPrompt({
+        name: promptName,
+        variables,
+        fallback: () => this.buildPrompt(ctx),
+      });
     }
 
-    return `
-      Ets un xef expert i nutricionista.
-      Has de crear ${ctx.count} receptes.
-      
-      ${instructions}
-      
-      INVENTARI REAL (Per vincular IDs i estalviar diners):
-      ${inventoryList || "(Buit)"}
-      
-      ⚠️ RESTRICCIONS ALIMENTÀRIES (Respectar SEMPRE, fins i tot en mode CHEF): ${ctx.restrictions.join(', ') || "Cap"}
-      IDIOMA: ${ctx.language || 'Català'}.
-      
-      FORMAT JSON OBLIGATORI:
-      {
-        "recipes": [
-          {
-            "name": "Nom del plat",
-            "prep_time_minutes": 20,
-            "tags": ["fàcil"],
-            "dietary_tags": ["sense gluten"],
-            "ingredients": [
-                { "id": "UUID_DEL_INVENTARI_O_NULL", "name": "Nom", "quantity": 1, "unit": "ut" }
-            ],
-            "steps": ["Pas 1..."]
-          }
-        ]
-      }
-    `;
+    return this.buildPrompt(ctx);
+  }
+
+  private buildPrompt(ctx: GenerationContext): string {
+    return ctx.mode === 'CHEF' ? getRecipeChefPrompt(ctx) : getRecipeFatePrompt(ctx);
   }
 
   private parseResponse(jsonString: string): AIRecipeDTO[] {
@@ -122,7 +86,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
 
   private mapToDomain(dto: AIRecipeDTO, ctx: GenerationContext): Recipe | null {
     try {
-      console.log(`\n🏭 [MAPPER] Processing: "${dto.name}"`);
+      console.log(`\n?? [MAPPER] Processing: "${dto.name}"`);
 
       const inventoryMapById = new Map(ctx.inventory.map(i => [i.id, i]));
       const inventoryMapByName = new Map(ctx.inventory.map(i => [i.name.toLowerCase().trim(), i]));
@@ -133,7 +97,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
       const mappedIngredients = dto.ingredients.map(aiIng => {
         let finalId = crypto.randomUUID();
         let finalName = aiIng.name;
-        let finalEmoji = '🥘';
+        let finalEmoji = '??';
         let linkedProductId: string | null = null;
         let linkedProductImage: string | null = null;
         let estimatedCost = 0;
@@ -142,7 +106,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
 
         // 1. Cerca per ID
         if (aiIng.id && inventoryMapById.has(aiIng.id)) {
-          // Casting segur gràcies a la interfície
+          // Casting segur gracies a la interfice
           foundProduct = inventoryMapById.get(aiIng.id) as unknown as InventoryProductMetadata;
         }
 
@@ -153,7 +117,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
           if (byName) {
              foundProduct = byName as unknown as InventoryProductMetadata;
           }
-          
+
           if (!foundProduct && searchName.length > 3) {
             const fuzzy = ctx.inventory.find(p => {
               const pName = p.name.toLowerCase();
@@ -166,8 +130,8 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
         if (foundProduct) {
           finalId = foundProduct.id;
           finalName = foundProduct.name;
-          
-          if (foundProduct.emoji && foundProduct.emoji !== '🛒') {
+
+          if (foundProduct.emoji && foundProduct.emoji !== '??') {
              finalEmoji = foundProduct.emoji;
           } else {
              const smartEmoji = EmojiMatcherService.match(foundProduct.name);
@@ -175,19 +139,18 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
           }
 
           linkedProductId = foundProduct.id || null;
-          
-          // ✅ SOLUCIÓ ERROR ANY: Accés tipat segur
+
+          // SOLUCIO ERROR ANY: Acces tipat segur
           const rawImage = foundProduct.image || foundProduct.props?.image;
-          
+
           if (rawImage && typeof rawImage === 'string' && rawImage.startsWith('http')) {
               linkedProductImage = rawImage;
           }
 
           const price = foundProduct.price || 0;
           if (price > 0) {
-            // ... (càlcul de preu igual) ...
-            // Simplificat per brevetat, aquí aniria la teva lògica de proporció
-             estimatedCost = price / 4; // Estimació simple si no quadren unitats
+            // Simplificat per brevetat
+             estimatedCost = price / 4;
           }
         } else {
           const preset = EmojiMatcherService.match(aiIng.name);
@@ -216,7 +179,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
       let finalTags = dto.tags || [];
       const finalDietaryTags = (dto.dietary_tags || []).map(t => t.toLowerCase());
       const dietaryKeywords = ['gluten', 'veg', 'lact', 'sucre', 'keto', 'paleo', 'peix', 'carn'];
-      
+
       finalTags = finalTags.filter(tag => {
           const lowerTag = tag.toLowerCase();
           const isDietary = dietaryKeywords.some(kw => lowerTag.includes(kw));
@@ -234,7 +197,7 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
         prepTimeMinutes: Number(dto.prep_time_minutes) || 30,
         estimatedCost: totalCost,
         isAiGenerated: true,
-        authorName: "✨ Chef IA",
+        authorName: "? Chef IA",
         ingredients: mappedIngredients,
         steps: safeSteps,
         tags: finalTags,
@@ -246,12 +209,12 @@ export abstract class BaseAIRecipeGenerator implements RecipeGenerator {
       });
 
       if (!recipe.isSafeFor(ctx.restrictions)) {
-        console.warn(`   ⚠️ [SAFETY] Recipe discarded.`);
+        console.warn(`   ?? [SAFETY] Recipe discarded.`);
         return null;
       }
       return recipe;
     } catch (e) {
-      console.error("❌ [MAPPING ERROR]:", e);
+      console.error("? [MAPPING ERROR]:", e);
       return null;
     }
   }

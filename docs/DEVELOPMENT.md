@@ -31,6 +31,7 @@ LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 ```
 
 > Nota: mantingues les claus fora del control de versions.
+> Prompts: veure `docs/AI_PROMPTS.md`.
 
 ## Scripts
 

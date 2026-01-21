@@ -76,6 +76,7 @@ L'usuari prem un botó en una feature:
 - Evita logs amb PII; usa `lib/logger` i `debug` només en dev.
 - Onboarding: el tour de decisions individuals s'activa manualment via `TourTrigger` (sense auto-start).
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
+- Prompts IA: es resolen via `PromptService` (LangSmith + fallback local).
 
 ## 6. Documents clau
 
