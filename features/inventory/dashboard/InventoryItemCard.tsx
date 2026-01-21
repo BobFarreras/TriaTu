@@ -5,7 +5,7 @@ import { ConsumeButton } from '../actions/ConsumeButton'; // Assegura't de la ru
 import { isItemExpired, isItemExpiringSoon } from '@/lib/inventoryUtils';
 import { EditItemModal } from '../actions/EditItemModal';
 import { FOOD_PRESETS } from '@/lib/food-presets';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { getSafeImageUrl } from '@/lib/imageUtils'; // 👈 IMPORTA AIXÒ
@@ -24,16 +24,50 @@ interface Props {
   onRefresh?: () => void; // ✅ Prop rebuda correctament
 }
 
+interface InventoryItemImageProps {
+  src?: string;
+  alt: string;
+  fallbackEmoji: string;
+}
+
+function InventoryItemImage({ src, alt, fallbackEmoji }: InventoryItemImageProps) {
+  const [isLoading, setIsLoading] = useState(!!src);
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return <div className="text-4xl md:text-6xl filter drop-shadow-md select-none">{fallbackEmoji}</div>;
+  }
+
+  return (
+    <>
+      {isLoading && (
+        <div
+          className="absolute inset-2 rounded-lg bg-slate-800/60 animate-pulse"
+          aria-hidden="true"
+        />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg transition-opacity duration-300 ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setHasError(true);
+          setIsLoading(false);
+        }}
+        // Ja no cal referrerPolicy perquS ve de wsrv.nl
+      />
+    </>
+  );
+}
+
 export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleSelect, onRefresh }: Props) {
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [isImageLoading, setIsImageLoading] = useState(!!item.image);
 
-  useEffect(() => {
-    setImageError(false);
-    setIsImageLoading(!!item.image);
-  }, [item.image]);
 
   const expired = isItemExpired(item);
   const expiringSoon = isItemExpiringSoon(item, 3);
@@ -76,6 +110,7 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
     bgClass = 'bg-amber-950/20';
   }
   const safeImageSrc = getSafeImageUrl(item.image);
+  const imageKey = safeImageSrc || 'no-image';
   return (
     <>
       <div
@@ -127,32 +162,12 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
 
         {/* --- IMATGE --- */}
         <div className="flex-1 flex items-center justify-center py-1 relative">
-          {item.image && !imageError ? (
-            <>
-              {isImageLoading && (
-                <div
-                  className="absolute inset-2 rounded-lg bg-slate-800/60 animate-pulse"
-                  aria-hidden="true"
-                />
-              )}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={safeImageSrc} // ?? Canviat
-                alt={displayName}
-                className={`w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg transition-opacity duration-300 ${
-                  isImageLoading ? 'opacity-0' : 'opacity-100'
-                }`}
-                onLoad={() => setIsImageLoading(false)}
-                onError={() => {
-                  setImageError(true);
-                  setIsImageLoading(false);
-                }}
-                // Ja no cal referrerPolicy perquŠ ve de wsrv.nl
-              />
-            </>
-          ) : (
-            <div className="text-4xl md:text-6xl filter drop-shadow-md select-none">{displayEmoji}</div>
-          )}
+          <InventoryItemImage
+            key={imageKey}
+            src={safeImageSrc}
+            alt={displayName}
+            fallbackEmoji={displayEmoji}
+          />
         </div>
 
         {/* --- NOM DEL PRODUCTE --- */}
