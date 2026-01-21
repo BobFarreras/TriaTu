@@ -5,7 +5,7 @@ import { ConsumeButton } from '../actions/ConsumeButton'; // Assegura't de la ru
 import { isItemExpired, isItemExpiringSoon } from '@/lib/inventoryUtils';
 import { EditItemModal } from '../actions/EditItemModal';
 import { FOOD_PRESETS } from '@/lib/food-presets';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InventoryItemProps } from '@/core/domain/entities/InventoryItem';
 import { getSafeImageUrl } from '@/lib/imageUtils'; // 👈 IMPORTA AIXÒ
@@ -28,6 +28,12 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(!!item.image);
+
+  useEffect(() => {
+    setImageError(false);
+    setIsImageLoading(!!item.image);
+  }, [item.image]);
 
   const expired = isItemExpired(item);
   const expiringSoon = isItemExpiringSoon(item, 3);
@@ -122,14 +128,28 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
         {/* --- IMATGE --- */}
         <div className="flex-1 flex items-center justify-center py-1 relative">
           {item.image && !imageError ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={safeImageSrc} // 👈 Canviat
-              alt={displayName}
-              className="w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg"
-              onError={() => setImageError(true)}
-            // Ja no cal referrerPolicy perquè ve de wsrv.nl
-            />
+            <>
+              {isImageLoading && (
+                <div
+                  className="absolute inset-2 rounded-lg bg-slate-800/60 animate-pulse"
+                  aria-hidden="true"
+                />
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={safeImageSrc} // ?? Canviat
+                alt={displayName}
+                className={`w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg transition-opacity duration-300 ${
+                  isImageLoading ? 'opacity-0' : 'opacity-100'
+                }`}
+                onLoad={() => setIsImageLoading(false)}
+                onError={() => {
+                  setImageError(true);
+                  setIsImageLoading(false);
+                }}
+                // Ja no cal referrerPolicy perquŠ ve de wsrv.nl
+              />
+            </>
           ) : (
             <div className="text-4xl md:text-6xl filter drop-shadow-md select-none">{displayEmoji}</div>
           )}
