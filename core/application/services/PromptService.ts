@@ -1,3 +1,4 @@
+import { debug } from '@/lib/logger';
 import type { PromptRepository } from '@/core/ports/PromptRepository';
 
 export type PromptVariables = Record<string, string | number | boolean | string[] | undefined>;
@@ -9,15 +10,28 @@ interface PromptRequest {
   fallback?: (vars: PromptVariables) => string;
 }
 
+type CachedPrompt = {
+  template: string;
+  source: 'langsmith' | 'local' | 'cache';
+  version?: string;
+};
+
 export class PromptService {
-  private cache = new Map<string, string>();
+  private cache = new Map<string, CachedPrompt>();
 
   constructor(private repo: PromptRepository) {}
 
   async getPrompt(request: PromptRequest): Promise<string> {
     const cacheKey = this.buildCacheKey(request.name, request.version, request.variables);
     const cached = this.cache.get(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      debug('[PromptService]', {
+        source: 'cache',
+        name: request.name,
+        version: cached.version || request.version || 'latest',
+      });
+      return cached.template;
+    }
 
     try {
       const result = await this.repo.fetchPrompt({
@@ -25,14 +39,32 @@ export class PromptService {
         version: request.version,
       });
       const interpolated = interpolateTemplate(result.template, request.variables);
-      this.cache.set(cacheKey, interpolated);
+      this.cache.set(cacheKey, {
+        template: interpolated,
+        source: 'langsmith',
+        version: result.version || 'latest',
+      });
+      debug('[PromptService]', {
+        source: 'langsmith',
+        name: request.name,
+        version: result.version || 'latest',
+      });
       return interpolated;
     } catch (error) {
       if (!request.fallback) {
         throw error;
       }
       const localPrompt = request.fallback(request.variables || {});
-      this.cache.set(cacheKey, localPrompt);
+      this.cache.set(cacheKey, {
+        template: localPrompt,
+        source: 'local',
+        version: request.version || 'latest',
+      });
+      debug('[PromptService]', {
+        source: 'local',
+        name: request.name,
+        version: request.version || 'latest',
+      });
       return localPrompt;
     }
   }

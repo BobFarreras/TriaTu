@@ -28,6 +28,8 @@ SENTRY_TEST_ENABLED=false
 LANGSMITH_API_KEY=
 LANGSMITH_PROJECT=triatu-nextjs
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_PROMPT_NAMESPACE=
+LANGSMITH_ORGANIZATION_ID=
 ```
 
 > Nota: mantingues les claus fora del control de versions.

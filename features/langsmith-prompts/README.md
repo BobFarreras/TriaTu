@@ -21,3 +21,4 @@ Notes:
 - Variables d'entorn a `docs/DEVELOPMENT.md`.
 - Observabilitat: errors a Sentry via `UseCaseError`.
 - Prompts: `triatu-scan`, `triatu-recipe-chef`, `triatu-recipe-fate`.
+- El test de LangSmith només fa "fetch" del template i no crea cap Run; el veuras al llistat de Prompts, no al panell de Runs.
