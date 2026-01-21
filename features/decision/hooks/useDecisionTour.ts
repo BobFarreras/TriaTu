@@ -51,37 +51,47 @@ const DUMMY_RECIPES: RecipeProps[] = [
 ];
 
 export function useDecisionTour(
+    mode: 'FATE' | 'CHEF',
     setMode: (mode: 'FATE' | 'CHEF') => void,
     expandMobile: (expanded: boolean) => void
 ) {
     const { t } = useLanguage();
-    const { startTour, isActive, currentStepIndex, nextStep } = useOnboarding();
+    const { isActive, currentStepIndex, nextStep, currentTourId } = useOnboarding();
+    const isDecisionTourActive = isActive && currentTourId === 'decision-maker';
 
-    const steps: TourStep[] = useMemo(() => [
-        { targetId: 'tour-dec-header', title: t.onboarding.decision.step1_title, description: t.onboarding.decision.step1_desc },
-        { targetId: 'tour-dec-mode', title: t.onboarding.decision.step2_title, description: t.onboarding.decision.step2_desc },
-        { targetId: 'tour-dec-inputs', title: t.onboarding.decision.step3_title, description: t.onboarding.decision.step3_desc },
-        { targetId: 'tour-dec-action', title: t.onboarding.decision.step4_title, description: t.onboarding.decision.step4_desc },
-        { targetId: 'tour-dec-results', title: t.onboarding.decision.step5_title, description: t.onboarding.decision.step5_desc }
-    ], [t]);
+    const steps: TourStep[] = useMemo(() => {
+        const baseSteps: TourStep[] = [
+            { targetId: 'tour-dec-header', title: t.onboarding.decision.step1_title, description: t.onboarding.decision.step1_desc },
+            { targetId: 'tour-dec-mode', title: t.onboarding.decision.step2_title, description: t.onboarding.decision.step2_desc }
+        ];
 
-    // 1. Iniciar
+        if (mode === 'CHEF') {
+            baseSteps.push({ targetId: 'tour-dec-inputs', title: t.onboarding.decision.step3_title, description: t.onboarding.decision.step3_desc });
+        }
+
+        baseSteps.push(
+            { targetId: 'tour-dec-action', title: t.onboarding.decision.step4_title, description: t.onboarding.decision.step4_desc },
+            { targetId: 'tour-dec-results', title: t.onboarding.decision.step5_title, description: t.onboarding.decision.step5_desc }
+        );
+
+        return baseSteps;
+    }, [t, mode]);
+
+    // 1. Control UI
     useEffect(() => {
-        startTour('decision-maker', steps);
-    }, [startTour, steps]);
+        if (!isDecisionTourActive) return;
 
-    // 2. Control UI
-    useEffect(() => {
-        if (!isActive) return;
-        if (currentStepIndex >= 2 && currentStepIndex <= 3) {
-            setMode('CHEF');
+        const shouldExpand = currentStepIndex >= 1;
+
+        if (shouldExpand) {
+            setMode(mode);
             expandMobile(true);
         }
-    }, [isActive, currentStepIndex, setMode, expandMobile]);
+    }, [isDecisionTourActive, currentStepIndex, setMode, expandMobile, mode]);
 
     return {
         steps,
-        isActive,
+        isActive: isDecisionTourActive,
         currentStepIndex,
         nextStep,
         dummyRecipes: DUMMY_RECIPES

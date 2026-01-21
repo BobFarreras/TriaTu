@@ -74,5 +74,6 @@ L'usuari prem un botó en una feature:
 
 - Valida inputs amb Zod abans de tocar infraestructura.
 - Evita logs amb PII; usa `lib/logger` i `debug` només en dev.
+- Onboarding: el tour de decisions individuals s'activa manualment via `TourTrigger` (sense auto-start).
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 

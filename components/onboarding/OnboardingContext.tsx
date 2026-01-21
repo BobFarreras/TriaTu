@@ -14,6 +14,7 @@ interface OnboardingContextType {
   isActive: boolean;
   currentStepIndex: number;
   steps: TourStep[];
+  currentTourId: string;
   startTour: (tourId: string, steps: TourStep[], options?: { force?: boolean }) => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -88,6 +89,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       isActive,
       currentStepIndex,
       steps,
+      currentTourId,
       startTour,
       nextStep,
       prevStep,

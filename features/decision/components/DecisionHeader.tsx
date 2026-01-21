@@ -55,7 +55,7 @@ export function DecisionHeader({ mode, setMode, error, isMobileExpanded, setIsMo
                 </div>
 
                 {/* TOUR TRIGGER */}
-                <div className={`${!isMobileExpanded ? 'opacity-0 pointer-events-none lg:opacity-100' : 'opacity-100'} transition-opacity`}>
+                <div className={`${!isMobileExpanded ? 'opacity-0 pointer-events-none lg:opacity-100 lg:pointer-events-auto' : 'opacity-100 pointer-events-auto'} transition-opacity`}>
                     <TourTrigger 
                         tourId="decision-maker" 
                         steps={tourSteps} 

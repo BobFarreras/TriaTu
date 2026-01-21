@@ -89,6 +89,8 @@ Els components compartits viuen a `components/` (sobretot `components/ui`).
 4) **Adapter**: persisteix a Supabase o crida IA.
 5) **UI**: renderitza resultat.
 
+Nota d'UX: el tour d'onboarding de decisions individuals s'inicia manualment amb `TourTrigger` (sense auto-start).
+
 ---
 
 ## 7. Testing (TDD obligatori)

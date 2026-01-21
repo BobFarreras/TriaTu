@@ -832,7 +832,7 @@ export const es = {
       step5_desc: "¿Quieres decidir qué cenar con amigos? ¡Crea una sala y empezad a votar!",
 
       step6_title: "Unirse",
-      step6_desc: "¿Tienes un código o QR? Entra rápidamente en la sala de un amigo.",
+      step6_desc: "¿Tienes un enlace o el ID de la sala? Entra rápidamente en la sala de un amigo.",
       step7_title: "Comunidad de Recetas",
       step7_desc: "Inspírate con lo que cocinan los demás. ¡Copia recetas y hazlas tuyas!",
 
@@ -845,8 +845,11 @@ export const es = {
       step10_title: "Tu Despensa",
       step10_desc: "Gestiona lo que tienes en la nevera para recibir recomendaciones precisas.",
 
-      step11_title: "Perfil y Configuración",
-      step11_desc: "Cambia tu avatar, nombre y preferencias globales aquí."
+      step11_title: "Lista de la Compra",
+      step11_desc: "Gestiona lo que necesitas comprar y sincronízalo con tu despensa.",
+
+      step12_title: "Perfil y Configuración",
+      step12_desc: "Cambia tu avatar, nombre y preferencias globales aquí."
 
     },
     inventory: {

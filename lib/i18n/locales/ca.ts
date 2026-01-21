@@ -847,7 +847,7 @@ export const ca = {
       step5_desc: "Vols decidir què sopar amb amics? Crea una sala i comenceu a votar!",
 
       step6_title: "Unir-se",
-      step6_desc: "Tens un codi o QR? Entra a la sala d'un amic ràpidament.",
+      step6_desc: "Tens un enllaç o l'ID de la sala? Entra a la sala d'un amic ràpidament.",
 
       step7_title: "Comunitat de Receptes",
       step7_desc: "Inspira't amb el que cuinen els altres. Copia receptes i fes-les teves!",
@@ -861,8 +861,11 @@ export const ca = {
       step10_title: "El Teu Rebost",
       step10_desc: "Gestiona què tens a la nevera per rebre recomanacions precises.",
 
-      step11_title: "Perfil i Configuració",
-      step11_desc: "Canvia el teu avatar, nom i preferències globals aquí."
+      step11_title: "Llista de la Compra",
+      step11_desc: "Gestiona el que has de comprar i sincronitza-ho amb el teu rebost.",
+
+      step12_title: "Perfil i Configuració",
+      step12_desc: "Canvia el teu avatar, nom i preferències globals aquí."
     },
     inventory: {
       step1_title: "El Teu Rebost Digital 📦",

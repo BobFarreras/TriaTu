@@ -64,7 +64,8 @@ export function DashboardContent({ userName, userId, profileData }: Props) {
     { targetId: 'tour-dash-ranking', title: t.onboarding.dashboard.step8_title, description: t.onboarding.dashboard.step8_desc },
     { targetId: 'tour-dash-rooms', title: t.onboarding.dashboard.step9_title, description: t.onboarding.dashboard.step9_desc },
     { targetId: 'tour-dash-inventory', title: t.onboarding.dashboard.step10_title, description: t.onboarding.dashboard.step10_desc },
-    { targetId: 'tour-dash-profile', title: t.onboarding.dashboard.step11_title, description: t.onboarding.dashboard.step11_desc }, 
+    { targetId: 'tour-dash-shopping', title: t.onboarding.dashboard.step11_title, description: t.onboarding.dashboard.step11_desc },
+    { targetId: 'tour-dash-profile', title: t.onboarding.dashboard.step12_title, description: t.onboarding.dashboard.step12_desc }
   ], [t, isDesktop]);
 
   // INICI AUTOMÀTIC DEL TOUR
