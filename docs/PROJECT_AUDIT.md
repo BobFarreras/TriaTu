@@ -40,6 +40,7 @@ El projecte està alineat amb Clean Architecture i disposa d'una base sòlida de
 - **Evolució d'arquitectura:** sense revisar `guia.md` i `arquitectura_triatu.md`, la divergència pot créixer.
 - **Observabilitat en marxa:** integració base de Sentry (client/server/edge) pendent d activar alertes i rutes crítiques.
 - **Governança de prompts pendent:** LangSmith definit però pendent d'integració i flux de versions.
+- **CI limitat a branques concretes:** el workflow actual només s'executa a `main` i a la branca literal `release`.
 
 ## Accions prioritàries (curt termini)
 

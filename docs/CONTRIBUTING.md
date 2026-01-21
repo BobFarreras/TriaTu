@@ -16,7 +16,10 @@ Gràcies per voler contribuir a Triatu. Aquest document defineix el flux de treb
 4) Afegeix adapters, container i Server Actions.
 5) Actualitza la UI (si cal).
 6) Actualitza la documentació afectada.
-7) Executa `pnpm test:ci` i `pnpm lint`.
+7) Executa `pnpm validate`.
+
+Consulta el workflow complet a `docs/GITHUB_WORKFLOW.md`.
+Per releases, afegeix notes a `docs/releases/vX.Y.Z.md`.
 
 ## Estil i arquitectura
 

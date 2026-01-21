@@ -77,3 +77,10 @@ L'usuari prem un botó en una feature:
 - Onboarding: el tour de decisions individuals s'activa manualment via `TourTrigger` (sense auto-start).
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 
+## 6. Documents clau
+
+- `docs/GITHUB_WORKFLOW.md`
+- `docs/AGENTS_GUIDE.md`
+- `docs/skills/README.md`
+- `docs/releases/README.md`
+

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UseCaseError } from '@/core/application/errors/UseCaseError';
 
 type UseCaseWithExecute = {

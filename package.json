@@ -14,7 +14,7 @@
     "test:ci": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:build": "cross-env NEXT_PUBLIC_E2E=true pnpm build && cross-env NEXT_PUBLIC_E2E=true PLAYWRIGHT_USE_BUILD=1 pnpm test:e2e",
-    "validate": "pnpm lint && pnpm test:ci && pnpm test:e2e && pnpm build"
+    "validate": "pnpm lint && pnpm test:ci && pnpm test:e2e:build"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

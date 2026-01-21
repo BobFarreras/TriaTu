@@ -41,6 +41,8 @@ LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 - `pnpm test` - tests.
 - `pnpm test:ci` - tests en mode CI.
 - `pnpm test:e2e` - tests end-to-end (Playwright).
+- `pnpm test:e2e:build` - e2e sobre build de produccio.
+- `pnpm validate` - lint + test:ci + test:e2e:build.
 
 ## E2E (Playwright)
 
@@ -85,5 +87,7 @@ Notes:
 ## Qualitat
 
 - Executa `pnpm test:ci` abans de pujar canvis.
+- Executa `pnpm validate` abans de PRs i merges importants.
+- Per releases, afegeix notes a `docs/releases/vX.Y.Z.md`.
 - Mantén la documentació actualitzada quan canvïi l'arquitectura o l'API.
 

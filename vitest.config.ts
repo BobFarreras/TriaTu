@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    pool: 'threads',
+    maxWorkers: 1,
     // 👇 ASSEGURA'T QUE AIXÒ ESTÀ AIXÍ
     setupFiles: ['./vitest.setup.ts'],
     include: [

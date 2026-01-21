@@ -125,3 +125,6 @@ Nota d'UX: el tour d'onboarding de decisions individuals s'inicia manualment amb
 - `docs/DEVELOPMENT.md`
 - `docs/SECURITY.md`
 - `docs/skills/`
+- `docs/GITHUB_WORKFLOW.md`
+- `docs/AGENTS_GUIDE.md`
+- `docs/releases/README.md`
