@@ -38,7 +38,7 @@ El projecte està alineat amb Clean Architecture i disposa d'una base sòlida de
 - **Dependència de documentació distribuïda:** sense una font de veritat única, es pot perdre coherència.
 - **Variables d'entorn:** cal assegurar que les claus necessàries estiguin documentades i revisades periòdicament.
 - **Evolució d'arquitectura:** sense revisar `guia.md` i `arquitectura_triatu.md`, la divergència pot créixer.
-- **Observabilitat pendent:** Sentry planificat però sense integració activa al codi.
+- **Observabilitat en marxa:** integració base de Sentry (client/server/edge) pendent d activar alertes i rutes crítiques.
 - **Governança de prompts pendent:** LangSmith definit però pendent d'integració i flux de versions.
 
 ## Accions prioritàries (curt termini)

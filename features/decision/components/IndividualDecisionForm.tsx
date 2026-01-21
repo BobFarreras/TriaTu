@@ -31,7 +31,6 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
 
     // LOG DE DEBUG (Opcional)
     useEffect(() => {
-        const resultsStepIndex = tourData.steps.findIndex((step) => step.targetId === 'tour-dec-results');
         // console.log("🔄 [RENDER] Estat:", { isTourActive, currentStepIndex });
     }, [isDecisionTourActive, currentStepIndex]);
 
