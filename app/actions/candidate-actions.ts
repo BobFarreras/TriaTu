@@ -3,7 +3,8 @@
 import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { debug, error as logError } from '@/lib/logger';
+import { debug } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 
 // 1. Accio per afegir un candidat (Restaurant, plat, etc.)
 export async function addCandidateAction(roomId: string, content: string) {
@@ -13,7 +14,7 @@ export async function addCandidateAction(roomId: string, content: string) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    logError('Auth error in addCandidateAction', authError);
+    logActionError('addCandidateAction', 'Auth error in addCandidateAction', authError);
     return { success: false, error: 'Unauthorized' };
   }
 
@@ -26,7 +27,7 @@ export async function addCandidateAction(roomId: string, content: string) {
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    logError('addCandidateAction failed', error);
+    logActionError('addCandidateAction', 'addCandidateAction failed', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: msg };
   }
@@ -60,7 +61,7 @@ export async function removeCandidateAction(candidateId: string, roomId: string)
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    logError('removeCandidate unauthorized');
+    logActionError('removeCandidateAction', 'removeCandidate unauthorized');
     return { success: false, error: 'Unauthorized' };
   }
 
@@ -72,7 +73,7 @@ export async function removeCandidateAction(candidateId: string, roomId: string)
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    logError('removeCandidate failed', error);
+    logActionError('removeCandidateAction', 'removeCandidate failed', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: msg };
   }

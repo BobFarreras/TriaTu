@@ -3,7 +3,8 @@
 import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { debug, error as logError } from '@/lib/logger';
+import { debug } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 
 export async function joinRoomByCode(inviteCode: string) {
   debug('[ACTION] joinRoomByCode start');
@@ -45,7 +46,7 @@ export async function joinRoomByCode(inviteCode: string) {
     });
 
   if (joinError) {
-    logError('joinRoomByCode insert failed', joinError);
+    logActionError('joinRoomByCode', 'joinRoomByCode insert failed', joinError);
     return { error: 'db_error', message: "No s'ha pogut unir a la sala" };
   }
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, ShoppingBasket } from 'lucide-react';
-import { EditorData, Ingredient } from '../../types';
+import { Ingredient } from '../../types';
 
 interface Props {
   ingredients: Ingredient[];

@@ -58,5 +58,5 @@ export function useRealtimeInventory(scope: InventoryScope, onRefresh: () => voi
     
     // 🔥 CLAU DE L'ÈXIT: 
     // Només depenem de 'scope'. Si 'onRefresh' canvia, NO ens desconnectem.
-  }, [scope]); 
+  }, [scope, supabase]); 
 }

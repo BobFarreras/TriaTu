@@ -6,7 +6,7 @@ import { container } from '@/services/container';
 import { revalidatePath } from 'next/cache';
 import { StorageLocation } from '@/core/domain/entities/StorageLocation'; // ✅ Necessari per recrear
 import { FOOD_PRESETS } from '@/lib/food-presets'; // ✅ Necessari per calcular data/emoji
-import { error as logError } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 
 // --- HELPER: Conversió d'Unitats ---
 function normalizeQuantity(qty: number, unit: string): { val: number; base: string } {
@@ -127,7 +127,7 @@ export async function toggleIngredientStockAction(
     }
 
   } catch (error) {
-    logError("Error en toggleIngredient:", error);
+    logActionError('toggleIngredientStockAction', 'Error en toggleIngredient:', error);
     return { success: false, error: "Error actualitzant l'estoc." };
   }
 }

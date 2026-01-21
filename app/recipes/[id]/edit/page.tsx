@@ -4,6 +4,8 @@ import { RecipeEditor } from '@/features/recipes/components/editor/RecipeEditor'
 import { redirect, notFound } from 'next/navigation';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { InventoryItemUI } from '@/features/recipes/components/editor/types';
+import { Recipe } from '@/core/domain/entities/Recipe';
+import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 
 // ✅ 1. CORRECCIÓ DE TIPUS: params és una Promise
 interface PageProps {
@@ -21,7 +23,7 @@ export default async function EditRecipePage({ params }: PageProps) {
 
   // 1. Carreguem la Recepta
   const getRecipe = container.getGetRecipe();
-  const recipe = await getRecipe.execute(id);
+  const recipe = (await getRecipe.execute(id)) as Recipe | null;
 
   if (!recipe) notFound();
 
@@ -32,7 +34,7 @@ export default async function EditRecipePage({ params }: PageProps) {
 
   // 3. Carreguem l'Inventari (per l'editor)
   const getUserInventory = container.getGetUserInventory(supabase);
-  const inventoryEntities = await getUserInventory.execute(user.id);
+  const inventoryEntities = (await getUserInventory.execute(user.id)) as InventoryItem[];
   
   const plainInventory: InventoryItemUI[] = inventoryEntities.map(item => ({
     id: item.id,

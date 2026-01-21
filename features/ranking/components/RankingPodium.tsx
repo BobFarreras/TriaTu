@@ -2,6 +2,7 @@
 
 import { Player } from '@/core/domain/entities/Player';
 import { Crown } from 'lucide-react';
+import Image from 'next/image';
 
 interface Props {
   players: Player[];
@@ -55,7 +56,14 @@ function PodiumStep({ player, position }: { player?: Player, position: number })
       {/* Avatar flotant */}
       <div className={`absolute -top-6 sm:-top-8 w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white/20 shadow-xl overflow-hidden z-20 flex items-center justify-center bg-zinc-800 transition-transform group-hover:scale-110 duration-300`}>
          {player.avatarUrl ? (
-            <img src={player.avatarUrl} alt={player.username} className="w-full h-full object-cover" />
+            <Image
+              src={player.avatarUrl}
+              alt={player.username}
+              width={56}
+              height={56}
+              unoptimized
+              className="w-full h-full object-cover"
+            />
          ) : (
             <span className="text-white font-bold">{player.username.charAt(0)}</span>
          )}

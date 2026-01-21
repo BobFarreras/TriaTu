@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3010';
+const useBuild = process.env.PLAYWRIGHT_USE_BUILD === '1';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -24,9 +25,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev --port 3010',
+    command: useBuild ? 'pnpm start -p 3010' : 'pnpm dev --port 3010',
     port: 3010,
     reuseExistingServer: false,
+    timeout: 120_000,
     env: {
       ...process.env,
       NEXT_PUBLIC_E2E: 'true',

@@ -5,7 +5,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { error as logError } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 
 export async function deleteRecipeAction(recipeId: string) {
   const supabase = await createClient();
@@ -26,7 +26,7 @@ export async function deleteRecipeAction(recipeId: string) {
     revalidatePath(`/recipes/${recipeId}`);
     
   } catch (error) {
-    logError('Error deleting recipe:', error);
+    logActionError('deleteRecipeAction', 'Error deleting recipe:', error);
     return { error: 'No s\'ha pogut eliminar la recepta.' };
   }
 

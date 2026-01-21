@@ -104,12 +104,13 @@ export class SupabaseRecipeRepository implements RecipeRepository {
         const rows = data as unknown as RecipeWithJoins[];
         return rows.map(row => {
             try { return RecipeMapper.toDomain(row); }
-            catch (e) { return null; }
+            catch { return null; }
         }).filter((r): r is Recipe => r !== null);
     }
 
     // --- FIND RANDOM ---
-    async findRandom(count: number, _restrictions: DietaryRestriction[]): Promise<Recipe[]> {
+    async findRandom(count: number, restrictions: DietaryRestriction[]): Promise<Recipe[]> {
+        void restrictions;
         const supabase = await createClient();
         const { data } = await supabase
             .from('saved_recipes')
@@ -152,7 +153,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
 
         const rows = data as unknown as RecipeWithJoins[];
         return rows.reduce((acc: Recipe[], row) => {
-            try { acc.push(RecipeMapper.toDomain(row)); } catch (e) { }
+            try { acc.push(RecipeMapper.toDomain(row)); } catch { }
             return acc;
         }, []);
     }

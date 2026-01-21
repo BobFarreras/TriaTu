@@ -76,5 +76,5 @@ export function useRealtimeShoppingList(
       supabase.removeChannel(itemsChannel);
       supabase.removeChannel(sessionsChannel);
     };
-  }, [scope, userId]);
+  }, [scope, userId, supabase]);
 }

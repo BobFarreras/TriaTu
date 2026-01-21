@@ -6,7 +6,8 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
-import { debug, error as logError } from '@/lib/logger';
+import { debug } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
 import { Dictionary } from '@/lib/i18n/dictionaries';
 import { checkRoomDailyLimit } from '@/lib/security/decision-limit';
@@ -81,10 +82,13 @@ export async function createRoomAction(userId: string, roomName: string): Promis
   if (!validation.success) return { success: false, error: getZodError(validation.error) };
   try {
     const createRoomUseCase = container.getCreateDecisionRoom();
-    const newRoomId = await createRoomUseCase.execute({ hostUserId: validation.data.hostUserId, name: validation.data.name });
+    const newRoomId = (await createRoomUseCase.execute({
+      hostUserId: validation.data.hostUserId,
+      name: validation.data.name
+    })) as string;
     return { success: true, roomId: newRoomId };
   } catch (error) {
-    logError('createRoomAction failed', error);
+    logActionError('createRoomAction', 'createRoomAction failed', error);
     return { success: false, error: "No s'ha pogut crear la sala." };
   }
 }
@@ -168,7 +172,7 @@ export async function addCandidateAction(roomId: string, candidateName: string) 
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    logError('addCandidateAction failed', error);
+    logActionError('addCandidateAction', 'addCandidateAction failed', error);
     return { success: false, error: 'Error intern al guardar.' };
   }
 }
@@ -266,10 +270,8 @@ export async function makeGroupDecisionAction(
         const enricher = new RecipeEnricherService(container.getProductCatalogRepo(supabase));
         winnerRecipe = await enricher.enrichRecipe(winnerRecipe);
 
-        const finalCost = winnerRecipe.estimatedCost || 0;
-
       } catch (err) {
-        logError("⚠️ Error enriquint recepta:", err);
+        logActionError('makeGroupDecisionAction', 'Error enriquint recepta:', err);
       }
 
       outcomeChoice = winnerRecipe.name;
@@ -332,7 +334,7 @@ export async function makeGroupDecisionAction(
     return { success: true, outcome: { choice: outcomeChoice, reason: outcomeReason } };
 
   } catch (error) {
-    logError("❌ Room Action Error:", error);
+    logActionError('makeGroupDecisionAction', 'Room Action Error:', error);
     return { success: false, error: "Error en la decisió grupal" };
   }
 
@@ -357,7 +359,7 @@ export async function getMyInventoryRoomsAction() {
     .returns<RoomParticipantRow[]>(); // <--- Tipatge fort
 
   if (error) {
-    logError("Error fetching rooms:", error);
+    logActionError('getMyInventoryRoomsAction', 'Error fetching rooms:', error);
     return [];
   }
 
@@ -398,7 +400,7 @@ export async function getMyShoppingRoomsAction() {
     .returns<RoomParticipantRow[]>();
 
   if (error) {
-    logError("Error fetching shopping rooms:", error);
+    logActionError('getMyShoppingRoomsAction', 'Error fetching shopping rooms:', error);
     return [];
   }
 

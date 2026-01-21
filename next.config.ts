@@ -86,15 +86,13 @@ const sentryWebpackPluginOptions = {
   authToken: process.env.SENTRY_AUTH_TOKEN,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
   silent: true
 };
 
-const sentryBuildOptions = {
-  disableServerWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
-  disableClientWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN
-};
-
-const sentryConfig = withSentryConfig(nextConfig, sentryWebpackPluginOptions, sentryBuildOptions);
+const sentryConfig = withSentryConfig(nextConfig, sentryWebpackPluginOptions);
 const finalConfig = isDev ? sentryConfig : withPWA(sentryConfig);
 
 export default finalConfig;

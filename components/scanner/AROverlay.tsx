@@ -1,5 +1,6 @@
 // src/components/scanner/AROverlay.tsx
 import { ScannedItem } from "@/core/domain/types/ScannedItem";
+import Image from 'next/image';
 
 interface AROverlayProps {
   imageSrc: string;
@@ -17,13 +18,14 @@ export function AROverlay({ imageSrc, items, onItemClick }: AROverlayProps) {
            És 'relative' perquè els botons es posicionin respecte a ELL.
            No té mida fixa, s'encongeix per abraçar la imatge (gràcies al flex pare).
       */}
-      <div className="relative max-w-full max-h-full">
-        <img
+      <div className="relative w-full h-full">
+        <Image
           src={imageSrc}
           alt="Captured"
-          // 3. Imatge: 'max-w-full max-h-full' fa que mai sigui més gran que la pantalla,
-          // mantenint la proporció original (aspect ratio) sense retallar res.
-          className="max-w-full max-h-full object-contain block"
+          fill
+          sizes="100vw"
+          unoptimized
+          className="object-contain"
         />
 
         {items.map((item, idx) => {
@@ -55,8 +57,14 @@ export function AROverlay({ imageSrc, items, onItemClick }: AROverlayProps) {
 
                 {/* Si tenim imatge de catàleg, la mostrem petita */}
                 {item.catalogImage ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={item.catalogImage} className="w-8 h-8 object-contain bg-white rounded-full" alt="" />
+                  <Image
+                    src={item.catalogImage}
+                    alt=""
+                    width={32}
+                    height={32}
+                    unoptimized
+                    className="w-8 h-8 object-contain bg-white rounded-full"
+                  />
                 ) : (
                   <span className="text-xl pl-1">{item.emoji}</span>
                 )}

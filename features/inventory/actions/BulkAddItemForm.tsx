@@ -8,10 +8,6 @@ import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 // ✅ 1. IMPORTAR EL SERVEI DE SEGURETAT
 import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService'; // ✅ Importar
 
-interface Props {
-  onClose: () => void;
-}
-
 interface CartItem {
   product: ProductResult;
   quantity: number;

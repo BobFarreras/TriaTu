@@ -10,7 +10,8 @@ import { InventoryItem } from '@/core/domain/entities/InventoryItem'; // Assegur
 import { FOOD_PRESETS } from '@/lib/food-presets';
 import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService';
 import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
-import { error as logError } from '@/lib/logger';
+import { Product } from '@/core/domain/entities/Product';
+import { logActionError } from '@/lib/observability/action-logger';
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
@@ -157,7 +158,7 @@ export async function addItemAction(formData: FormData) {
     return { success: true };
 
   } catch (error: unknown) {
-    logError("💥 Error fatal a addItemAction:", error);
+    logActionError('addItemAction', 'Error fatal a addItemAction:', error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -284,7 +285,7 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
     return { success: true };
 
   } catch (error: unknown) {
-    logError('Error in addBatchItemsAction:', error);
+    logActionError('addBatchItemsAction', 'Error in addBatchItemsAction:', error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -330,7 +331,7 @@ export async function quickAddInventoryAction(
     return { success: true };
 
   } catch (error) {
-    logError("Error quick adding to inventory:", error);
+    logActionError('quickAddInventoryAction', 'Error quick adding to inventory:', error);
     return { success: false, error: "Error afegint a l'inventari." };
   }
 }
@@ -344,7 +345,7 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
   try {
     const supabase = await createClient();
     const searcher = container.getSearchAndCacheProducts(supabase);
-    const products = await searcher.execute(query);
+    const products = (await searcher.execute(query)) as Product[];
 
     const serialized = products.map(p => ({
       id: p.props.id,
@@ -358,7 +359,7 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
 
     return { success: true, data: serialized };
   } catch (error) {
-    logError("Error cercant productes:", error);
+    logActionError('searchProductsAction', 'Error cercant productes:', error);
     return { success: false, error: "No s'ha pogut completar la cerca." };
   }
 }

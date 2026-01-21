@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, ChangeEvent, KeyboardEvent } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { publishRecipeAction } from '@/app/actions/community';
 
 // Tipus estrictes

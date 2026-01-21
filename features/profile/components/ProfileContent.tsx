@@ -1,10 +1,8 @@
 // src/features/profile/components/ProfileContent.tsx
 'use client';
 
-import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { ProfileForm } from './ProfileFrom';
-import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useOnboarding, TourStep } from '@/components/onboarding/OnboardingContext';
 import { TourTrigger } from '@/components/onboarding/TourTrigger';

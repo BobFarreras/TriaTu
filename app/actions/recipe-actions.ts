@@ -10,7 +10,8 @@ import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherSer
 import { GenerateRecipeSchema, MaterializeRecipeSchema } from '@/core/application/schemas/inputSchemas';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
-import { debug, error as logError } from '@/lib/logger';
+import { debug } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 
 // ✅ FIX: Definició robusta de la resposta
 export type ActionResponse = {
@@ -155,7 +156,7 @@ export async function saveRecipeAction(data: SaveRecipeInput): Promise<ActionRes
     return { success: true, recipeId: resultId };
 
   } catch (error) {
-    logError('saveRecipeAction failed', error);
+    logActionError('saveRecipeAction', 'saveRecipeAction failed', error);
     return { success: false, error: "Error intern." };
   }
 }
@@ -177,7 +178,7 @@ export async function toggleFavoriteAction(recipeId: string) {
 
     return { success: true, isFavorite: isFav };
   } catch (error) {
-    logError('Error updating favorite', error);
+    logActionError('toggleFavoriteAction', 'Error updating favorite', error);
     return { success: false, error: "Error updating favorite" };
   }
 
@@ -232,7 +233,10 @@ export async function generateMenuAction(
     // 2. ⚠️ ASSEGURA'T QUE estimatedCost EXISTEIX AQUÍ ⚠️
     // Si plainRecipes[0].estimatedCost és undefined, JSON.stringify l'esborrarà!
     if (plainRecipes.length > 0 && plainRecipes[0].estimatedCost === undefined) {
-      logError("⚠️ ALERTA: estimatedCost és undefined abans d'enviar al client!");
+      logActionError(
+        'generateMenuAction',
+        "ALERTA: estimatedCost és undefined abans d'enviar al client!"
+      );
     }
 
     // 3. Sanitització
@@ -246,7 +250,7 @@ export async function generateMenuAction(
     };
 
   } catch (error) {
-    logError('❌ [ACTION ERROR]:', error);
+    logActionError('generateMenuAction', '[ACTION ERROR]:', error);
     return { success: false, error: "Error generant el menú." };
   }
 }
@@ -275,7 +279,7 @@ export async function materializeRecipeAction(rawAiRecipe: unknown): Promise<Act
           return { success: true, recipeId: existing.id };
       }
   } catch (err) {
-    logError('MaterializeRecipeAction error', err);
+    logActionError('materializeRecipeAction', 'MaterializeRecipeAction error', err);
       // Ignorem errors de consulta (ex: no trobat), seguim endavant per crear-la
   }
 

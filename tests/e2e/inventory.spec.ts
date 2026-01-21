@@ -200,7 +200,7 @@ test.describe('inventory', () => {
 
       const itemCard = page.getByTestId('inventory-item-card').filter({ hasText: productName });
       await expect(itemCard).toBeVisible();
-      await itemCard.getByTestId('inventory-consume-button').click();
+      await itemCard.getByRole('button', { name: /Acabar|Consumir/ }).click();
       await expect(itemCard).toHaveCount(0);
     });
 

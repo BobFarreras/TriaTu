@@ -25,8 +25,8 @@ export class PreferenceAggregator {
     const threshold = Math.max(1, Math.floor(profiles.length / 3));
     
     const commonInterests = Array.from(interestCounts.entries())
-      .filter(([_, count]) => count >= threshold)
-      .map(([interest, _]) => interest); // Retornem l'string
+      .filter(([, count]) => count >= threshold)
+      .map(([interest]) => interest); // Retornem l'string
 
     return {
       commonInterests, // string[]

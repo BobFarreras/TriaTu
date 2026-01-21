@@ -36,10 +36,10 @@ export default async function ShoppingListPage({ searchParams }: PageProps) {
   const getHistory = container.getGetShoppingHistory(supabase);
 
   // Data Fetching
-  const [items, history] = await Promise.all([
+  const [items, history] = (await Promise.all([
     getShoppingList.execute(user.id, activeRoomId),
     getHistory.execute(user.id, activeRoomId)
-  ]);
+  ])) as [ShoppingListItem[], ShoppingSession[]];
 
   // Mapping
   const plainItems = mapItemsToViewModel(items);

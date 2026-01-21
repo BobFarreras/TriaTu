@@ -6,6 +6,7 @@ import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 // ✅ IMPORT DEL REPOSITORI NOU
 import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
+import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
 
   // ✅ 3. RECUPEREM LES SALES (Server Side)
   const getUserRooms = container.getUserRooms();
-  const rooms = await getUserRooms.execute(user.id);
+  const rooms = (await getUserRooms.execute(user.id)) as DecisionRoom[];
 
   // ✅ 4. PREPAREM LES DADES DEL PERFIL PER A LA UI
   // Fem servir els getters de l'entitat UserProfile (.preferences, .restrictions)

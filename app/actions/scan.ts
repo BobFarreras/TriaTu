@@ -4,7 +4,7 @@ import { container } from '@/services/container';
 import { createClient } from '@/adapters/supabase/server';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { ProductMatcherService } from '@/core/application/services/ProductMatcherService'; // Import nou
-import { error as logError } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 
 export type ScanResult = 
   | { success: true; items: ScannedItem[] }
@@ -41,7 +41,7 @@ export async function scanImageAction(formData: FormData): Promise<ScanResult> {
     return { success: true, items: enrichedItems };
 
   } catch (error) {
-    logError('Scan action failed', error);
+    logActionError('scanImageAction', 'Scan action failed', error);
     return { success: false, error: 'Failed to analyze image' };
   }
 }

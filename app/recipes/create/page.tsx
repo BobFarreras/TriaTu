@@ -3,6 +3,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container'; // ✅ 1. Importem el container
 import { RecipeEditor } from '@/features/recipes/components/editor/RecipeEditor';
 import { InventoryItemUI } from '@/features/recipes/components/editor/types';
+import { InventoryItem } from '@/core/domain/entities/InventoryItem';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { redirect } from 'next/navigation';
@@ -21,7 +22,7 @@ export default async function CreateRecipePage() {
 
   // ✅ ARA (Correcte amb Injecció de Dependències):
   const getUserInventory = container.getGetUserInventory(supabase);
-  const inventoryEntities = await getUserInventory.execute(user.id);
+  const inventoryEntities = (await getUserInventory.execute(user.id)) as InventoryItem[];
 
   const plainInventory: InventoryItemUI[] = inventoryEntities.map(item => ({
     id: item.id,

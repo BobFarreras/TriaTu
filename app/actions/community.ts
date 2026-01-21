@@ -6,6 +6,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 import { PublishRecipe } from '@/core/usecases/community/PublishRecipe';
 import { RateRecipe } from '@/core/usecases/community/RateRecipe';
+import { logActionError } from '@/lib/observability/action-logger';
 
 
 export async function publishRecipeAction(formData: FormData) {
@@ -51,6 +52,7 @@ export async function publishRecipeAction(formData: FormData) {
     revalidatePath('/community');
     return { success: true };
   } catch (e: unknown) {
+    logActionError('publishRecipeAction', 'publishRecipeAction failed', e);
     return { error: e instanceof Error ? e.message : "Error desconegut" };
   }
 }
@@ -93,6 +95,7 @@ export async function rateRecipeAction(recipeId: string, value: number) {
     return { success: true };
 
   } catch (e: unknown) {
+    logActionError('rateRecipeAction', 'rateRecipeAction failed', e);
     // 6. Gestió d'errors de domini
     // Si el UseCase llança "La recepta no existeix" o "Puntuació invàlida", ho capturem aquí.
     const errorMessage = e instanceof Error ? e.message : "Error al guardar el vot";

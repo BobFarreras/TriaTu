@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function UserDropdown({ userName }: Props) {
-  const { t, locale, changeLanguage } = useLanguage();
+  const { locale, changeLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

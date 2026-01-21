@@ -12,7 +12,9 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:ci": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:build": "cross-env NEXT_PUBLIC_E2E=true pnpm build && cross-env NEXT_PUBLIC_E2E=true PLAYWRIGHT_USE_BUILD=1 pnpm test:e2e",
+    "validate": "pnpm lint && pnpm test:ci && pnpm test:e2e && pnpm build"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -45,6 +47,7 @@
     "@types/react-dom": "^19",
     "@types/react-webcam": "^1.1.0",
     "@vitejs/plugin-react": "^5.1.2",
+    "cross-env": "^7.0.3",
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",

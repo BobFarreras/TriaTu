@@ -20,6 +20,11 @@ SENTRY_PROJECT=
 SENTRY_TEST_ENABLED=false
 ```
 
+## Configuracio de Next.js
+
+- `instrumentation.ts` inicialitza Sentry per `nodejs` i `edge`.
+- `app/global-error.tsx` captura errors de render a l'App Router.
+
 ## Abast recomanat
 
 - Server Actions (errors i latencies).

@@ -2,7 +2,7 @@
 
 import { Ingredient } from '../types';
 import { useProductLinker } from './useProductLinker';
-import { Loader2, Check, ShoppingBasket, X, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { Loader2, Check, X, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface Props {

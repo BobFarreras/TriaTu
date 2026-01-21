@@ -24,7 +24,6 @@ import { BonpreuAdapter } from '@/adapters/external/BonpreuAdapter';
 import { BasicDecisionEngine } from '@/services/decision/BasicDecisionEngine';
 import { BasicGroupResolver } from '@/services/decision/BasicGroupResolver';
 import { FoodKnowledgeService } from '@/core/domain/services/FoodKnowledgeService';
-import { RecipeMatcher } from '@/core/domain/services/RecipeMatcher';
 
 // ✅ NOU SERVICE HÍBRID
 import { GenerateMenuService } from '@/core/application/services/GenerateMenuService';
@@ -65,7 +64,7 @@ import { AddToShoppingList } from '@/core/usecases/shopping-list/AddToShoppingLi
 import { GetShoppingList } from '@/core/usecases/shopping-list/GetShoppingList';
 import { CompleteShoppingSession } from '@/core/usecases/shopping-list/CompleteShoppingSession';
 import { GetShoppingHistory } from '@/core/usecases/shopping-list/GetShoppingHistory';
-import { debug } from '@/lib/logger';
+import { wrapUseCase } from '@/services/observability/wrapUseCase';
 
 
 // --- INSTÀNCIES STATELESS (PODEN SER GLOBALS) ---
@@ -100,22 +99,22 @@ const userProfileRepo = new SupabaseUserProfileRepository();
 export const container = {
   // === INVENTORY ===
   getAddItem: (client: SupabaseClient) =>
-    new AddItem(new SupabaseInventoryRepository(client)),
+    wrapUseCase('inventory', 'AddItem', new AddItem(new SupabaseInventoryRepository(client))),
 
   getConsumeItem: (client: SupabaseClient) =>
-    new ConsumeItem(new SupabaseInventoryRepository(client)),
+    wrapUseCase('inventory', 'ConsumeItem', new ConsumeItem(new SupabaseInventoryRepository(client))),
 
   getGetExpiringItems: (client: SupabaseClient) =>
-    new GetExpiringItems(new SupabaseInventoryRepository(client)),
+    wrapUseCase('inventory', 'GetExpiringItems', new GetExpiringItems(new SupabaseInventoryRepository(client))),
 
   getGetUserInventory: (client: SupabaseClient) =>
-    new GetUserInventory(new SupabaseInventoryRepository(client)),
+    wrapUseCase('inventory', 'GetUserInventory', new GetUserInventory(new SupabaseInventoryRepository(client))),
 
   getUpdateItem: (client: SupabaseClient) =>
-    new UpdateItem(new SupabaseInventoryRepository(client)),
+    wrapUseCase('inventory', 'UpdateItem', new UpdateItem(new SupabaseInventoryRepository(client))),
 
   getDeleteItem: (client: SupabaseClient) =>
-    new DeleteItem(new SupabaseInventoryRepository(client)),
+    wrapUseCase('inventory', 'DeleteItem', new DeleteItem(new SupabaseInventoryRepository(client))),
 
 
 
@@ -126,9 +125,13 @@ export const container = {
     new SupabaseProductCatalogRepository(client),
 
   getSearchAndCacheProducts: (client: SupabaseClient) =>
-    new SearchAndCacheProducts(
-      bonpreuAdapter,
-      new SupabaseProductCatalogRepository(client)
+    wrapUseCase(
+      'inventory',
+      'SearchAndCacheProducts',
+      new SearchAndCacheProducts(
+        bonpreuAdapter,
+        new SupabaseProductCatalogRepository(client)
+      )
     ),
 
   // === AI & TOOLS ===
@@ -136,17 +139,28 @@ export const container = {
 
 
   // === DECISIONS ===
-  getMakeIndividualDecision: () => new MakeIndividualDecision(decisionRepo, userProfileRepo, individualEngine),
-  getCreateDecisionRoom: () => new CreateDecisionRoom(roomRepo),
-  getJoinDecisionRoom: () => new JoinDecisionRoom(roomRepo),
-  getMakeGroupDecision: () => new MakeGroupDecision(roomRepo, userProfileRepo, candidateRepo, groupResolver),
-  getRemoveParticipant: () => new RemoveParticipant(roomRepo),
-  getClearRoomHistory: () => new ClearRoomHistory(roomRepo),
-  getSetVotingMode: () => new SetRoomVotingMode(roomRepo),
-  getUserRooms: () => new GetUserRooms(roomRepo),
-  getUpdateUserProfile: () => new UpdateUserProfile(userProfileRepo),
-  getAddCandidate: () => new AddCandidate(candidateRepo),
-  getRemoveCandidate: () => new RemoveCandidate(candidateRepo),
+  getMakeIndividualDecision: () =>
+    wrapUseCase('decision', 'MakeIndividualDecision', new MakeIndividualDecision(decisionRepo, userProfileRepo, individualEngine)),
+  getCreateDecisionRoom: () =>
+    wrapUseCase('rooms', 'CreateDecisionRoom', new CreateDecisionRoom(roomRepo)),
+  getJoinDecisionRoom: () =>
+    wrapUseCase('rooms', 'JoinDecisionRoom', new JoinDecisionRoom(roomRepo)),
+  getMakeGroupDecision: () =>
+    wrapUseCase('rooms', 'MakeGroupDecision', new MakeGroupDecision(roomRepo, userProfileRepo, candidateRepo, groupResolver)),
+  getRemoveParticipant: () =>
+    wrapUseCase('rooms', 'RemoveParticipant', new RemoveParticipant(roomRepo)),
+  getClearRoomHistory: () =>
+    wrapUseCase('rooms', 'ClearRoomHistory', new ClearRoomHistory(roomRepo)),
+  getSetVotingMode: () =>
+    wrapUseCase('rooms', 'SetRoomVotingMode', new SetRoomVotingMode(roomRepo)),
+  getUserRooms: () =>
+    wrapUseCase('rooms', 'GetUserRooms', new GetUserRooms(roomRepo)),
+  getUpdateUserProfile: () =>
+    wrapUseCase('profile', 'UpdateUserProfile', new UpdateUserProfile(userProfileRepo)),
+  getAddCandidate: () =>
+    wrapUseCase('candidates', 'AddCandidate', new AddCandidate(candidateRepo)),
+  getRemoveCandidate: () =>
+    wrapUseCase('candidates', 'RemoveCandidate', new RemoveCandidate(candidateRepo)),
 
   // === RECIPES & GENERATION ===
   getRecipeRepository: (): RecipeRepository => recipeRepo,
@@ -160,25 +174,29 @@ export const container = {
       userProfileRepo
     ),
 
-  getGetRecipe: () => new GetRecipe(recipeRepo),
-  getGetRandomInspiration: () => new GetRandomInspiration(recipeRepo),
+  getGetRecipe: () => wrapUseCase('recipes', 'GetRecipe', new GetRecipe(recipeRepo)),
+  getGetRandomInspiration: () => wrapUseCase('recipes', 'GetRandomInspiration', new GetRandomInspiration(recipeRepo)),
   getRecipeById: () => ({ execute: (id: string) => recipeRepo.findById(id) }),
   getRankingRepository: (client: SupabaseClient) => new SupabaseRankingRepository(client),
 
   // === SHOPPING LIST ===
   getAddToShoppingList: (client: SupabaseClient) =>
-    new AddToShoppingList(new SupabaseShoppingListRepository(client)),
+    wrapUseCase('shopping-list', 'AddToShoppingList', new AddToShoppingList(new SupabaseShoppingListRepository(client))),
 
   getGetShoppingList: (client: SupabaseClient) =>
-    new GetShoppingList(new SupabaseShoppingListRepository(client)),
+    wrapUseCase('shopping-list', 'GetShoppingList', new GetShoppingList(new SupabaseShoppingListRepository(client))),
 
   getGetShoppingHistory: (client: SupabaseClient) =>
-    new GetShoppingHistory(new SupabaseShoppingListRepository(client)),
+    wrapUseCase('shopping-list', 'GetShoppingHistory', new GetShoppingHistory(new SupabaseShoppingListRepository(client))),
 
   getCompleteShoppingSession: (client: SupabaseClient) =>
-    new CompleteShoppingSession(
-      new SupabaseShoppingListRepository(client),
-      new SupabaseInventoryRepository(client)
+    wrapUseCase(
+      'shopping-list',
+      'CompleteShoppingSession',
+      new CompleteShoppingSession(
+        new SupabaseShoppingListRepository(client),
+        new SupabaseInventoryRepository(client)
+      )
     ),
 
   getShoppingListRepo: (client: SupabaseClient) =>
@@ -187,7 +205,7 @@ export const container = {
   // ✅ CORRECCIÓ: Tipem el paràmetre explícitament
   getDeleteRecipe() {
     const repo = new SupabaseRecipeRepository();
-    return new DeleteRecipe(repo);
+    return wrapUseCase('recipes', 'DeleteRecipe', new DeleteRecipe(repo));
   },
   // ✅ NOU MÈTODE NECESSARI
   // ✅ CORRECCIÓ: Retornem el FallbackRecipeGenerator, no només Gemini
