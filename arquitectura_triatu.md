@@ -90,6 +90,7 @@ Els components compartits viuen a `components/` (sobretot `components/ui`).
 5) **UI**: renderitza resultat.
 
 Nota d'UX: el tour d'onboarding de decisions individuals s'inicia manualment amb `TourTrigger` (sense auto-start).
+Nota IA: els prompts es resolen via `PromptService` amb LangSmith i fallback local.
 
 ---
 

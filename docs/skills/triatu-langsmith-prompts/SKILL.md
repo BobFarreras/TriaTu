@@ -15,6 +15,9 @@ description: "LangSmith prompt governance for Triatu. Use when moving prompts ou
 
 1) Create a LangSmith project for Triatu prompts.
 2) Define prompt templates with variables and clear naming.
+   - `triatu-scan`
+   - `triatu-recipe-chef`
+   - `triatu-recipe-fate`
 3) Version prompts and document intended use per feature.
 4) Fetch prompt templates at runtime with caching.
 5) Provide fallback to local prompt (for offline/dev).

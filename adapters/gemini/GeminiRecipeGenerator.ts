@@ -1,13 +1,14 @@
 // adapters/gemini/GeminiRecipeGenerator.ts
 
 import { BaseAIRecipeGenerator } from '@/adapters/ai/BaseAIRecipeGenerator';
+import type { PromptService } from '@/core/application/services/PromptService';
 import { GoogleGenAI } from "@google/genai";
 
 export class GeminiRecipeGenerator extends BaseAIRecipeGenerator {
   private client: GoogleGenAI;
 
-  constructor() {
-    super();
+  constructor(promptService?: PromptService) {
+    super(promptService);
     if (!process.env.GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
     this.client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
