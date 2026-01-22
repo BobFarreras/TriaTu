@@ -1,37 +1,35 @@
-// src/features/rooms/actions/delete-room.ts
+// features/rooms/actions/delete-room.ts
 'use server';
-import { getCurrentUser } from '@/lib/auth/session'; // ✅ Ara ja existeix
-import { getRoomHostId, deleteRoomById } from '@/features/rooms/repositories/room-repository';
+
+import { createClient } from '@/adapters/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
-export async function deleteRoom(roomId: string) {
-  // 1. Auth Check
-  const user = await getCurrentUser();
-  if (!user) {
-    throw new Error('Unauthenticated');
-  }
+// ✅ Retorn tipat explícit
+export type DeleteRoomResult = { success: boolean; error?: string };
 
-  // 2. Domain Logic Check
-  const hostId = await getRoomHostId(roomId);
-  
-  if (!hostId) {
-    throw new Error('Room not found');
-  }
+export async function deleteRoom(roomId: string): Promise<DeleteRoomResult> {
+  const supabase = await createClient();
 
-  if (hostId !== user.id) {
-    throw new Error('Unauthorized: Only the host can delete the room');
-  }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  // 3. Execution
   try {
-    await deleteRoomById(roomId);
-  } catch (error) {
-    console.error('Error deleting room:', error);
-    throw new Error('Could not delete the room. Please try again.');
-  }
+    const { error } = await supabase
+      .from('decision_rooms')
+      .delete()
+      .eq('id', roomId)
+      .eq('host_user_id', user.id);
 
-  // 4. Feedback
-  revalidatePath('/rooms');
-  redirect('/rooms');
+    if (error) {
+      console.error('Error deleting room:', error);
+      return { success: false, error: 'Error DB' };
+    }
+
+    revalidatePath('/rooms');
+    return { success: true };
+
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: 'Unexpected error' };
+  }
 }
