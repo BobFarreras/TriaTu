@@ -4,6 +4,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { RecipeDetailView } from '@/features/recipes/components/RecipeDetailView';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
+import { getCurrentUser } from '@/lib/auth/session';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -11,11 +12,11 @@ interface PageProps {
 
 export default async function RecipePage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   
   if (!user) redirect('/login');
 
+  const supabase = await createClient();
   const getRecipe = container.getGetRecipe(); 
   const recipe = (await getRecipe.execute(id)) as Recipe | null;
 

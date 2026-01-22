@@ -1,17 +1,16 @@
 // src/app/profile/page.tsx
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/adapters/supabase/server';
 // ✅ 1. CANVI IMPORTANT: Importem el repositori nou
 import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
 import { ProfileContent } from '@/features/profile/components/ProfileContent';
+import { getCurrentUser } from '@/lib/auth/session';
 
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect('/login');
 

@@ -1,4 +1,3 @@
-import { createClient } from '@/adapters/supabase/server';
 import { SearchRecipes } from '@/core/usecases/community/SearchRecipes';
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 import { RecipeFeed } from '@/features/recipes/components/RecipeFeed';
@@ -6,6 +5,7 @@ import { FilterBar } from '@/features/recipes/components/FilterBar';
 import { BackButton } from '@/components/ui/BackButton';
 import { CreateRecipeButton } from '@/features/recipes/components/CreateRecipeButton';
 import { CommunityHeader } from '@/features/recipes/components/CommunityHeader';
+import { getCurrentUser } from '@/lib/auth/session';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -13,11 +13,10 @@ interface PageProps {
 
 export default async function CommunityPage(props: PageProps) {
   const searchParams = await props.searchParams;
-  const supabase = await createClient();
   const repo = new SupabaseRecipeRepository();
   const searchUseCase = new SearchRecipes(repo);
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   const userId = user?.id;
 
   const mode = typeof searchParams.mode === 'string' ? searchParams.mode : 'ALL';

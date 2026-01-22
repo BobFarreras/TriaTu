@@ -1,20 +1,19 @@
 'use server'
 
 import { container } from '@/services/container';
-import { createClient } from '@/adapters/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { debug } from '@/lib/logger';
 import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 
 // 1. Accio per afegir un candidat (Restaurant, plat, etc.)
 export async function addCandidateAction(roomId: string, content: string) {
   debug('[ACTION] addCandidateAction start');
 
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
-  if (authError || !user) {
-    logActionError('addCandidateAction', 'Auth error in addCandidateAction', authError);
+  if (!user) {
+    logActionError('addCandidateAction', 'Auth error in addCandidateAction');
     return { success: false, error: 'Unauthorized' };
   }
 
@@ -35,8 +34,7 @@ export async function addCandidateAction(roomId: string, content: string) {
 
 // 2. Accio per canviar el mode (Cego / Public)
 export async function toggleVotingModeAction(roomId: string, mode: 'BLIND' | 'PUBLIC') {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { success: false, error: 'Unauthorized' };
 
@@ -57,8 +55,7 @@ export async function toggleVotingModeAction(roomId: string, mode: 'BLIND' | 'PU
 export async function removeCandidateAction(candidateId: string, roomId: string) {
   debug('[ACTION] removeCandidate start');
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     logActionError('removeCandidateAction', 'removeCandidate unauthorized');

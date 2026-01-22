@@ -2,16 +2,15 @@
 'use server'
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/adapters/supabase/server';
 import { SupabaseRecipeRepository } from '@/adapters/supabase/SupabaseRecipeRepository';
 import { PublishRecipe } from '@/core/usecases/community/PublishRecipe';
 import { RateRecipe } from '@/core/usecases/community/RateRecipe';
 import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 
 
 export async function publishRecipeAction(formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { error: "Has d'iniciar sessió." };
 
@@ -62,8 +61,7 @@ export async function publishRecipeAction(formData: FormData) {
  */
 export async function rateRecipeAction(recipeId: string, value: number) {
   // 1. Validació d'infraestructura (Auth)
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return { error: "Has d'iniciar sessió per votar." };

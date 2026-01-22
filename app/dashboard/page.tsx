@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/adapters/supabase/server';
+import { getCurrentUser } from '@/lib/auth/session';
 import { DashboardContent } from '@/features/dashboard/components/DashboardContent'; 
 import { container } from '@/services/container';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
@@ -9,8 +9,7 @@ import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserP
 import { DecisionRoom } from '@/core/domain/entities/DecisionRoom';
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect('/login');
 

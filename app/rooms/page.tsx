@@ -1,10 +1,10 @@
 import { container } from '@/services/container';
-import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
 import { BackButton } from '@/components/ui/BackButton';
 import { RoomQuickActions } from '@/features/rooms/components/RoomQuickActions';
 import { RoomsGrid, UserRoom } from '@/features/rooms/components/RoomsGrid';
 import { SocialHeader } from '@/features/rooms/components/SocialHeader'; // ✅ Import nou
+import { getCurrentUser } from '@/lib/auth/session';
 
 // Tipus per a la DB
 interface RoomFromDB {
@@ -19,8 +19,7 @@ interface RoomFromDB {
 
 export default async function RoomsPage() {
   // 1. AUTH
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   // 2. DATA

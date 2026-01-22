@@ -1,13 +1,12 @@
 // =================== FILE: app/join/page.tsx ===================
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/adapters/supabase/server';
 import { JoinRoomContent } from '@/features/rooms/components/JoinRoomContent';
 import { BackButton } from '@/components/ui/BackButton';
+import { getCurrentUser } from '@/lib/auth/session';
 
 export default async function JoinPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect('/login');
 
