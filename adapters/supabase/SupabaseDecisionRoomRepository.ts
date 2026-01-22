@@ -6,6 +6,7 @@ import { DecisionOutcome } from '@/core/domain/value-objects/DecisionOutcome';
 import { createClient } from '@/adapters/supabase/server';
 // ✅ IMPORTS CENTRALITZATS
 import { DbRoomJoinResponse } from '@/adapters/supabase/types/database.dtos';
+import { getCurrentUser } from '@/lib/auth/session';
 
 
 
@@ -62,8 +63,8 @@ export class SupabaseDecisionRoomRepository implements DecisionRoomRepository {
   async findById(id: string): Promise<DecisionRoom | null> {
     const supabase = await createClient();
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) return null;
+    const user = await getCurrentUser();
+    if (!user) return null;
 
     // ✅ QUERY OPTIMITZADA: Inclou 'metadata' a decisions
     const { data, error } = await supabase

@@ -5,6 +5,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { ProductMatcherService } from '@/core/application/services/ProductMatcherService'; // Import nou
 import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 
 export type ScanResult = 
   | { success: true; items: ScannedItem[] }
@@ -12,10 +13,10 @@ export type ScanResult =
 
 export async function scanImageAction(formData: FormData): Promise<ScanResult> {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Unauthorized' };
 
+    const supabase = await createClient();
     const file = formData.get('image');
     if (!file || !(file instanceof File)) return { success: false, error: 'No image' };
 

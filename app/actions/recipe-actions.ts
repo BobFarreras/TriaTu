@@ -12,6 +12,7 @@ import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
 import { debug } from '@/lib/logger';
 import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 
 // ✅ FIX: Definició robusta de la resposta
 export type ActionResponse = {
@@ -47,10 +48,10 @@ export interface SaveRecipeInput {
 export async function saveRecipeAction(data: SaveRecipeInput): Promise<ActionResponse> {
   debug('[SAVE ACTION] saveRecipeAction');
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const supabase = await createClient();
   try {
     let authorName = "Xef Anònim";
     const { data: profile } = await supabase.from('preference_profiles').select('username').eq('user_id', user.id).single();
@@ -162,11 +163,11 @@ export async function saveRecipeAction(data: SaveRecipeInput): Promise<ActionRes
 }
 // Acció per Favorits (Necessita el Repositori)
 export async function toggleFavoriteAction(recipeId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const supabase = await createClient();
   // Ara sí que tenim l'import a dalt
   const repo = new SupabaseRecipeRepository();
 

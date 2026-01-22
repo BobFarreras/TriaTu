@@ -3,10 +3,10 @@
 
 import { container } from '@/services/container';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/adapters/supabase/server';
 import { UpdateProfileSchema } from '@/core/application/schemas/inputSchemas';
 import { debug } from '@/lib/logger';
 import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 
 type ProfileState = {
   success?: boolean;
@@ -23,8 +23,7 @@ export async function updateProfileAction(prevState: ProfileState, formData: For
   debug('[ACTION] updateProfileAction start');
 
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       logActionError('updateProfileAction', 'updateProfileAction unauthorized');

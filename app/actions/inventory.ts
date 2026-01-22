@@ -12,6 +12,7 @@ import { ExpirySafetyService } from '@/core/application/services/ExpirySafetySer
 import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
 import { Product } from '@/core/domain/entities/Product';
 import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
@@ -55,10 +56,10 @@ function getErrorMessage(error: unknown): string { return error instanceof Error
 // 0. GET INVENTORY (NOVA ACCIÓ PER LLISTAR)
 // ------------------------------------------------------------------
 export async function getInventoryAction(roomId?: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const supabase = await createClient();
   try {
     const repo = container.getInventoryRepo(supabase);
     // Cridem al nou mètode del repo que vam crear al pas anterior
@@ -83,10 +84,10 @@ export async function getInventoryAction(roomId?: string) {
 // ------------------------------------------------------------------
 export async function addItemAction(formData: FormData) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     const name = String(formData.get('name') || 'Producte');
     let emoji = formData.get('emoji')?.toString() || '📦';
     const roomId = formData.get('roomId')?.toString() || undefined; // <--- LLEGIM EL CONTEXT
@@ -192,10 +193,10 @@ interface UpdateItemDTO { id: string; name: string; quantity: number; unit: stri
 
 export async function updateItemAction(item: UpdateItemDTO) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     if (!item.id || !item.name) throw new Error("Dades incompletes");
 
     const repo = container.getInventoryRepo(supabase);
@@ -249,10 +250,10 @@ export async function deleteItemAction(itemId: string) {
 // ------------------------------------------------------------------
 export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySchema>) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     const validation = BatchInventorySchema.safeParse(items);
     if (!validation.success) return { success: false, error: getZodError(validation.error) };
 
@@ -302,10 +303,10 @@ export async function quickAddInventoryAction(
   roomId?: string // <--- NOU PARÀMETRE
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error("Unauthorized");
 
+    const supabase = await createClient();
     const expiryYMD = ExpirySafetyService.applySafetyRules(name, 'PANTRY', undefined);
     const expiryDate = new Date(expiryYMD);
 
@@ -369,10 +370,10 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
 // ------------------------------------------------------------------
 export async function deleteBatchItemsAction(ids: string[]) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     const repo = container.getInventoryRepo(supabase);
     await repo.batchDelete(ids);
 

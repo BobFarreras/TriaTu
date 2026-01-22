@@ -9,6 +9,7 @@ import { CandidateDTO } from '@/features/rooms/components/DecisionControls';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { DecisionMetadata } from '@/core/domain/types/DecisionTypes';
+import { getCurrentUser } from '@/lib/auth/session';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
@@ -25,11 +26,11 @@ interface HistoryItemWithMetadata {
 }
 export default async function RoomPage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect(`/login?next=/rooms/${id}`);
 
+  const supabase = await createClient();
   // 1. Instanciem Repositori i Use Case
   const roomRepo = new SupabaseDecisionRoomRepository();
   const getRoomUseCase = new GetDecisionRoom(roomRepo);

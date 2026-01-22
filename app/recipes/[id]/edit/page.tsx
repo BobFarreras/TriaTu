@@ -6,6 +6,7 @@ import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { InventoryItemUI } from '@/features/recipes/components/editor/types';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
+import { getCurrentUser } from '@/lib/auth/session';
 
 // ✅ 1. CORRECCIÓ DE TIPUS: params és una Promise
 interface PageProps {
@@ -16,8 +17,7 @@ export default async function EditRecipePage({ params }: PageProps) {
   // ✅ 2. CORRECCIÓ CLAU: Fem 'await' abans de llegir l'ID
   const { id } = await params;
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect('/auth/login');
 
@@ -33,6 +33,7 @@ export default async function EditRecipePage({ params }: PageProps) {
   }
 
   // 3. Carreguem l'Inventari (per l'editor)
+  const supabase = await createClient();
   const getUserInventory = container.getGetUserInventory(supabase);
   const inventoryEntities = (await getUserInventory.execute(user.id)) as InventoryItem[];
   

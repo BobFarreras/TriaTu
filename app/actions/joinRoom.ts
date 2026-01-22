@@ -5,15 +5,16 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { debug } from '@/lib/logger';
 import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 
 export async function joinRoomByCode(inviteCode: string) {
   debug('[ACTION] joinRoomByCode start');
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { error: 'unauthenticated' };
 
+  const supabase = await createClient();
   // Busquem la sala
   const { data: room, error: roomError } = await supabase
     .from('decision_rooms')

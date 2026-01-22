@@ -4,6 +4,7 @@ import { container } from '@/services/container';
 import { redirect } from 'next/navigation';
 import { BackButton } from '@/components/ui/BackButton';
 import { ShoppingListManager } from '@/features/shoppingList/components/ShoppingListManager';
+import { getCurrentUser } from '@/lib/auth/session';
 
 // ✅ 1. IMPORTAR TOTS DOS: Provider (Lògica) i Overlay (Visual)
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
@@ -21,11 +22,11 @@ interface PageProps {
 }
 
 export default async function ShoppingListPage({ searchParams }: PageProps) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect('/auth/login');
 
+  const supabase = await createClient();
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const roomParam = resolvedSearchParams?.room;
   const roomValidation = z.string().uuid().safeParse(roomParam);

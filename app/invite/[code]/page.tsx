@@ -2,6 +2,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { joinRoomByCode } from '@/app/actions/joinRoom'; // La funció del Pas 2
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getCurrentUser } from '@/lib/auth/session';
 
 // ✅ CORRECCIÓ: Wrapper per satisfer TypeScript
 function JoinButton({ code }: { code: string }) {
@@ -30,18 +31,18 @@ interface PageProps {
   params: Promise<{ code: string }>;
 }
 export default async function InvitePage({ params }: PageProps) {
-  const supabase = await createClient();
   const { code } = await params;
 
   console.log("🔍 [DEBUG] Buscant sala amb codi:", code); // <--- LOG 1
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     console.log("👤 [DEBUG] Usuari no loguejat, redirigint...");
     redirect(`/login?next=/invite/${code}`);
   }
 
+  const supabase = await createClient();
   // Busquem la sala
   const { data: room, error } = await supabase
     .from('decision_rooms')
