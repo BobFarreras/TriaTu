@@ -9,11 +9,6 @@ vi.mock('next/link', () => ({
     <a href={href}>{children}</a>
   )
 }));
-const deleteRoomMock = vi.fn();
-vi.mock('@/features/rooms/actions/delete-room', () => ({
-  deleteRoom: (roomId: string) => deleteRoomMock(roomId)
-}));
-
 describe('Rooms Feature - RoomHeader', () => {
   it('hauria de mostrar el nom de la sala', () => {
     render(
@@ -34,8 +29,8 @@ describe('Rooms Feature - RoomHeader', () => {
     expect(screen.getByText('Sala Prova')).toBeTruthy();
   });
 
-  it('obre el dialeg de confirmacio i crida deleteRoom quan el host elimina la sala', async () => {
-    deleteRoomMock.mockResolvedValueOnce(undefined);
+  it('obre els ajustos quan el host fa click al botó de settings', async () => {
+    const onOpenSettings = vi.fn();
 
     render(
       <LanguageProvider>
@@ -47,15 +42,12 @@ describe('Rooms Feature - RoomHeader', () => {
           currentUserId="host-1"
           onKick={() => {}}
           onCopyCode={() => {}}
-          onOpenSettings={() => {}}
+          onOpenSettings={onOpenSettings}
         />
       </LanguageProvider>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /eliminar sala/i }));
-    expect(screen.getByText(/est[aà]s segur/i)).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('button', { name: /s[ií],? eliminar sala/i }));
-    expect(deleteRoomMock).toHaveBeenCalledWith('room-12345678');
+    fireEvent.click(screen.getByRole('button', { name: /open room settings/i }));
+    expect(onOpenSettings).toHaveBeenCalled();
   });
 });

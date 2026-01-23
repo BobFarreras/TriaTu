@@ -88,6 +88,7 @@ export function RoomHeader({
         {isHost && (
           <button
             onClick={onOpenSettings}
+            aria-label="Open room settings"
             className="flex items-center justify-center w-12 h-12 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 rounded-2xl text-zinc-300 transition-all active:scale-95"
           >
             <Settings size={22} />

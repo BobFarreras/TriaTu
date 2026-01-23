@@ -1,60 +1,59 @@
 // tests/features/rooms/actions/delete-room.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { deleteRoom } from '@/features/rooms/actions/delete-room';
-import * as RoomRepository from '@/features/rooms/repositories/room-repository';
-import * as AuthModule from '@/lib/auth/session';
-import { redirect } from 'next/navigation';
+import { createClient } from '@/adapters/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 // Mocks
-vi.mock('@/features/rooms/repositories/room-repository');
-vi.mock('@/lib/auth/session');
-vi.mock('next/navigation', () => ({
-  redirect: vi.fn(),
+vi.mock('@/adapters/supabase/server', () => ({
+  createClient: vi.fn()
+}));
+vi.mock('next/cache', () => ({
   revalidatePath: vi.fn()
 }));
 
 describe('Delete Room Feature', () => {
   const MOCK_ROOM_ID = 'room-123';
   const MOCK_HOST_ID = 'user-host-uuid';
-  const MOCK_INTRUDER_ID = 'user-intruder-uuid';
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should throw "Unauthorized" if current user is NOT the host', async () => {
-    // 1. Setup: Usuari autenticat (Intrus)
-    // ✅ CORRECCIÓ: Afegim l'email per complir amb el tipatge
-    vi.spyOn(AuthModule, 'getCurrentUser').mockResolvedValue({ 
-      id: MOCK_INTRUDER_ID, 
-      email: 'intruder@example.com' 
-    });
-    
-    // El host de la sala és un altre
-    vi.spyOn(RoomRepository, 'getRoomHostId').mockResolvedValue(MOCK_HOST_ID);
+  it('should return Unauthorized when there is no user', async () => {
+    const getUser = vi.fn().mockResolvedValue({ data: { user: null } });
+    const fromMock = vi.fn();
 
-    // 2. Act & Assert
-    await expect(deleteRoom(MOCK_ROOM_ID))
-      .rejects.toThrow('Unauthorized: Only the host can delete the room');
-      
-    expect(RoomRepository.deleteRoomById).not.toHaveBeenCalled();
+    vi.mocked(createClient).mockResolvedValue({
+      auth: { getUser },
+      from: fromMock
+    } as never);
+
+    const result = await deleteRoom(MOCK_ROOM_ID);
+
+    expect(result).toEqual({ success: false, error: 'Unauthorized' });
+    expect(fromMock).not.toHaveBeenCalled();
   });
 
   it('should delete room and redirect if current user IS the host', async () => {
-    // 1. Setup: Usuari autenticat (Host)
-    // ✅ CORRECCIÓ: Afegim l'email aquí també
-    vi.spyOn(AuthModule, 'getCurrentUser').mockResolvedValue({ 
-      id: MOCK_HOST_ID, 
-      email: 'host@example.com' 
-    });
-    
-    vi.spyOn(RoomRepository, 'getRoomHostId').mockResolvedValue(MOCK_HOST_ID);
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: MOCK_HOST_ID } } });
+    const chain = { eq: vi.fn(), error: null };
+    chain.eq.mockReturnValue(chain);
+    const deleteMock = vi.fn(() => chain);
+    const fromMock = vi.fn(() => ({ delete: deleteMock }));
 
-    // 2. Act
-    await deleteRoom(MOCK_ROOM_ID);
+    vi.mocked(createClient).mockResolvedValue({
+      auth: { getUser },
+      from: fromMock
+    } as never);
 
-    // 3. Assert
-    expect(RoomRepository.deleteRoomById).toHaveBeenCalledWith(MOCK_ROOM_ID);
-    expect(redirect).toHaveBeenCalledWith('/rooms');
+    const result = await deleteRoom(MOCK_ROOM_ID);
+
+    expect(fromMock).toHaveBeenCalledWith('decision_rooms');
+    expect(deleteMock).toHaveBeenCalled();
+    expect(chain.eq).toHaveBeenCalledWith('id', MOCK_ROOM_ID);
+    expect(chain.eq).toHaveBeenCalledWith('host_user_id', MOCK_HOST_ID);
+    expect(revalidatePath).toHaveBeenCalledWith('/rooms');
+    expect(result).toEqual({ success: true });
   });
 });
