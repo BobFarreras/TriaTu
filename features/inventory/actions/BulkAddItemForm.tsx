@@ -74,7 +74,7 @@ export function BulkAddItemForm({ onClose, activeRoomId }: BulkAddItemFormProps)
           unit: 'ut',
           location: location,
           emoji: item.product.emoji,
-          productId: item.product.id,
+          productId: item.product.source === 'manual' ? null : item.product.id,
           expiryDate: isoDate,
           roomId: activeRoomId // ✅ VITAL: Afegir això aquí!
         };

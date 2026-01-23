@@ -1,14 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ProductResult, searchProductsAction } from '@/app/actions/inventory';
 import { MainCategory } from '@/lib/taxonamy';
-// ✅ HELPER: Neteja accents i minúscules per comparar millor
-// "Tomàquet" -> "tomaquet"
-const normalizeText = (text: string) => {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-};
+import { findTaxonomyMatch } from '@/lib/taxonamy/matcher';
+import { buildManualProduct } from './productFallback';
+import { buildQueryTerms, filterProductsByQuery } from '@/core/application/services/ProductSearchFilter';
 export function useProductSearch() {
   const [activeCategory, setActiveCategory] = useState<MainCategory | null>(null);
   const [activeSubQuery, setActiveSubQuery] = useState<string | string[]>('');
@@ -24,54 +19,89 @@ export function useProductSearch() {
     setLoading(true);
     try {
       let rawProducts: ProductResult[] = [];
+      const isManualSearch = !activeCategory && typeof query === 'string';
+      const isCategorySearch = !!activeCategory && !manualSearch;
+      const inferredCategoryId = isManualSearch ? findTaxonomyMatch(query)?.categoryId : undefined;
+      const categoryId = activeCategory?.id || inferredCategoryId;
 
       // A. FETCHING (Igual que abans)
       if (Array.isArray(query)) {
-        const promises = query.map(q => searchProductsAction(q));
-        const responses = await Promise.all(promises);
+        const responses = await Promise.all(query.map(q => searchProductsAction(q)));
         rawProducts = responses
           .filter(res => res.success && res.data)
           .flatMap(res => res.data || []);
+
+        const perQueryFiltered = responses.flatMap((res, idx) => {
+          const data = res.success && res.data ? res.data : [];
+          return filterProductsByQuery(data, {
+            exclude: excludeList,
+            mustContain: mustContainList,
+            queryTerms: buildQueryTerms(query[idx]),
+            avoidFlavorMatches: true,
+            categoryId
+          });
+        });
+
+        rawProducts = perQueryFiltered;
       } else {
         const res = await searchProductsAction(query);
-        if (res.success && res.data) rawProducts = res.data;
+        const queryTerms = buildQueryTerms(query);
+
+        if (res.success && res.data) {
+          rawProducts = filterProductsByQuery(res.data, {
+            exclude: excludeList,
+            mustContain: mustContainList,
+            queryTerms,
+            avoidFlavorMatches: true,
+            categoryId
+          });
+        }
+
+        if (isManualSearch && queryTerms.length > 1) {
+          const fallbackQueries = Array.from(new Set(queryTerms)).slice(0, 3);
+          const fallbackResponses = await Promise.all(
+            fallbackQueries.map(term => searchProductsAction(term))
+          );
+
+          const fallbackFiltered = fallbackResponses.flatMap(res => {
+            const data = res.success && res.data ? res.data : [];
+            return filterProductsByQuery(data, {
+              exclude: excludeList,
+              mustContain: mustContainList,
+              queryTerms,
+              avoidFlavorMatches: true,
+              categoryId
+            });
+          });
+
+          rawProducts = [...rawProducts, ...fallbackFiltered];
+        }
       }
 
-      // B. UNIQUE MAP (Igual que abans)
+      // B. UNIQUE MAP
       const uniqueProducts = Array.from(
         new Map(rawProducts.map(item => [item.id, item])).values()
       );
 
-      // C. FILTRES MILLORATS (NORMALITZACIÓ)
-      const filteredResults = uniqueProducts.filter(product => {
-        // ✅ MILLORA: Normalitzem el nom del producte (sense accents)
-        const normalizedName = normalizeText(product.name);
-
-        // 1. EXCLUDE FILTER
-        if (excludeList.length > 0) {
-          const hasBadWord = excludeList.some(badWord =>
-            normalizedName.includes(normalizeText(badWord)) // ✅ Comparació neta
-          );
-          if (hasBadWord) return false;
+      if (uniqueProducts.length === 0 && isManualSearch && typeof query === 'string') {
+        const trimmed = query.trim();
+        if (trimmed.length > 0) {
+          setResults([buildManualProduct(trimmed)]);
+        } else {
+          setResults([]);
         }
-
-        // 2. MUST CONTAIN FILTER
-        if (mustContainList) {
-          const requiredWords = Array.isArray(mustContainList) ? mustContainList : [mustContainList];
-
-          if (requiredWords.length > 0) {
-            const hasRequiredWord = requiredWords.some(goodWord =>
-              normalizedName.includes(normalizeText(goodWord)) // ✅ Comparació neta
-            );
-            // Si no té la paraula clau, fora
-            if (!hasRequiredWord) return false;
-          }
-        }
-
-        return true;
-      });
-
-      setResults(filteredResults);
+      } else if (uniqueProducts.length === 0 && isCategorySearch) {
+        const subcategory = activeCategory?.subcategories.find(sub =>
+          Array.isArray(sub.query) && Array.isArray(activeSubQuery)
+            ? JSON.stringify(sub.query) === JSON.stringify(activeSubQuery)
+            : sub.query === activeSubQuery
+        );
+        const fallbackName = subcategory?.label || activeCategory?.label || 'Producte';
+        const fallbackEmoji = subcategory?.emoji || activeCategory?.emoji || '📦';
+        setResults([buildManualProduct(fallbackName, fallbackEmoji)]);
+      } else {
+        setResults(uniqueProducts);
+      }
 
     } catch (e) {
       console.error("Error searching products:", e);
@@ -79,7 +109,7 @@ export function useProductSearch() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeCategory, activeSubQuery, manualSearch]);
 
 
   // --- 2. EFFECT ---

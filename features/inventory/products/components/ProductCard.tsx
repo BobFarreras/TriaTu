@@ -47,7 +47,7 @@ export function ProductCard({ product, quantity, onSelect }: Props) {
 
         {/* Tag Source (Petit) */}
         <div className="absolute bottom-1 left-1 px-1 bg-slate-100 text-[8px] text-slate-500 rounded border border-slate-200">
-          {product.source === 'BONPREU' ? 'BP' : 'DB'}
+          {product.source === 'BONPREU' ? 'BP' : product.source === 'manual' ? 'MAN' : 'DB'}
         </div>
       </div>
 
