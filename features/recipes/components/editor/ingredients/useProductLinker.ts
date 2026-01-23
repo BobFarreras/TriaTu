@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Ingredient } from '../types';
 import { searchProductsAction, ProductResult } from '@/app/actions/inventory';
-import { FOOD_TAXONOMY, SubCategory } from '@/lib/taxonamy'; // Check path spelling!
+import { SubCategory } from '@/lib/taxonamy';
+import { findTaxonomyMatch } from '@/lib/taxonamy/matcher';
+import { buildQueryTerms, filterProductsByQuery } from '@/core/application/services/ProductSearchFilter';
 
 export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
   const [loading, setLoading] = useState(false);
@@ -37,17 +39,8 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const findTaxonomyMatch = (name: string): SubCategory | null => {
-    const lowerName = name.toLowerCase();
-    for (const cat of FOOD_TAXONOMY) {
-      for (const sub of cat.subcategories) {
-        if (sub.label.toLowerCase() === lowerName) return sub;
-        if (lowerName.includes(sub.label.toLowerCase())) return sub;
-        if (sub.label.toLowerCase().includes(lowerName)) return sub;
-      }
-    }
-    return null;
-  };
+  const findIngredientTaxonomyMatch = (name: string): { categoryId: string; sub: SubCategory } | null =>
+    findTaxonomyMatch(name);
 
   const loadMatches = async () => {
     setLoading(true);
@@ -58,44 +51,55 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
       
       try {
         // 1. TAXONOMIA
-        const taxMatch = findTaxonomyMatch(ing.name);
+        const taxMatch = findIngredientTaxonomyMatch(ing.name);
         
         if (taxMatch) {
-            const queries = Array.isArray(taxMatch.query) ? taxMatch.query : [taxMatch.query];
+            const queries = Array.isArray(taxMatch.sub.query) ? taxMatch.sub.query : [taxMatch.sub.query];
             const responses = await Promise.all(queries.map(q => searchProductsAction(q)));
-            let rawResults = responses
-                .filter(r => r.success && r.data)
-                .flatMap(r => r.data || []);
+            const filtered = responses.flatMap((res, idx) => {
+                const data = res.success && res.data ? res.data : [];
+                return filterProductsByQuery(data, {
+                    exclude: taxMatch.sub.exclude,
+                    mustContain: taxMatch.sub.mustContain,
+                    queryTerms: buildQueryTerms(queries[idx]),
+                    avoidFlavorMatches: true,
+                    categoryId: taxMatch.categoryId,
+                    contextEmoji: ing.emoji
+                });
+            });
 
-            if (taxMatch.exclude) {
-                rawResults = rawResults.filter(p => {
-                    const lowerName = p.name.toLowerCase();
-                    return !taxMatch.exclude!.some(bad => lowerName.includes(bad.toLowerCase()));
+            foundProducts = filtered;
+        } else {
+            const queryTerms = buildQueryTerms(ing.name);
+            const resDirect = await searchProductsAction(ing.name);
+            if (resDirect.data) {
+                foundProducts = filterProductsByQuery(resDirect.data, {
+                    queryTerms,
+                    minMatchRatio: 0.5,
+                    avoidFlavorMatches: true,
+                    contextEmoji: ing.emoji
                 });
             }
-            // Eliminar duplicats
-            foundProducts = Array.from(new Map(rawResults.map(item => [item.id, item])).values());
-        
-        } else {
-            // 2. NOM EXACTE
-            const resDirect = await searchProductsAction(ing.name);
-            if (resDirect.data) foundProducts = resDirect.data;
 
-            // 3. FALLBACK (Primera paraula)
             if (foundProducts.length === 0 && ing.name.includes(' ')) {
                 const firstWord = ing.name.split(' ')[0];
                 if (firstWord.length > 2) {
                     const resFallback = await searchProductsAction(firstWord);
                     if (resFallback.data) {
-                        // Afegim als resultats existents (o els reemplacem si estava buit)
-                        foundProducts = resFallback.data;
+                        foundProducts = filterProductsByQuery(resFallback.data, {
+                            queryTerms,
+                            minMatchRatio: 0.5,
+                            avoidFlavorMatches: true,
+                            contextEmoji: ing.emoji
+                        });
                     }
                 }
             }
         }
 
         if (foundProducts.length > 0) {
-          newMatches[ing.id] = foundProducts.slice(0, 10);
+          const unique = Array.from(new Map(foundProducts.map(item => [item.id, item])).values());
+          newMatches[ing.id] = unique.slice(0, 10);
         }
 
       } catch (error) {

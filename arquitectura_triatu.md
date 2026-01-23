@@ -91,6 +91,7 @@ Els components compartits viuen a `components/` (sobretot `components/ui`).
 
 Nota d'UX: el tour d'onboarding de decisions individuals s'inicia manualment amb `TourTrigger` (sense auto-start).
 Nota IA: els prompts es resolen via `PromptService` amb LangSmith i fallback local.
+Nota productes: el filtratge de cerques de catàleg passa per `ProductSearchFilter` (Application) per mantenir coherència entre inventory i receptes, amb bloqueig per secció; la cerca manual fa fallback per termes i ofereix un item manual amb emoji si no hi ha resultats; tokens curts clau actuen com a àncores per evitar falsos positius.
 
 ---
 

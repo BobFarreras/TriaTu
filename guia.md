@@ -75,6 +75,9 @@ L'usuari prem un botó en una feature:
 - Valida inputs amb Zod abans de tocar infraestructura.
 - Evita logs amb PII; usa `lib/logger` i `debug` només en dev.
 - Onboarding: el tour de decisions individuals s'activa manualment via `TourTrigger` (sense auto-start).
+- Les cerques de productes passen per `ProductSearchFilter` (core/application/services) per garantir coherència i filtres comuns, incloent bloqueig per secció (categoria).
+- A la cerca manual de productes, hi ha fallback per termes i un producte manual amb emoji si no hi ha resultats.
+- Els tokens curts clau (ex: `pa`, `ou`, `vi`, `te`) actuen com a àncores per evitar falsos positius.
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 - Prompts IA: es resolen via `PromptService` (LangSmith + fallback local).
 
