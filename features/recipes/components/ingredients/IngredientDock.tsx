@@ -8,12 +8,13 @@ import { Ingredient } from '../editor/types';
 
 interface Props {
   ingredients: Ingredient[];
+  totalCost: number;
   onRemove: (id: string) => void;
   labels: { title: string; empty: string };
   onOpenLinker: () => void;
 }
 
-export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: Props) {
+export function IngredientDock({ ingredients, totalCost, onRemove, labels, onOpenLinker }: Props) {
   // Estat local per controlar si el dock està desplegat o minimitzat
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -31,38 +32,21 @@ export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: 
     <motion.div
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      className="w-full bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 flex flex-col relative transition-all duration-300 ease-in-out"
+      className="w-full bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-70 flex flex-col relative transition-all duration-300 ease-in-out"
     >
 
-      {/* 🔮 BOTÓ MÀGIC "CALCULAR COST" (Flotant a dalt a la dreta) 
-          Només el mostrem si està expandit per no solapar en mode minimitzat */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute right-4 -top-5 pointer-events-auto z-50"
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation(); // Evitem que el click tanqui el dock
-                onOpenLinker();
-              }}
-              className="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-emerald-500/50 text-emerald-300 px-4 py-2 rounded-full shadow-xl hover:bg-emerald-900/20 hover:scale-105 transition-all active:scale-95 group ring-1 ring-white/10"
-            >
-              <Sparkles className="w-4 h-4 group-hover:animate-spin-slow text-emerald-400" />
-              <span className="text-xs font-black uppercase tracking-wider">Calcular</span>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* HEADER DESPLEGABLE */}
-      {/* Fem que tot el header sigui clickable per millorar la UX en mòbil/escriptori */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between px-4 py-3 border-b border-slate-800/50 bg-slate-900/50 hover:bg-slate-800/50 transition-colors w-full cursor-pointer focus:outline-none"
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-800/50 bg-slate-900/50 hover:bg-slate-800/50 transition-colors w-full cursor-pointer focus:outline-none"
       >
         <div className="flex items-center gap-2">
           {/* Badge contador */}
@@ -81,7 +65,27 @@ export function IngredientDock({ ingredients, onRemove, labels, onOpenLinker }: 
             className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
           />
         </div>
-      </button>
+
+        <div className="flex items-center gap-2">
+          {totalCost > 0 && (
+            <div className="flex flex-col items-end text-emerald-400">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Total</span>
+              <span className="text-sm font-black font-mono leading-none">{totalCost.toFixed(2)}€</span>
+            </div>
+          )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenLinker();
+            }}
+            className="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-emerald-500/50 text-emerald-300 px-3 py-1.5 rounded-full shadow-xl hover:bg-emerald-900/20 transition-all active:scale-95 group ring-1 ring-white/10"
+          >
+            <Sparkles className="w-4 h-4 group-hover:animate-spin-slow text-emerald-400" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Calcular</span>
+          </button>
+        </div>
+      </div>
 
       {/* LLISTA D'INGREDIENTS (Contingut Collapsible) */}
       <motion.div

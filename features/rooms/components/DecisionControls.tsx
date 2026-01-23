@@ -92,10 +92,8 @@ export function DecisionControls({
 
   const displayInputValue = simulatedInputValue || inputValue;
   const showLoading = isPending || isSimulatingLoading;
-
   return (
-    <div className="space-y-8 h-full flex flex-col">
-
+    <div className="space-y-6 h-full flex flex-col">
       {mode === 'manual' ? (
         <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-6 flex-1">
 

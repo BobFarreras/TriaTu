@@ -24,10 +24,50 @@ interface Props {
   onRefresh?: () => void; // ✅ Prop rebuda correctament
 }
 
+interface InventoryItemImageProps {
+  src?: string;
+  alt: string;
+  fallbackEmoji: string;
+}
+
+function InventoryItemImage({ src, alt, fallbackEmoji }: InventoryItemImageProps) {
+  const [isLoading, setIsLoading] = useState(!!src);
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return <div className="text-4xl md:text-6xl filter drop-shadow-md select-none">{fallbackEmoji}</div>;
+  }
+
+  return (
+    <>
+      {isLoading && (
+        <div
+          className="absolute inset-2 rounded-lg bg-slate-800/60 animate-pulse"
+          aria-hidden="true"
+        />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg transition-opacity duration-300 ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setHasError(true);
+          setIsLoading(false);
+        }}
+        // Ja no cal referrerPolicy perquS ve de wsrv.nl
+      />
+    </>
+  );
+}
+
 export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleSelect, onRefresh }: Props) {
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
-  const [imageError, setImageError] = useState(false);
+
 
   const expired = isItemExpired(item);
   const expiringSoon = isItemExpiringSoon(item, 3);
@@ -70,10 +110,13 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
     bgClass = 'bg-amber-950/20';
   }
   const safeImageSrc = getSafeImageUrl(item.image);
+  const imageKey = safeImageSrc || 'no-image';
   return (
     <>
       <div
         onClick={handleClick}
+        data-testid="inventory-item-card"
+        data-item-id={item.id}
         className={`
             relative rounded-xl border ${borderClass} ${bgClass} 
             transition-all duration-200 cursor-pointer group 
@@ -119,18 +162,12 @@ export function InventoryItemCard({ item, isSelectionMode, isSelected, onToggleS
 
         {/* --- IMATGE --- */}
         <div className="flex-1 flex items-center justify-center py-1 relative">
-          {item.image && !imageError ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={safeImageSrc} // 👈 Canviat
-              alt={displayName}
-              className="w-full h-full object-contain max-h-[80px] md:max-h-[100px] drop-shadow-lg"
-              onError={() => setImageError(true)}
-            // Ja no cal referrerPolicy perquè ve de wsrv.nl
-            />
-          ) : (
-            <div className="text-4xl md:text-6xl filter drop-shadow-md select-none">{displayEmoji}</div>
-          )}
+          <InventoryItemImage
+            key={imageKey}
+            src={safeImageSrc}
+            alt={displayName}
+            fallbackEmoji={displayEmoji}
+          />
         </div>
 
         {/* --- NOM DEL PRODUCTE --- */}

@@ -1,7 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ProductCatalogRepository } from '@/core/ports/ProductCatalogRepository';
 import { Product } from '@/core/domain/entities/Product';
-import { debug, error as logError } from '@/lib/logger';
 
 // ✅ DEFINIM LA FORMA DE LA BASE DE DADES (DTO Intern)
 // Això ens permet treure el 'any' del mètode mapToEntity

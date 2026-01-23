@@ -122,6 +122,8 @@ export const ca = {
     decide_roll: '🎲 Tirar els Daus!',
     waiting_host: 'Esperant al Host...',
     history_title: 'Historial',
+    decisions_tab: 'Decisions',
+    history_tab: 'Llista',
     trophy_empty_title: 'Sala de Trofeus buida',
     trophy_empty_desc: 'Encara no s\'ha pres cap decisió.',
     wall_fame: 'Mur de la Fama',
@@ -140,7 +142,7 @@ export const ca = {
     share_text: "Ei! Ajuda'm a decidir què fem a la sala '{name}'. Entra aquí:",
     // ✅ AFEGEIX AQUEST BLOC NOU:
     history: {
-      title: "Mur de la Fama",
+      title: "Llista de decisions",
       empty: "Encara no hi ha trofeus",
       type_recipe: "Recepta",
       type_algo: "Algoritme",
@@ -847,7 +849,7 @@ export const ca = {
       step5_desc: "Vols decidir què sopar amb amics? Crea una sala i comenceu a votar!",
 
       step6_title: "Unir-se",
-      step6_desc: "Tens un codi o QR? Entra a la sala d'un amic ràpidament.",
+      step6_desc: "Tens un enllaç o l'ID de la sala? Entra a la sala d'un amic ràpidament.",
 
       step7_title: "Comunitat de Receptes",
       step7_desc: "Inspira't amb el que cuinen els altres. Copia receptes i fes-les teves!",
@@ -861,8 +863,11 @@ export const ca = {
       step10_title: "El Teu Rebost",
       step10_desc: "Gestiona què tens a la nevera per rebre recomanacions precises.",
 
-      step11_title: "Perfil i Configuració",
-      step11_desc: "Canvia el teu avatar, nom i preferències globals aquí."
+      step11_title: "Llista de la Compra",
+      step11_desc: "Gestiona el que has de comprar i sincronitza-ho amb el teu rebost.",
+
+      step12_title: "Perfil i Configuració",
+      step12_desc: "Canvia el teu avatar, nom i preferències globals aquí."
     },
     inventory: {
       step1_title: "El Teu Rebost Digital 📦",
@@ -918,6 +923,9 @@ export const ca = {
     room: {
       step1_title: "Benvingut a la Sala! 👋",
       step1_desc: "Mira qui està connectat i invitar amics a la sala",
+
+      step_settings_title: "Ajustos de la sala ⚙️",
+      step_settings_desc: "Obre aquest panell per activar l'inventari compartit, la llista de compra o eliminar la sala (només Host).",
 
       step2_title: "Mode Màgic o Manual? ✨",
       step2_desc: "Tria 'Màgic' per deixar que la IA decideixi o 'Manual' per votar democràticament.",

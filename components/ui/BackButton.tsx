@@ -1,14 +1,21 @@
+// src/components/ui/BackButton.tsx
 'use client';
-import { useRouter } from 'next/navigation'; // 👈 Importem el router
+
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 interface BackButtonProps {
-  href?: string; // Ara és opcional de veritat
+  href?: string;
   label?: string;
   className?: string;
   preferReferrer?: boolean;
   fallbackHref?: string;
+  /**
+   * Acció personalitzada (ex: tancar modal).
+   * Si es defineix, bloqueja la navegació automàtica.
+   */
+  onAction?: () => void;
 }
 
 export function BackButton({
@@ -16,14 +23,15 @@ export function BackButton({
   label = "Tornar",
   className = "",
   preferReferrer = false,
-  fallbackHref
+  fallbackHref,
+  onAction // 👈 Recuperem la prop del test
 }: BackButtonProps) {
   const router = useRouter();
+  
   const storageKey = typeof window !== 'undefined'
     ? `back-origin:${window.location.pathname}`
     : null;
 
-  // Definim els estils comuns per no repetir codi
   const buttonStyles = `
     flex items-center justify-center gap-2 
     bg-slate-800 hover:bg-slate-700 
@@ -31,17 +39,11 @@ export function BackButton({
     border border-slate-700 hover:border-purple-500/50
     transition-colors shadow-lg
     cursor-pointer
-    
-    /* MÒBIL: Rodó i petit */
     w-10 h-10 rounded-full
-    
-    /* ESCRIPTORI: Allargat i amb text */
     sm:w-auto sm:h-auto sm:px-4 sm:py-2 sm:rounded-full
-    
     ${className}
   `;
 
-  // Contingut visual del botó (Icona + Text)
   const content = (
     <>
       <span className="text-xl sm:text-lg leading-none pb-1 sm:pb-0">🔙</span>
@@ -51,10 +53,10 @@ export function BackButton({
     </>
   );
 
-  // CAS 1: Si tenim una ruta específica (href), fem servir Link (millor per SEO i prefetching)
-  if (href) {
+  // 1. Si tenim HREF explícit i NO tenim acció personalitzada, usem Link
+  if (href && !onAction) {
     return (
-      <Link href={href}>
+      <Link href={href} passHref>
         <motion.div 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -66,25 +68,35 @@ export function BackButton({
     );
   }
 
+  // 2. Gestió del clic per a Router o Action
+  const handleClick = () => {
+    // CAS A: Prioritat absoluta a la funció personalitzada (el que busca el test)
+    if (onAction) {
+      onAction();
+      return; // 🛑 ATUREM l'execució aquí, no fem router.back()
+    }
 
-  // CAS 2: Si volem tornar a l'origen (fora d'aquesta ruta), usem el referrer guardat
+    // CAS B: Lògica de navegació
+    if (preferReferrer && typeof window !== "undefined" && storageKey) {
+      const storedOrigin = sessionStorage.getItem(storageKey);
+      if (storedOrigin) {
+        router.push(storedOrigin);
+        return;
+      }
+      if (fallbackHref) {
+        router.push(fallbackHref);
+        return;
+      }
+    }
+    
+    // CAS C: Default
+    router.back();
+  };
+
   return (
     <motion.button
       type="button"
-      onClick={() => {
-        if (preferReferrer && typeof window !== "undefined" && storageKey) {
-          const storedOrigin = sessionStorage.getItem(storageKey);
-          if (storedOrigin) {
-            router.push(storedOrigin);
-            return;
-          }
-          if (fallbackHref) {
-            router.push(fallbackHref);
-            return;
-          }
-        }
-        router.back();
-      }} // back navigation
+      onClick={handleClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       className={buttonStyles}

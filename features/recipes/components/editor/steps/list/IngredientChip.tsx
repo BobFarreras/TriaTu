@@ -35,7 +35,7 @@ export function IngredientChip({ name, ingredient }: Props) {
   return (
     <span
       className={`
-        inline-flex items-center gap-1.5 align-middle mx-1 px-1.5 py-0.5 rounded-lg border shadow-sm select-none transition-all
+        inline-flex items-center gap-1.5 align-baseline mx-1 px-1.5 py-0.5 rounded-lg border shadow-sm select-none transition-all leading-none
         ${hasImage
           ? 'bg-slate-800/90 border-emerald-500/40 text-white pr-2 shadow-emerald-900/20' // Estil Premium
           : 'bg-slate-800 border-slate-700 text-emerald-100'

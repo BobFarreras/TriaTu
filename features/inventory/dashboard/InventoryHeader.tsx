@@ -134,6 +134,7 @@ export function InventoryHeader({
             <button
               id={addBtnId}
               onClick={onToggleAdd}
+              data-testid="inventory-add-button"
               className={`
                         flex-1 md:flex-none md:w-auto md:px-6 h-10 flex items-center justify-center gap-2 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 border whitespace-nowrap
                         ${isAddFormVisible

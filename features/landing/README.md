@@ -1,4 +1,4 @@
-# Landing Feature
+# Feature: Landing
 
 Objectiu:
 Presentar la proposta de valor i facilitar l'entrada a l'app.
@@ -8,17 +8,17 @@ Responsabilitats:
 - CTA cap a registre o login.
 
 Components clau:
-- `LandingHero`, `TypewriterText`, `NavbarInstallbutton`
+- `LandingHero`, `TypewriterText`, `NavbarInstallButton`.
 
 Estructura:
-- `components/` UI de landing (hero, navbar, typewriter)
-- `hooks/` (quan cal)
-- `logic/` (sense dependencies d'infra)
-- `__tests__/` (tests de feature)
-- `index.ts` (exports publices)
+- `components/` UI de landing (hero, navbar, typewriter).
+- `hooks/` (quan cal).
+- `logic/` (sense dependencies d'infra).
+- `__tests__/` (tests de feature).
+- `index.ts` (exports publics).
 
 Flux principal:
 Nomes UI (sense dependencies de domini).
 
 Tests:
-- Tests visuals/units si hi ha llogica.
+- Tests visuals/units si hi ha logica.

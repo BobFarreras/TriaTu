@@ -46,6 +46,7 @@ export function RecipeCard({ recipe, userId, userRating }: Props) {
     <motion.article 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      data-testid={`recipe-card-${recipe.id}`}
       className={`
         group relative flex flex-col bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg transition-all 
         ${isExpanded ? 'ring-1 ring-purple-500/30 bg-slate-900' : 'hover:border-purple-500/40'}
@@ -85,6 +86,7 @@ export function RecipeCard({ recipe, userId, userRating }: Props) {
              <FavoriteButton 
                 recipeId={recipe.id} 
                 initialIsFavorite={!!recipe.isFavorite} // !! per assegurar boolean
+                testId={`recipe-favorite-${recipe.id}`}
              />
         </div>
 
@@ -181,6 +183,7 @@ function CardContent({ recipe, isAuthor, isAi, displayAuthorName, userRating }: 
                             average={recipe.ratingSummary?.average || 0} 
                             count={recipe.ratingSummary?.count || 0}
                             initialUserRating={userRating || 0}
+                            testIdPrefix={`recipe-rating-${recipe.id}`}
                         />
                     </div>
                 </div>

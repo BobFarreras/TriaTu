@@ -1,25 +1,25 @@
-# Rooms Feature
+# Feature: Rooms
 
 Objectiu:
-Gestionar sales de decisions de grup.
+Gestionar sales de decisions i compartir context (inventari o llista de la compra).
 
 Responsabilitats:
-- Creacio i unio a sales.
-- Resolucio de decisions i historial.
+- Crear i unir-se a sales.
+- Activar o desactivar features compartides.
+- Mostrar participants i historial.
 
 Estructura:
 - `components/` UI de sales.
-- `hooks/` hooks de realtime i simulacio.
-- `logic/` tipus i helpers de la feature.
+- `hooks/` hooks de realtime i helpers.
+- `logic/` tipus i helpers locals.
 - `__tests__/` tests locals de la feature.
-- `index.ts` exports publicats.
+- `index.ts` exports publics.
 
 Components clau:
-- `RoomDetail`, `DecisionControls`, `ParticipantsDock`.
-- Llistats: `RoomsGrid`, `RoomQuickActions`, `SocialHeader`.
+- `RoomDetail`, `DecisionControls`, `ParticipantsDock`, `RoomFeaturesPanel`.
 
 Flux principal:
-UI -> `room-actions` -> Use Cases -> Repositoris.
+UI -> `app/actions/room-actions` -> Use Cases -> Repositoris.
 
 Tests:
-- `tests/usecases/*Room*` i `tests/actions/joinRoom.test.ts`.
+- `tests/usecases/*Room*` i `tests/actions/*room*`.

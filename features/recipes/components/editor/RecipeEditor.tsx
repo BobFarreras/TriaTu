@@ -121,6 +121,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
           <button
             onClick={handleDelete}
             disabled={isPendingDelete || loading}
+            data-testid="recipe-delete-button"
             className="absolute top-4 right-16 p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
             title="Eliminar recepta"
           >
@@ -184,6 +185,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
           id="tour-save-btn"
           whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
           onClick={handleSave} disabled={loading}
+          data-testid="recipe-save-button"
           className={`w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_0_40px_-10px_rgba(168,85,247,0.6)] flex items-center justify-center ring-4 transition-all ${loading ? 'bg-slate-800 cursor-wait ring-slate-700' : 'bg-linear-to-r from-purple-600 to-pink-600 hover:shadow-purple-500/40 cursor-pointer ring-slate-950/80'}`}
         >
           {loading ? <span className="animate-spin text-2xl">⏳</span> : <Save className="w-6 h-6 md:w-7 md:h-7 text-white stroke-[2.5px]" />}

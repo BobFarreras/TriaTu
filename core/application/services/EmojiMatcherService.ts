@@ -42,7 +42,7 @@ export class EmojiMatcherService {
             // console.log(`🧩 [Matcher] "${productName}" conté el preset "${preset.name}"`);
             return preset;
           }
-      } catch (e) {
+      } catch {
           // Ignorem errors de regex per caràcters estranys
       }
 

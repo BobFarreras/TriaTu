@@ -2,6 +2,7 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { RankingView } from '@/features/ranking/components/RankingView';
 import { Player } from '@/core/domain/entities/Player';
+import { getCurrentUser } from '@/lib/auth/session';
 
 export const revalidate = 60; 
 
@@ -42,9 +43,9 @@ export default async function RankingPage() {
     const supabase = await createClient();
     const rankingRepo = container.getRankingRepository(supabase);
     
-    const [rawTopPlayers, { data: { user } }] = await Promise.all([
+    const [rawTopPlayers, user] = await Promise.all([
         rankingRepo.getTopPlayers(50),
-        supabase.auth.getUser()
+        getCurrentUser()
     ]);
 
     // Convertim forçant el tipus d'entrada al nostre DTO

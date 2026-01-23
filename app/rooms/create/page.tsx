@@ -1,11 +1,10 @@
 // =================== FILE: app/rooms/create/page.tsx ===================
 import { redirect } from 'next/navigation';
-import { createClient } from '@/adapters/supabase/server';
 import { CreateRoomContent } from '@/features/rooms/components/CreateRoomContent';
+import { getCurrentUser } from '@/lib/auth/session';
 
 export default async function CreateRoomPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect('/login');

@@ -6,10 +6,12 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { SupabaseRateLimiter } from '@/adapters/supabase/SupabaseRateLimiter';
 import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogger';
-import { debug, error as logError } from '@/lib/logger';
+import { debug } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
 import { Dictionary } from '@/lib/i18n/dictionaries';
 import { checkRoomDailyLimit } from '@/lib/security/decision-limit';
+import { getCurrentUser } from '@/lib/auth/session';
 
 import { CreateRoomSchema, ParticipantActionSchema } from '@/core/application/schemas/inputSchemas';
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
@@ -81,10 +83,13 @@ export async function createRoomAction(userId: string, roomName: string): Promis
   if (!validation.success) return { success: false, error: getZodError(validation.error) };
   try {
     const createRoomUseCase = container.getCreateDecisionRoom();
-    const newRoomId = await createRoomUseCase.execute({ hostUserId: validation.data.hostUserId, name: validation.data.name });
+    const newRoomId = (await createRoomUseCase.execute({
+      hostUserId: validation.data.hostUserId,
+      name: validation.data.name
+    })) as string;
     return { success: true, roomId: newRoomId };
   } catch (error) {
-    logError('createRoomAction failed', error);
+    logActionError('createRoomAction', 'createRoomAction failed', error);
     return { success: false, error: "No s'ha pogut crear la sala." };
   }
 }
@@ -108,8 +113,7 @@ export async function joinRoomAction(roomId: string, userId: string): Promise<Ac
 // 3. KICK PARTICIPANT
 // ---------------------------------------------------------
 export async function kickParticipantAction(roomId: string, participantId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
   const KickSchema = z.object({ roomId: z.string().uuid(), participantId: z.string().uuid(), hostId: z.string().uuid() });
@@ -141,8 +145,7 @@ const AddCandidateSchema = z.object({
 });
 
 export async function addCandidateAction(roomId: string, candidateName: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   const userId = user?.id || 'anonymous';
 
   // 1. Validació
@@ -168,7 +171,7 @@ export async function addCandidateAction(roomId: string, candidateName: string) 
     revalidatePath(`/rooms/${roomId}`);
     return { success: true };
   } catch (error) {
-    logError('addCandidateAction failed', error);
+    logActionError('addCandidateAction', 'addCandidateAction failed', error);
     return { success: false, error: 'Error intern al guardar.' };
   }
 }
@@ -182,11 +185,11 @@ export async function makeGroupDecisionAction(
   mode: 'magic' | 'manual',
   locale: string = 'ca'
 ) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const supabase = await createClient();
   const normalizedLocale = locale.substring(0, 2).toLowerCase();
   const t: Dictionary = DICTIONARIES[normalizedLocale] || DICTIONARIES['ca'];
 
@@ -266,10 +269,8 @@ export async function makeGroupDecisionAction(
         const enricher = new RecipeEnricherService(container.getProductCatalogRepo(supabase));
         winnerRecipe = await enricher.enrichRecipe(winnerRecipe);
 
-        const finalCost = winnerRecipe.estimatedCost || 0;
-
       } catch (err) {
-        logError("⚠️ Error enriquint recepta:", err);
+        logActionError('makeGroupDecisionAction', 'Error enriquint recepta:', err);
       }
 
       outcomeChoice = winnerRecipe.name;
@@ -332,17 +333,17 @@ export async function makeGroupDecisionAction(
     return { success: true, outcome: { choice: outcomeChoice, reason: outcomeReason } };
 
   } catch (error) {
-    logError("❌ Room Action Error:", error);
+    logActionError('makeGroupDecisionAction', 'Room Action Error:', error);
     return { success: false, error: "Error en la decisió grupal" };
   }
 
 }
 export async function getMyInventoryRoomsAction() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return [];
 
+  const supabase = await createClient();
   // Tipem la resposta com a array de RoomParticipantRow
   const { data, error } = await supabase
     .from('room_participants')
@@ -357,7 +358,7 @@ export async function getMyInventoryRoomsAction() {
     .returns<RoomParticipantRow[]>(); // <--- Tipatge fort
 
   if (error) {
-    logError("Error fetching rooms:", error);
+    logActionError('getMyInventoryRoomsAction', 'Error fetching rooms:', error);
     return [];
   }
 
@@ -379,11 +380,11 @@ export async function getMyInventoryRoomsAction() {
 }
 
 export async function getMyShoppingRoomsAction() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return [];
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('room_participants')
     .select(`
@@ -398,7 +399,7 @@ export async function getMyShoppingRoomsAction() {
     .returns<RoomParticipantRow[]>();
 
   if (error) {
-    logError("Error fetching shopping rooms:", error);
+    logActionError('getMyShoppingRoomsAction', 'Error fetching shopping rooms:', error);
     return [];
   }
 
@@ -415,11 +416,11 @@ export async function getMyShoppingRoomsAction() {
 }
 
 export async function toggleRoomFeatureAction(roomId: string, feature: 'INVENTORY' | 'SHOPPING', isEnabled: boolean) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const supabase = await createClient();
   // 1. Verifiquem que l'usuari és el HOST de la sala (Seguretat)
   const { data: room } = await supabase
     .from('decision_rooms')

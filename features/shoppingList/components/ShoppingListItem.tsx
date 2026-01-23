@@ -29,6 +29,8 @@ export function ShoppingListItem({ item, onToggle }: Props) {
             initial={{ opacity: 0, y: 5 }} 
             animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0 }}
+            data-testid="shopping-item"
+            data-item-id={item.id}
             className={`
                 group flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none
                 ${item.isChecked 

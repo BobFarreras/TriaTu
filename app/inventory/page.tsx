@@ -6,16 +6,18 @@ import { InventoryManager } from '@/features/inventory/InventoryManager'; // Ass
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { redirect } from 'next/navigation';
+import { InventoryItem } from '@/core/domain/entities/InventoryItem';
+import { getCurrentUser } from '@/lib/auth/session';
 
 export default async function InventoryPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect('/auth/login');
 
   // 1. Càrrega inicial: Inventari PERSONAL
+  const supabase = await createClient();
   const useCase = container.getGetUserInventory(supabase);
-  const domainItems = await useCase.execute(user.id);
+  const domainItems = (await useCase.execute(user.id)) as InventoryItem[];
   
   // Convertim a primitius per passar al Client Component
   const plainItems = domainItems.map(item => item.toPrimitives());

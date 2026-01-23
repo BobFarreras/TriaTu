@@ -2,7 +2,6 @@ import { createClient } from './server';
 import { UserProfile } from '@/core/domain/entities/UserProfile';
 import { UserProfileRepository } from '@/core/ports/UserProfileRepository';
 import { DietaryRestriction } from '@/core/domain/value-objects/DietaryRestriction';
-import { debug, error as logError } from '@/lib/logger';
 
 export class SupabaseUserProfileRepository implements UserProfileRepository {
 

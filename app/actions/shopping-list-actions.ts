@@ -3,8 +3,10 @@
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { revalidatePath } from 'next/cache';
-import { debug, error as logError } from '@/lib/logger';
+import { debug } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
 import { z } from 'zod';
+import { getCurrentUser } from '@/lib/auth/session';
 
 const AddItemSchema = z.object({
   name: z.string().min(1),
@@ -40,10 +42,10 @@ export async function addToShoppingListAction(
   try {
     debug('[ACTION] addToShoppingList start');
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error("Unauthorized");
 
+    const supabase = await createClient();
     const validation = AddItemSchema.safeParse({ 
         name, quantity, unit, emoji, productId, productImage, estimatedCost, roomId
     });
@@ -70,7 +72,7 @@ export async function addToShoppingListAction(
     return { success: true };
 
   } catch (error) {
-    logError('addToShoppingList failed', error);
+    logActionError('addToShoppingListAction', 'addToShoppingList failed', error);
     return { success: false, error: "No s'ha pogut afegir a la llista." };
   }
 }
@@ -88,7 +90,7 @@ export async function toggleShoppingItemAction(itemId: string, isChecked: boolea
     revalidatePath('/shopping-list');
     return { success: true };
   } catch (error) {
-    logError('toggleShoppingItem failed', error);
+    logActionError('toggleShoppingItemAction', 'toggleShoppingItem failed', error);
     return { success: false, error: "Error actualitzant" };
   }
 }
@@ -99,27 +101,27 @@ export async function completeShoppingSessionAction(roomId?: string | null) {
     const validation = RoomIdSchema.safeParse(roomId);
     if (!validation.success) return { success: false, error: "Dades invàlides" };
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     const useCase = container.getCompleteShoppingSession(supabase);
-    const result = await useCase.execute(user.id, validation.data || undefined);
+    const result = (await useCase.execute(user.id, validation.data || undefined)) as { added: number };
 
     revalidatePath('/shopping-list');
     revalidatePath('/inventory');
     return { success: true, count: result.added };
   } catch (error) {
-    logError("Error completing shopping session:", error);
+    logActionError('completeShoppingSessionAction', 'Error completing shopping session:', error);
     return { success: false, error: "Error finalitzant la compra" };
   }
 }
 export async function addBatchToShoppingListAction(items: z.infer<typeof AddItemSchema>[], roomId?: string | null) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error("Unauthorized");
 
+    const supabase = await createClient();
     // Validar dades
     const validation = BatchItemSchema.safeParse({ items, roomId });
     if (!validation.success) return { success: false, error: "Dades invàlides" };
@@ -145,16 +147,16 @@ export async function addBatchToShoppingListAction(items: z.infer<typeof AddItem
     return { success: true };
 
   } catch (error) {
-    logError("Error adding batch:", error);
+    logActionError('addBatchToShoppingListAction', 'Error adding batch:', error);
     return { success: false, error: "Error guardant productes" };
   }
 }
 
 export async function getShoppingListDataAction(roomId?: string | null) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const supabase = await createClient();
   const validation = RoomIdSchema.safeParse(roomId);
   if (!validation.success) return { success: false, error: "Dades invàlides" };
 
@@ -162,10 +164,13 @@ export async function getShoppingListDataAction(roomId?: string | null) {
     const getShoppingList = container.getGetShoppingList(supabase);
     const getHistory = container.getGetShoppingHistory(supabase);
 
-    const [items, history] = await Promise.all([
+    const [items, history] = (await Promise.all([
       getShoppingList.execute(user.id, validation.data || undefined),
       getHistory.execute(user.id, validation.data || undefined),
-    ]);
+    ])) as [
+      import('@/core/domain/entities/ShoppingListItem').ShoppingListItem[],
+      import('@/core/domain/entities/ShoppingSession').ShoppingSession[]
+    ];
 
     return {
       success: true,
@@ -175,7 +180,7 @@ export async function getShoppingListDataAction(roomId?: string | null) {
       },
     };
   } catch (error) {
-    logError('getShoppingListDataAction failed', error);
+    logActionError('getShoppingListDataAction', 'getShoppingListDataAction failed', error);
     return { success: false, error: "No s'ha pogut carregar la llista." };
   }
 }

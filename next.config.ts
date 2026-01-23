@@ -1,6 +1,7 @@
 // =================== FILE: next.config.ts ===================
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -72,7 +73,7 @@ const nextConfig: NextConfig = {
               style-src 'self' 'unsafe-inline';
               img-src 'self' blob: data: https://*.supabase.co https://*.supabase.in https://wsrv.nl https://www.compraonline.bonpreuesclat.cat;
               font-src 'self' data:;
-              connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://wsrv.nl;
+              connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://wsrv.nl https://*.ingest.sentry.io https://*.ingest.de.sentry.io;
             `.replace(/\s{2,}/g, ' ').trim()
           }
         ],
@@ -81,6 +82,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-const finalConfig = isDev ? nextConfig : withPWA(nextConfig);
+const sentryWebpackPluginOptions = {
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  silent: true
+};
+
+const sentryConfig = withSentryConfig(nextConfig, sentryWebpackPluginOptions);
+const finalConfig = isDev ? sentryConfig : withPWA(sentryConfig);
 
 export default finalConfig;

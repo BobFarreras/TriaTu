@@ -1,5 +1,5 @@
 
-\restrict X46Rb2k76p3mhwd4g5rVwezmoob7mUHywg3stv8VhGwXAOTMf6p8LY3F5lIGyb4
+\restrict OTAtvKQ2snJgzdvr4qZ6cl3vWnvebdIsfYU7hpCqsroAdPQeKynAF4IigR3i4c7
 
 
 SET statement_timeout = 0;
@@ -267,6 +267,7 @@ CREATE TABLE IF NOT EXISTS "public"."decision_rooms" (
     "voting_mode" "text" DEFAULT 'BLIND'::"text",
     "invite_code" "text" DEFAULT "encode"("extensions"."gen_random_bytes"(4), 'hex'::"text"),
     "enable_inventory" boolean DEFAULT false,
+    "enable_shopping_list" boolean DEFAULT false NOT NULL,
     CONSTRAINT "decision_rooms_voting_mode_check" CHECK (("voting_mode" = ANY (ARRAY['BLIND'::"text", 'PUBLIC'::"text"])))
 );
 
@@ -486,7 +487,8 @@ CREATE TABLE IF NOT EXISTS "public"."shopping_list_items" (
     "emoji" "text" DEFAULT '📦'::"text",
     "product_id" "text",
     "product_image" "text",
-    "estimated_cost" numeric(10,2)
+    "estimated_cost" numeric(10,2),
+    "room_id" "uuid"
 );
 
 
@@ -499,7 +501,8 @@ CREATE TABLE IF NOT EXISTS "public"."shopping_sessions" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "total_cost" numeric(10,2) DEFAULT 0,
     "item_count" integer DEFAULT 0,
-    "items_snapshot" "jsonb" NOT NULL
+    "items_snapshot" "jsonb" NOT NULL,
+    "room_id" "uuid"
 );
 
 
@@ -681,6 +684,14 @@ CREATE INDEX "idx_saved_recipes_user_id" ON "public"."saved_recipes" USING "btre
 
 
 
+CREATE INDEX "idx_shopping_list_room_id" ON "public"."shopping_list_items" USING "btree" ("room_id");
+
+
+
+CREATE INDEX "idx_shopping_sessions_room_id" ON "public"."shopping_sessions" USING "btree" ("room_id");
+
+
+
 CREATE INDEX "shopping_list_user_idx" ON "public"."shopping_list_items" USING "btree" ("user_id");
 
 
@@ -800,7 +811,17 @@ ALTER TABLE ONLY "public"."security_logs"
 
 
 ALTER TABLE ONLY "public"."shopping_list_items"
+    ADD CONSTRAINT "shopping_list_items_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."shopping_list_items"
     ADD CONSTRAINT "shopping_list_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."shopping_sessions"
+    ADD CONSTRAINT "shopping_sessions_room_id_fkey" FOREIGN KEY ("room_id") REFERENCES "public"."decision_rooms"("id") ON DELETE CASCADE;
 
 
 
@@ -921,23 +942,35 @@ CREATE POLICY "Read group decisions" ON "public"."group_decisions" USING (true);
 
 
 
+CREATE POLICY "Shopping list delete (owner or room member)" ON "public"."shopping_list_items" FOR DELETE TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND "public"."has_room_access"("room_id"))));
+
+
+
+CREATE POLICY "Shopping list insert (owner or room member)" ON "public"."shopping_list_items" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND "public"."has_room_access"("room_id"))));
+
+
+
+CREATE POLICY "Shopping list read (owner or room member)" ON "public"."shopping_list_items" FOR SELECT TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND "public"."has_room_access"("room_id"))));
+
+
+
+CREATE POLICY "Shopping list update (owner or room member)" ON "public"."shopping_list_items" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND "public"."has_room_access"("room_id"))));
+
+
+
+CREATE POLICY "Shopping sessions insert (owner or room member)" ON "public"."shopping_sessions" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND "public"."has_room_access"("room_id"))));
+
+
+
+CREATE POLICY "Shopping sessions read (owner or room member)" ON "public"."shopping_sessions" FOR SELECT TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (("room_id" IS NOT NULL) AND "public"."has_room_access"("room_id"))));
+
+
+
 CREATE POLICY "Users can create recipes" ON "public"."community_recipes" FOR INSERT WITH CHECK (("auth"."uid"() = "author_id"));
 
 
 
-CREATE POLICY "Users can delete from their own shopping list" ON "public"."shopping_list_items" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can delete their own recipes" ON "public"."saved_recipes" FOR DELETE USING (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can insert into their own shopping list" ON "public"."shopping_list_items" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can insert own history" ON "public"."shopping_sessions" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -961,19 +994,7 @@ CREATE POLICY "Users can rate recipes" ON "public"."recipe_ratings" FOR INSERT W
 
 
 
-CREATE POLICY "Users can update their own shopping list" ON "public"."shopping_list_items" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can view own history" ON "public"."shopping_sessions" FOR SELECT USING (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can view their own recipes" ON "public"."saved_recipes" FOR SELECT USING (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "Users can view their own shopping list" ON "public"."shopping_list_items" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -1232,6 +1253,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-\unrestrict X46Rb2k76p3mhwd4g5rVwezmoob7mUHywg3stv8VhGwXAOTMf6p8LY3F5lIGyb4
+\unrestrict OTAtvKQ2snJgzdvr4qZ6cl3vWnvebdIsfYU7hpCqsroAdPQeKynAF4IigR3i4c7
 
 RESET ALL;

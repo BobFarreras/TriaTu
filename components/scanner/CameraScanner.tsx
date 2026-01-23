@@ -5,6 +5,7 @@ import Webcam from 'react-webcam';
 // ⚠️ ASSEGURA'T QUE AQUEST IMPORT ÉS EL CORRECTE
 import { scanImageAction } from '@/app/actions/scan'; 
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
+import Image from 'next/image';
 
 interface CameraScannerProps {
   onItemsFound: (items: ScannedItem[], imageSrc: string) => void;
@@ -140,7 +141,14 @@ export function CameraScanner({ onItemsFound, onCancel }: CameraScannerProps) {
         )}
 
         {capturedImage && (
-          <img src={capturedImage} alt="Captured" className="absolute inset-0 w-full h-full object-contain bg-black" />
+          <Image
+            src={capturedImage}
+            alt="Captured"
+            fill
+            sizes="100vw"
+            unoptimized
+            className="object-contain bg-black"
+          />
         )}
 
         {/* LOADING SPINNER */}

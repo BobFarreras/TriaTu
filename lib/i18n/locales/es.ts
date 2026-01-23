@@ -118,6 +118,8 @@ export const es = {
     decide_roll: '🎲 ¡Tirar los Dados!',
     waiting_host: 'Esperando al Anfitrión...',
     history_title: 'Historial',
+    decisions_tab: 'Decisiones',
+    history_tab: 'Lista',
     trophy_empty_title: 'Sala de Trofeos vacía',
     trophy_empty_desc: 'Aún no se ha tomado ninguna decisión.',
     wall_fame: 'Muro de la Fama',
@@ -136,7 +138,7 @@ export const es = {
     share_title: "Únete a '{name}'",
     share_text: "¡Ey! Ayúdame a decidir qué hacemos en la sala '{name}'. Entra aquí:",
     history: {
-      title: "Muro de la Fama",
+      title: "Lista de decisiones",
       empty: "Aún no hay trofeos",
       type_recipe: "Receta",
       type_algo: "Algoritmo",
@@ -832,7 +834,7 @@ export const es = {
       step5_desc: "¿Quieres decidir qué cenar con amigos? ¡Crea una sala y empezad a votar!",
 
       step6_title: "Unirse",
-      step6_desc: "¿Tienes un código o QR? Entra rápidamente en la sala de un amigo.",
+      step6_desc: "¿Tienes un enlace o el ID de la sala? Entra rápidamente en la sala de un amigo.",
       step7_title: "Comunidad de Recetas",
       step7_desc: "Inspírate con lo que cocinan los demás. ¡Copia recetas y hazlas tuyas!",
 
@@ -845,8 +847,11 @@ export const es = {
       step10_title: "Tu Despensa",
       step10_desc: "Gestiona lo que tienes en la nevera para recibir recomendaciones precisas.",
 
-      step11_title: "Perfil y Configuración",
-      step11_desc: "Cambia tu avatar, nombre y preferencias globales aquí."
+      step11_title: "Lista de la Compra",
+      step11_desc: "Gestiona lo que necesitas comprar y sincronízalo con tu despensa.",
+
+      step12_title: "Perfil y Configuración",
+      step12_desc: "Cambia tu avatar, nombre y preferencias globales aquí."
 
     },
     inventory: {
@@ -903,6 +908,9 @@ export const es = {
     room: {
       step1_title: "¡Bienvenido a la Sala! 👋",
       step1_desc: "Aquí puedes ver quién está conectado e invitar amigos a unirse a la sala.",
+
+      step_settings_title: "Ajustes de la sala ⚙️",
+      step_settings_desc: "Abre este panel para activar la despensa compartida, la lista de compra o eliminar la sala (solo Host).",
 
       step2_title: "¿Modo Mágico o Manual? ✨",
       step2_desc: "Elige 'Mágico' para dejar que la IA decida o 'Manual' para votar de forma democrática.",

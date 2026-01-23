@@ -87,6 +87,7 @@ export function DashboardHeader({ userName }: Props) {
         {/* 3. LOGOUT */}
         <button
             onClick={() => signOutAction()}
+            data-testid="logout-button"
             className="w-9 h-9 bg-red-600 hover:bg-red-500 rounded-lg flex items-center justify-center border-b-[3px] border-red-900 active:border-b-0 active:translate-y-1 transition-all group"
         >
             <span className="text-base group-hover:-translate-x-0.5 transition-transform text-white font-bold">🚪</span>

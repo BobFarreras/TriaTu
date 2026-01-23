@@ -32,6 +32,7 @@ export function EditorTabs({ activeTab, onChange, errors, counts }: Props) {
           error={errors.name}
           icon={<Settings2 size={16} />}
           label="Info"
+          testId="recipe-tab-meta"
         />
         <TabButton
           active={activeTab === 'ingredients'}
@@ -40,6 +41,7 @@ export function EditorTabs({ activeTab, onChange, errors, counts }: Props) {
           icon={<ChefHat size={16} />}
           label="Ingredients"
           count={counts.ingredients}
+          testId="recipe-tab-ingredients"
         />
         <TabButton
           active={activeTab === 'steps'}
@@ -48,6 +50,7 @@ export function EditorTabs({ activeTab, onChange, errors, counts }: Props) {
           icon={<ListChecks size={16} />}
           label="Passos"
           count={counts.steps}
+          testId="recipe-tab-steps"
         />
       </div>
     </div>
@@ -55,13 +58,14 @@ export function EditorTabs({ activeTab, onChange, errors, counts }: Props) {
 }
 
 interface TabButtonProps {
-  active: boolean; onClick: () => void; error: boolean; icon: React.ReactNode; label: string; count?: number;
+  active: boolean; onClick: () => void; error: boolean; icon: React.ReactNode; label: string; count?: number; testId?: string;
 }
 
-function TabButton({ active, onClick, error, icon, label, count }: TabButtonProps) {
+function TabButton({ active, onClick, error, icon, label, count, testId }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
+      data-testid={testId}
       className={`relative z-10 flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2 ${error ? 'text-red-400 animate-pulse' : (active ? 'text-white' : 'text-slate-500 hover:text-slate-300')}`}
     >
       {icon}

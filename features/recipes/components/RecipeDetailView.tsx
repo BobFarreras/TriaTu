@@ -74,11 +74,13 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
                 <FavoriteButton 
                     recipeId={recipe.id} 
                     initialIsFavorite={!!recipe.isFavorite}
+                    testId="recipe-favorite-button"
                     className="w-8 h-8 bg-slate-800 border border-slate-700" 
                 />
-                {isAuthor && (
+                    {isAuthor && (
                     <Link 
                         href={`/recipes/${recipe.id}/edit`}
+                        data-testid="recipe-edit-link"
                         className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600 hover:text-white transition-colors"
                     >
                         <Edit size={14} />
@@ -97,10 +99,11 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
                     <FavoriteButton 
                         recipeId={recipe.id} 
                         initialIsFavorite={!!recipe.isFavorite}
+                        testId="recipe-favorite-button"
                         className="w-10 h-10 bg-slate-900 border border-slate-700 hover:border-rose-500/50"
                     />
                     {isAuthor && (
-                        <Link href={`/recipes/${recipe.id}/edit`} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-900 text-slate-400 hover:bg-purple-600 hover:text-white transition-all border border-slate-700 hover:border-purple-500" title="Editar Recepta">
+                        <Link href={`/recipes/${recipe.id}/edit`} data-testid="recipe-edit-link" className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-900 text-slate-400 hover:bg-purple-600 hover:text-white transition-all border border-slate-700 hover:border-purple-500" title="Editar Recepta">
                             <Edit size={18} />
                         </Link>
                     )}

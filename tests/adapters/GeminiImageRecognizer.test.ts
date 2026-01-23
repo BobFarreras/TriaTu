@@ -10,7 +10,9 @@ vi.mock('@google/genai', () => {
         generateContent: mockGenerateContent
       };
       // FIX: Canviem 'any' per 'unknown' per satisfer el linter
-      constructor(options: unknown) {}
+      constructor(options: unknown) {
+        void options;
+      }
     }
   };
 });

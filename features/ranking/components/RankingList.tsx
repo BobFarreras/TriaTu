@@ -1,7 +1,7 @@
 'use client';
 
 import { Player } from '@/core/domain/entities/Player'; // ✅ Usem l'entitat de domini
-import { Crown, Medal, Trophy, User } from 'lucide-react';
+import Image from 'next/image';
 
 interface Props {
   players: Player[];
@@ -48,7 +48,14 @@ export function RankingList({ players, currentUserId }: Props) {
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-inner ${isMe ? 'bg-purple-600 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                    {player.avatarUrl ? (
-                      <img src={player.avatarUrl} alt={player.username} className="w-full h-full rounded-full object-cover" />
+                      <Image
+                        src={player.avatarUrl}
+                        alt={player.username}
+                        width={40}
+                        height={40}
+                        unoptimized
+                        className="w-full h-full rounded-full object-cover"
+                      />
                    ) : (
                       <span>{player.username.charAt(0).toUpperCase()}</span>
                    )}

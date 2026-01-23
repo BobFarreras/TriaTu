@@ -11,9 +11,10 @@ interface Props {
     recipeId: string;
     initialIsFavorite: boolean;
     className?: string;
+    testId?: string;
 }
 
-export function FavoriteButton({ recipeId, initialIsFavorite, className = "" }: Props) {
+export function FavoriteButton({ recipeId, initialIsFavorite, className = "", testId }: Props) {
     const [isFav, setIsFav] = useState(initialIsFavorite);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -44,6 +45,7 @@ export function FavoriteButton({ recipeId, initialIsFavorite, className = "" }: 
             whileTap={{ scale: 0.8 }}
             onClick={handleToggle}
             disabled={isLoading}
+            data-testid={testId}
             className={`
                 flex items-center justify-center rounded-full p-2 transition-all
                 ${isFav 

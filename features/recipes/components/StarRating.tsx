@@ -10,9 +10,10 @@ interface Props {
   initialUserRating?: number;
   average: number;
   count: number;
+  testIdPrefix?: string;
 }
 
-export function StarRating({ recipeId, initialUserRating, average, count }: Props) {
+export function StarRating({ recipeId, initialUserRating, average, count, testIdPrefix }: Props) {
   const [loading, setLoading] = useState(false);
   const [userRating, setUserRating] = useState(initialUserRating || 0);
 
@@ -50,6 +51,7 @@ export function StarRating({ recipeId, initialUserRating, average, count }: Prop
               whileTap={{ scale: 0.8 }}
               onClick={(e) => handleRate(e, star)}
               disabled={loading}
+              data-testid={testIdPrefix ? `${testIdPrefix}-star-${star}` : undefined}
               className={`focus:outline-none text-2xl leading-none transition-colors ${
                   isFilled 
                     ? 'text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.6)]' 

@@ -69,6 +69,7 @@ export function ShoppingHistory({ sessions }: Props) {
                         <select 
                             value={filterMonth}
                             onChange={(e) => setFilterMonth(e.target.value)}
+                            data-testid="shopping-history-month"
                             className="bg-slate-950 border border-slate-800 text-white text-sm rounded-lg px-3 py-1 outline-none focus:border-emerald-500"
                         >
                             {availableMonths.map(m => {
@@ -99,6 +100,8 @@ export function ShoppingHistory({ sessions }: Props) {
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setSelectedSession(session)}
+                            data-testid="shopping-history-session"
+                            data-session-id={session.id}
                             className="bg-slate-900 p-4 rounded-xl border border-slate-800 hover:border-emerald-500/30 transition-all cursor-pointer group"
                         >
                             <div className="flex justify-between items-center mb-3">

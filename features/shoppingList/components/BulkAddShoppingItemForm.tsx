@@ -50,7 +50,7 @@ export function BulkAddShoppingItemForm({ onClose, activeRoomId }: Props) {
             quantity: item.quantity,
             unit: 'ut', // Per defecte unitats, o podria venir del producte
             emoji: item.product.emoji,
-            productId: item.product.id,
+            productId: item.product.source === 'manual' ? null : item.product.id,
             productImage: item.product.image,
             estimatedCost: item.product.price // ✅ Important: Passem el preu!
         }));

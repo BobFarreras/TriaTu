@@ -46,6 +46,7 @@ export class SupabaseCandidateRepository implements CandidateRepository {
     // 3. ESBORRAR (PER ID)
     // Ajustem la signatura per complir amb la teva interfície: (candidateId, userId)
     async deleteById(candidateId: string, userId: string): Promise<void> {
+        void userId;
         const supabase = await createClient();
         
         const { error } = await supabase

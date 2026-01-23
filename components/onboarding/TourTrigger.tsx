@@ -12,6 +12,9 @@ interface Props {
 
 export function TourTrigger({ steps, className, tourId }: Props) {
   const { startTour } = useOnboarding();
+  const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
+
+  if (isE2E) return null;
 
   return (
     <motion.button

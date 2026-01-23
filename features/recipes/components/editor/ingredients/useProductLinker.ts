@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Ingredient } from '../types';
 import { searchProductsAction, ProductResult } from '@/app/actions/inventory';
-import { FOOD_TAXONOMY, SubCategory } from '@/lib/taxonamy'; // Check path spelling!
+import { SubCategory } from '@/lib/taxonamy';
+import { findTaxonomyMatch } from '@/lib/taxonamy/matcher';
+import { buildQueryTerms, filterProductsByQuery } from '@/core/application/services/ProductSearchFilter';
+import { buildSearchQueries } from '@/core/application/services/SearchQueryBuilder';
+import { hasExactTokenMatch } from '@/core/application/services/ExactTokenMatcher';
 
 export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
   const [loading, setLoading] = useState(false);
   const [matches, setMatches] = useState<Record<string, ProductResult[]>>({});
   const [selectedProducts, setSelectedProducts] = useState<Record<string, ProductResult | null>>({});
+  const [manualQueries, setManualQueries] = useState<Record<string, string>>({});
 
   // 1. EFECTE D'INICIALITZACIÓ (Quan s'obre el modal)
   useEffect(() => {
@@ -37,16 +42,64 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const findTaxonomyMatch = (name: string): SubCategory | null => {
-    const lowerName = name.toLowerCase();
-    for (const cat of FOOD_TAXONOMY) {
-      for (const sub of cat.subcategories) {
-        if (sub.label.toLowerCase() === lowerName) return sub;
-        if (lowerName.includes(sub.label.toLowerCase())) return sub;
-        if (sub.label.toLowerCase().includes(lowerName)) return sub;
+  const findIngredientTaxonomyMatch = (name: string): { categoryId: string; sub: SubCategory } | null =>
+    findTaxonomyMatch(name);
+
+  const fetchMatchesForIngredient = async (ing: Ingredient, queryOverride?: string) => {
+    let foundProducts: ProductResult[] = [];
+    const override = queryOverride?.trim();
+    const effectiveOverride = override && override.length >= 3 ? override : undefined;
+    const baseQuery = effectiveOverride || ing.name;
+    const queryTerms = buildQueryTerms(baseQuery);
+
+    const taxMatch = !effectiveOverride ? findIngredientTaxonomyMatch(ing.name) : null;
+    const categoryId = taxMatch?.categoryId;
+
+    if (taxMatch) {
+      const queries = Array.isArray(taxMatch.sub.query) ? taxMatch.sub.query : [taxMatch.sub.query];
+      const responses = await Promise.all(queries.map(q => searchProductsAction(q)));
+      const filtered = responses.flatMap((res, idx) => {
+        const data = res.success && res.data ? res.data : [];
+        return filterProductsByQuery(data, {
+          exclude: taxMatch.sub.exclude,
+          mustContain: taxMatch.sub.mustContain,
+          queryTerms: buildQueryTerms(queries[idx]),
+          avoidFlavorMatches: true,
+          categoryId,
+          contextEmoji: ing.emoji
+        });
+      });
+
+      foundProducts = filtered;
+    } else {
+      const queries = buildSearchQueries(baseQuery);
+      const minMatchCount = Math.max(1, Math.min(2, queryTerms.length));
+
+      if (queries.length > 0) {
+        const responses = await Promise.all(queries.map(q => searchProductsAction(q)));
+        const filtered = responses.flatMap(res => {
+          const data = res.success && res.data ? res.data : [];
+          return filterProductsByQuery(data, {
+            queryTerms,
+            minMatchRatio: 1,
+            minMatchCount,
+            avoidFlavorMatches: true,
+            categoryId
+          });
+        });
+
+        foundProducts = filtered;
       }
     }
-    return null;
+
+    if (foundProducts.length === 0) return [];
+    const anchorTerms = queryTerms.filter(term => term.length >= 4);
+    const strictFiltered = anchorTerms.length > 0
+      ? foundProducts.filter(prod => anchorTerms.some(term => hasExactTokenMatch(prod.name, term)))
+      : foundProducts;
+    if (strictFiltered.length === 0) return [];
+    const unique = Array.from(new Map(strictFiltered.map(item => [item.id, item])).values());
+    return unique.slice(0, 10);
   };
 
   const loadMatches = async () => {
@@ -54,50 +107,9 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
     const newMatches: Record<string, ProductResult[]> = {};
     
     const promises = ingredients.map(async (ing) => {
-      let foundProducts: ProductResult[] = [];
-      
       try {
-        // 1. TAXONOMIA
-        const taxMatch = findTaxonomyMatch(ing.name);
-        
-        if (taxMatch) {
-            const queries = Array.isArray(taxMatch.query) ? taxMatch.query : [taxMatch.query];
-            const responses = await Promise.all(queries.map(q => searchProductsAction(q)));
-            let rawResults = responses
-                .filter(r => r.success && r.data)
-                .flatMap(r => r.data || []);
-
-            if (taxMatch.exclude) {
-                rawResults = rawResults.filter(p => {
-                    const lowerName = p.name.toLowerCase();
-                    return !taxMatch.exclude!.some(bad => lowerName.includes(bad.toLowerCase()));
-                });
-            }
-            // Eliminar duplicats
-            foundProducts = Array.from(new Map(rawResults.map(item => [item.id, item])).values());
-        
-        } else {
-            // 2. NOM EXACTE
-            const resDirect = await searchProductsAction(ing.name);
-            if (resDirect.data) foundProducts = resDirect.data;
-
-            // 3. FALLBACK (Primera paraula)
-            if (foundProducts.length === 0 && ing.name.includes(' ')) {
-                const firstWord = ing.name.split(' ')[0];
-                if (firstWord.length > 2) {
-                    const resFallback = await searchProductsAction(firstWord);
-                    if (resFallback.data) {
-                        // Afegim als resultats existents (o els reemplacem si estava buit)
-                        foundProducts = resFallback.data;
-                    }
-                }
-            }
-        }
-
-        if (foundProducts.length > 0) {
-          newMatches[ing.id] = foundProducts.slice(0, 10);
-        }
-
+        const foundProducts = await fetchMatchesForIngredient(ing, manualQueries[ing.id]);
+        if (foundProducts.length > 0) newMatches[ing.id] = foundProducts;
       } catch (error) {
         console.error(error);
       }
@@ -111,6 +123,15 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
 
   const selectProduct = (ingredientId: string, product: ProductResult) => {
     setSelectedProducts((prev) => ({ ...prev, [ingredientId]: product }));
+  };
+
+  const setManualQuery = (ingredientId: string, query: string) => {
+    setManualQueries(prev => ({ ...prev, [ingredientId]: query }));
+  };
+
+  const searchIngredient = async (ingredient: Ingredient, queryOverride?: string) => {
+    const results = await fetchMatchesForIngredient(ingredient, queryOverride);
+    setMatches(prev => ({ ...prev, [ingredient.id]: results }));
   };
 
   const applyChanges = (originalIngredients: Ingredient[]): Ingredient[] => {
@@ -134,6 +155,9 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
     loading,
     matches,
     selectedProducts,
+    manualQueries,
+    setManualQuery,
+    searchIngredient,
     selectProduct,
     applyChanges,
     totalCost

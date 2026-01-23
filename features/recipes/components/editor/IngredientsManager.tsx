@@ -91,15 +91,9 @@ export function IngredientsManager({
 
         <div id={ingredientsListId} className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
           <div className="pointer-events-auto relative">
-            {recipeTotalCost > 0 && (
-              <div className="absolute right-4 -top-14 bg-slate-900/90 backdrop-blur border border-emerald-500/50 text-emerald-400 px-4 py-2 rounded-xl shadow-xl flex flex-col items-end z-40 animate-in slide-in-from-bottom-2">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Total Recepta</span>
-                <span className="text-xl font-black font-mono leading-none">{recipeTotalCost.toFixed(2)}€</span>
-              </div>
-            )}
-
             <IngredientDock
               ingredients={data.ingredients}
+              totalCost={recipeTotalCost}
               onRemove={removeIngredient}
               labels={{ title: labels.basket_title, empty: labels.basket_empty }}
               onOpenLinker={() => setIsLinkerOpen(true)}

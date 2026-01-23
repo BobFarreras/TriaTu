@@ -8,10 +8,6 @@ import { StorageLocation } from '@/core/domain/entities/StorageLocation';
 // ✅ 1. IMPORTAR EL SERVEI DE SEGURETAT
 import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService'; // ✅ Importar
 
-interface Props {
-  onClose: () => void;
-}
-
 interface CartItem {
   product: ProductResult;
   quantity: number;
@@ -78,7 +74,7 @@ export function BulkAddItemForm({ onClose, activeRoomId }: BulkAddItemFormProps)
           unit: 'ut',
           location: location,
           emoji: item.product.emoji,
-          productId: item.product.id,
+          productId: item.product.source === 'manual' ? null : item.product.id,
           expiryDate: isoDate,
           roomId: activeRoomId // ✅ VITAL: Afegir això aquí!
         };

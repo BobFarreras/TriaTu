@@ -133,8 +133,10 @@ export const en = {
     copy_error: "Error copying link",
     share_title: "Join '{name}'",
     share_text: "Hey! Help me decide in room '{name}'. Join here:",
+    decisions_tab: 'Decisions',
+    history_tab: 'Decision list',
     history: {
-      title: "Wall of Fame",
+      title: "Decision list",
       empty: "There are no trophies yet",
       type_recipe: "Recipe",
       type_algo: "Algorithm",
@@ -833,7 +835,7 @@ export const en = {
       step5_desc: "Want to decide what to have for dinner with friends? Create a room and start voting!",
 
       step6_title: "Join",
-      step6_desc: "Got a code or QR? Quickly join a friend's room.",
+      step6_desc: "Got a link or room ID? Quickly join a friend's room.",
       step7_title: "Recipe Community",
       step7_desc: "Get inspired by what others are cooking. Copy recipes and make them your own!",
 
@@ -846,8 +848,11 @@ export const en = {
       step10_title: "Your Pantry",
       step10_desc: "Manage what you have in your fridge to get accurate recommendations.",
 
-      step11_title: "Profile & Settings",
-      step11_desc: "Change your avatar, name, and global preferences here."
+      step11_title: "Shopping List",
+      step11_desc: "Manage what you need to buy and sync it with your pantry.",
+
+      step12_title: "Profile & Settings",
+      step12_desc: "Change your avatar, name, and global preferences here."
 
     },
     inventory: {
@@ -904,6 +909,9 @@ export const en = {
     room: {
       step1_title: "Welcome to the Room! 👋",
       step1_desc: "Here you can see who’s connected and invite friends to join the room.",
+
+      step_settings_title: "Room Settings ⚙️",
+      step_settings_desc: "Open this panel to enable the shared pantry, shopping list, or delete the room (Host only).",
 
       step2_title: "Magic or Manual Mode? ✨",
       step2_desc: "Choose 'Magic' to let the AI decide or 'Manual' to vote democratically.",

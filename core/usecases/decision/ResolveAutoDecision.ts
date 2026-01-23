@@ -12,7 +12,8 @@ export class ResolveAutoDecision {
     private decisionResolver: GroupDecisionResolver
   ) {}
 
-  async execute(roomId: string, _userId: string): Promise<DecisionOutcome> {
+  async execute(roomId: string, userId: string): Promise<DecisionOutcome> {
+    void userId;
     // 1. Carreguem la sala
     const room = await this.roomRepo.findById(roomId);
     if (!room) throw new Error('Room not found');

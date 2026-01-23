@@ -10,7 +10,9 @@ import { InventoryItem } from '@/core/domain/entities/InventoryItem'; // Assegur
 import { FOOD_PRESETS } from '@/lib/food-presets';
 import { ExpirySafetyService } from '@/core/application/services/ExpirySafetyService';
 import { EmojiMatcherService } from '@/core/application/services/EmojiMatcherService';
-import { error as logError } from '@/lib/logger';
+import { Product } from '@/core/domain/entities/Product';
+import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 import {
   InventoryItemSchema,
   ConsumeItemSchema,
@@ -54,10 +56,10 @@ function getErrorMessage(error: unknown): string { return error instanceof Error
 // 0. GET INVENTORY (NOVA ACCIÓ PER LLISTAR)
 // ------------------------------------------------------------------
 export async function getInventoryAction(roomId?: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const supabase = await createClient();
   try {
     const repo = container.getInventoryRepo(supabase);
     // Cridem al nou mètode del repo que vam crear al pas anterior
@@ -82,10 +84,10 @@ export async function getInventoryAction(roomId?: string) {
 // ------------------------------------------------------------------
 export async function addItemAction(formData: FormData) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     const name = String(formData.get('name') || 'Producte');
     let emoji = formData.get('emoji')?.toString() || '📦';
     const roomId = formData.get('roomId')?.toString() || undefined; // <--- LLEGIM EL CONTEXT
@@ -157,7 +159,7 @@ export async function addItemAction(formData: FormData) {
     return { success: true };
 
   } catch (error: unknown) {
-    logError("💥 Error fatal a addItemAction:", error);
+    logActionError('addItemAction', 'Error fatal a addItemAction:', error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -191,10 +193,10 @@ interface UpdateItemDTO { id: string; name: string; quantity: number; unit: stri
 
 export async function updateItemAction(item: UpdateItemDTO) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     if (!item.id || !item.name) throw new Error("Dades incompletes");
 
     const repo = container.getInventoryRepo(supabase);
@@ -248,10 +250,10 @@ export async function deleteItemAction(itemId: string) {
 // ------------------------------------------------------------------
 export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySchema>) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     const validation = BatchInventorySchema.safeParse(items);
     if (!validation.success) return { success: false, error: getZodError(validation.error) };
 
@@ -284,7 +286,7 @@ export async function addBatchItemsAction(items: z.infer<typeof BatchInventorySc
     return { success: true };
 
   } catch (error: unknown) {
-    logError('Error in addBatchItemsAction:', error);
+    logActionError('addBatchItemsAction', 'Error in addBatchItemsAction:', error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -301,10 +303,10 @@ export async function quickAddInventoryAction(
   roomId?: string // <--- NOU PARÀMETRE
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error("Unauthorized");
 
+    const supabase = await createClient();
     const expiryYMD = ExpirySafetyService.applySafetyRules(name, 'PANTRY', undefined);
     const expiryDate = new Date(expiryYMD);
 
@@ -330,7 +332,7 @@ export async function quickAddInventoryAction(
     return { success: true };
 
   } catch (error) {
-    logError("Error quick adding to inventory:", error);
+    logActionError('quickAddInventoryAction', 'Error quick adding to inventory:', error);
     return { success: false, error: "Error afegint a l'inventari." };
   }
 }
@@ -344,7 +346,7 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
   try {
     const supabase = await createClient();
     const searcher = container.getSearchAndCacheProducts(supabase);
-    const products = await searcher.execute(query);
+    const products = (await searcher.execute(query)) as Product[];
 
     const serialized = products.map(p => ({
       id: p.props.id,
@@ -358,7 +360,7 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
 
     return { success: true, data: serialized };
   } catch (error) {
-    logError("Error cercant productes:", error);
+    logActionError('searchProductsAction', 'Error cercant productes:', error);
     return { success: false, error: "No s'ha pogut completar la cerca." };
   }
 }
@@ -368,10 +370,10 @@ export async function searchProductsAction(query: string): Promise<{ success: bo
 // ------------------------------------------------------------------
 export async function deleteBatchItemsAction(ids: string[]) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error('Unauthorized');
 
+    const supabase = await createClient();
     const repo = container.getInventoryRepo(supabase);
     await repo.batchDelete(ids);
 

@@ -1,33 +1,34 @@
-// ARXIU: docs/features/shoppingList
+# Feature: Llista de la compra
 
-# Feature: Llista de la Compra Intel·ligent
+Objectiu:
+Gestionar els productes que falten i permetre una llista personal o compartida per sala.
 
-## Descripció
-Sistema que gestiona els ingredients que falten. Actua com a "fallback" quan l'inventari és insuficient.
+Responsabilitats:
+- Afegir i marcar items de compra.
+- Crear sessions d'historial quan es completa la compra.
+- Suportar context personal o de sala.
 
-## Arquitectura
-- **Domini**: `ShoppingListItem` (Entitat).
-- **Port**: `ShoppingListRepository` (Interface).
-- **Adaptador**: `SupabaseShoppingListRepository` (Implementació).
+Estructura:
+- `components/` UI de llista i historial.
+- `hooks/` hooks de la feature.
+- `logic/` tipus i helpers locals.
+- `__tests__/` tests locals de la feature.
+- `index.ts` exports publics.
 
-## Regles de Negoci
-1. **Unificació**: Si s'afegeix un producte que ja existeix (per nom, case-insensitive), no es crea un nou registre, sinó que se suma la quantitat al existent.
-2. **Reactivació**: Si s'afegeix quantitat a un producte que estava marcat com "comprat" (checked), aquest torna a quedar pendent (unchecked).
-3. **Persistència**: Totes les dades es guarden a Supabase sota la taula `shopping_list_items`.
+Components clau:
+- `ShoppingListManager`, `ShoppingHeader`, `ShoppingListItem`, `ShoppingHistory`.
 
-## Ús Tècnic
-Aquesta feature serà utilitzada principalment per:
-- `AddToShoppingList` (nou).
-- `CookRecipeUseCase` (quan faltin ingredients).
-## Estructura
-- components/ UI de la llista i historial
-- hooks/ (quan cal)
-- logic/ (sense dependencies d'infra)
-- __tests__/ (tests de feature)
-- index.ts (exports publices)
+Flux principal:
+UI -> `app/actions/shopping-list-actions` -> Use Cases/Serveis -> Repositoris.
 
+Regles de negoci (resum):
+- Unificacio per nom (case-insensitive).
+- Reactivacio d'items marcats quan s'afegeix quantitat.
+- Persistencia en `shopping_list_items` i sessions en `shopping_sessions`.
 
-## Comparticio de sala
+Context compartit:
 - La llista pot ser personal o de sala si el host activa `enable_shopping_list`.
 - El selector de context permet canviar entre personal i sales habilitades.
-- Les dades compartides es guarden amb `room_id` a `shopping_list_items` i `shopping_sessions`.
+
+Tests:
+- `tests/usecases/*Shopping*` i tests de components quan apliqui.

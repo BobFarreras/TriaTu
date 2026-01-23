@@ -21,32 +21,40 @@ El projecte està alineat amb Clean Architecture i disposa d'una base sòlida de
 
 ### Documentació
 
-- Existien documents sobre arquitectura i estructura, però faltaven guies operatives unificades.
-- Ara es disposa de guies de desenvolupament, contribució i seguretat.
+- Guies de desenvolupament, contribució i seguretat actives.
+- README per feature en `features/*/README.md`.
+- Skills per agents a `docs/skills/`.
 
 ## Fortaleses
 
 - Arquitectura neta i explícita.
 - Bones pràctiques de validació i seguretat.
-- Test suite ja organitzada per domini.
+- Test suite organitzada per domini.
 - Logs de servidor centralitzats amb `lib/logger` i sanejats de PII.
-- Validacio Zod ampliada per entrades IA (materialitzacio de receptes).
+- Validació Zod ampliada per entrades d'IA (materialització de receptes).
 
 ## Riscos i deute tècnic
 
 - **Dependència de documentació distribuïda:** sense una font de veritat única, es pot perdre coherència.
 - **Variables d'entorn:** cal assegurar que les claus necessàries estiguin documentades i revisades periòdicament.
-- **Evolució d'arquitectura:** sense revisar `guia.md` i `arquitectura_assistent_de_decisions_quotidianes.md`, la divergència pot créixer.
+- **Evolució d'arquitectura:** sense revisar `guia.md` i `arquitectura_triatu.md`, la divergència pot créixer.
+- **Filtratge de catàleg heurístic:** el matching per paraules (incloent plurals i context de sabor) necessita ajustos periòdics i tests de regressió per evitar falsos positius/negatius.
+- **Fallback de cerca manual:** multiplica consultes quan la query és multi-terme; cal monitoritzar rendiment i límits del proveïdor.
+- **Observabilitat en marxa:** integració base de Sentry (client/server/edge) pendent d activar alertes i rutes crítiques.
+- **Governança de prompts pendent:** LangSmith definit però pendent d'integració i flux de versions.
+- **Dependència externa de prompts:** LangSmith introdueix dependència de xarxa; cal fallback local i cache.
+- **CI limitat a branques concretes:** el workflow actual només s'executa a `main` i a la branca literal `release`.
 
 ## Accions prioritàries (curt termini)
-4. Mantenir README.md per feature per facilitar onboarding.
 
-1. Revisar la documentació a cada canvi estructural.
-2. Assegurar tests verds abans de cada PR.
-3. Mantenir el fitxer `.env.local` alineat amb adapters i serveis actius.
+1) Revisar la documentació a cada canvi estructural.
+2) Assegurar tests verds abans de cada PR.
+3) Mantenir el fitxer `.env.local` alineat amb adapters i serveis actius.
+4) Mantenir `README.md` per feature per facilitar onboarding.
 
 ## Accions recomanades (mig termini)
 
-1. Revisió periòdica (trimestral) de seguretat i dependències.
-2. Documentar fluxos de dades crítics (autenticació i decisions de grup).
-3. Afegir un changelog si el ritme d'iteració augmenta.
+1) Revisió periòdica (trimestral) de seguretat i dependències.
+2) Documentar fluxos de dades crítics (autenticació i decisions de grup).
+3) Afegir un changelog si el ritme d'iteració augmenta.
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toggleRoomFeatureAction } from '@/app/actions/room-actions';
 import { Package, ShoppingCart, ArrowRight, Lock, Unlock } from 'lucide-react';
@@ -79,6 +79,7 @@ export function RoomFeaturesPanel({ roomId, isHost, enableInventory, enableShopp
                 <button
                   disabled={isPending}
                   onClick={() => handleToggleInventory(false)}
+                  data-testid="room-feature-inventory-disable"
                   className={`p-2 rounded-md transition-all ${!enableInventory ? 'bg-red-500/20 text-red-400' : 'text-zinc-600 hover:text-zinc-400'}`}
                 >
                   <Lock size={16} />
@@ -86,6 +87,7 @@ export function RoomFeaturesPanel({ roomId, isHost, enableInventory, enableShopp
                 <button
                   disabled={isPending}
                   onClick={() => handleToggleInventory(true)}
+                  data-testid="room-feature-inventory-enable"
                   className={`p-2 rounded-md transition-all ${enableInventory ? 'bg-emerald-500/20 text-emerald-400' : 'text-zinc-600 hover:text-zinc-400'}`}
                 >
                   <Unlock size={16} />
@@ -96,6 +98,7 @@ export function RoomFeaturesPanel({ roomId, isHost, enableInventory, enableShopp
             {enableInventory && (
               <button
                 onClick={navigateToInventory}
+                data-testid="room-feature-inventory-open"
                 className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-emerald-500/20 active:scale-95"
               >
                 <span>Obrir Nevera</span>
@@ -129,6 +132,7 @@ export function RoomFeaturesPanel({ roomId, isHost, enableInventory, enableShopp
                 <button
                   disabled={isPending}
                   onClick={() => handleToggleShopping(false)}
+                  data-testid="room-feature-shopping-disable"
                   className={`p-2 rounded-md transition-all ${!enableShoppingList ? 'bg-red-500/20 text-red-400' : 'text-zinc-600 hover:text-zinc-400'}`}
                 >
                   <Lock size={16} />
@@ -136,6 +140,7 @@ export function RoomFeaturesPanel({ roomId, isHost, enableInventory, enableShopp
                 <button
                   disabled={isPending}
                   onClick={() => handleToggleShopping(true)}
+                  data-testid="room-feature-shopping-enable"
                   className={`p-2 rounded-md transition-all ${enableShoppingList ? 'bg-amber-500/20 text-amber-300' : 'text-zinc-600 hover:text-zinc-400'}`}
                 >
                   <Unlock size={16} />
@@ -146,6 +151,7 @@ export function RoomFeaturesPanel({ roomId, isHost, enableInventory, enableShopp
             {enableShoppingList && (
               <button
                 onClick={navigateToShoppingList}
+                data-testid="room-feature-shopping-open"
                 className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-amber-500/20 active:scale-95"
               >
                 <span>Obrir Llista</span>

@@ -24,6 +24,7 @@ interface Props {
 export function DashboardContent({ userName, userId, profileData }: Props) {
   const { t } = useLanguage();
   const { startTour } = useOnboarding();
+  const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 
   // El hook ja gestiona la hidratació
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -63,20 +64,22 @@ export function DashboardContent({ userName, userId, profileData }: Props) {
     { targetId: 'tour-dash-ranking', title: t.onboarding.dashboard.step8_title, description: t.onboarding.dashboard.step8_desc },
     { targetId: 'tour-dash-rooms', title: t.onboarding.dashboard.step9_title, description: t.onboarding.dashboard.step9_desc },
     { targetId: 'tour-dash-inventory', title: t.onboarding.dashboard.step10_title, description: t.onboarding.dashboard.step10_desc },
-    { targetId: 'tour-dash-profile', title: t.onboarding.dashboard.step11_title, description: t.onboarding.dashboard.step11_desc }, 
+    { targetId: 'tour-dash-shopping', title: t.onboarding.dashboard.step11_title, description: t.onboarding.dashboard.step11_desc },
+    { targetId: 'tour-dash-profile', title: t.onboarding.dashboard.step12_title, description: t.onboarding.dashboard.step12_desc }
   ], [t, isDesktop]);
 
   // INICI AUTOMÀTIC DEL TOUR
   useEffect(() => {
-     if (typeof window !== 'undefined') {
+     if (!isE2E && typeof window !== 'undefined') {
         startTour('dashboard', onboardingSteps);
      }
-  }, [startTour, onboardingSteps]);
+  }, [startTour, onboardingSteps, isE2E]);
 
   return (
     <main className="min-h-dvh lg:h-dvh w-full flex flex-col relative bg-[#131f24] bg-gamified-pattern overflow-y-auto lg:overflow-hidden">
         
       {/* ✅ MILLORA UX: POSICIONAMENT DEL TRIGGER */}
+      {!isE2E && (
       <div className={`
           z-100 transition-all duration-500
           /* MÒBIL: Fixed a baix dreta (Tipus botó d'ajuda flotant) */
@@ -91,6 +94,8 @@ export function DashboardContent({ userName, userId, profileData }: Props) {
             className="shadow-2xl shadow-purple-900/50 lg:shadow-none"
         />
       </div>
+
+      )}
 
       {/* FONS */}
       <div className="fixed top-[-20%] left-[-10%] w-150 h-150 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>

@@ -1,13 +1,12 @@
 import { LandingHero } from '@/features/landing/components/LandingHero';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
-import { createClient } from '@/adapters/supabase/server';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import logo from '@/public/icon1.png'; // Assegura't que aquesta ruta existeix
 import { NavbarInstallButton } from '@/features/landing/components/NavbarInstallbutton';
+import { getCurrentUser } from '@/lib/auth/session';
 export default async function Home() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (user) redirect('/dashboard'); 
 

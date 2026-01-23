@@ -2,8 +2,9 @@
 
 import { Ingredient } from '../types';
 import { useProductLinker } from './useProductLinker';
-import { Loader2, Check, ShoppingBasket, X, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { Loader2, Check, X, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useRef } from 'react';
 
 interface Props {
   isOpen: boolean;
@@ -13,7 +14,18 @@ interface Props {
 }
 
 export function ProductLinkerModal({ isOpen, onClose, ingredients, onUpdateIngredients }: Props) {
-  const { loading, matches, selectedProducts, selectProduct, applyChanges, totalCost } = useProductLinker(ingredients, isOpen);
+  const {
+    loading,
+    matches,
+    selectedProducts,
+    manualQueries,
+    setManualQuery,
+    searchIngredient,
+    selectProduct,
+    applyChanges,
+    totalCost
+  } = useProductLinker(ingredients, isOpen);
+  const debounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const handleConfirm = () => {
     const updated = applyChanges(ingredients);
@@ -65,13 +77,22 @@ export function ProductLinkerModal({ isOpen, onClose, ingredients, onUpdateIngre
                 const selected = selectedProducts[ing.id];
                 const isLinked = !!ing.linkedProductId || !!selected;
                 const hasOptions = productOptions.length > 0;
+                const manualValue = manualQueries[ing.id] || '';
+
+                const handleManualChange = (value: string) => {
+                  setManualQuery(ing.id, value);
+                  if (debounceRef.current[ing.id]) clearTimeout(debounceRef.current[ing.id]);
+                  debounceRef.current[ing.id] = setTimeout(() => {
+                    searchIngredient(ing, value);
+                  }, 400);
+                };
 
                 return (
                   <div key={ing.id} className="relative pl-4 border-l-2 border-slate-800 hover:border-slate-700 transition-colors py-1">
                     <div className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 transition-colors ${isLinked ? 'bg-emerald-500 border-emerald-500' : 'bg-slate-900 border-slate-600'}`} />
 
                     {/* Títol Ingredient */}
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-2">
                        <span className="text-2xl">{ing.emoji || '🥗'}</span>
                        <div>
                           <h3 className="text-white font-bold text-lg leading-tight">{ing.name}</h3>
@@ -79,6 +100,15 @@ export function ProductLinkerModal({ isOpen, onClose, ingredients, onUpdateIngre
                              {ing.quantity} {ing.unit}
                           </p>
                        </div>
+                    </div>
+
+                    <div className="pl-2 mb-2">
+                       <input
+                         value={manualValue}
+                         onChange={(e) => handleManualChange(e.target.value)}
+                         placeholder="Cerca manual..."
+                         className="w-full bg-slate-900/60 border border-slate-700/60 rounded-lg py-1.5 px-3 text-xs text-white outline-none focus:border-emerald-500/60 focus:bg-slate-900 placeholder:text-slate-500"
+                       />
                     </div>
 
                     {/* ZONA DE PRODUCTES (SCROLL HORITZONTAL) */}

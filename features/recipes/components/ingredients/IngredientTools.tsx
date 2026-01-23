@@ -27,6 +27,7 @@ export function SearchHeader({ query, setQuery, selectedCategory, setSelectedCat
         <input 
           value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder={labels.search_placeholder}
+          data-testid="recipe-ingredient-search"
           className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl py-2 pl-9 pr-9 text-sm text-white outline-none focus:border-purple-500 focus:bg-slate-900 transition-all placeholder:text-slate-600"
         />
         {query && (
@@ -38,7 +39,12 @@ export function SearchHeader({ query, setQuery, selectedCategory, setSelectedCat
         <CategoryPill active={selectedCategory === 'ALL'} onClick={() => setSelectedCategory('ALL')} label={labels.category_all} />
         {categories.map(cat => (
           // Use String(cat) per seguretat visual
-          <CategoryPill key={String(cat)} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} label={String(cat)} />
+          <CategoryPill
+            key={String(cat)}
+            active={selectedCategory === cat}
+            onClick={() => setSelectedCategory(selectedCategory === cat ? 'ALL' : cat)}
+            label={String(cat)}
+          />
         ))}
       </div>
     </div>
@@ -80,6 +86,7 @@ export function CalculatorGrid({ presets, inventory, currentIngredients, onQuick
               key={preset.id} 
               whileTap={{ scale: 0.9 }}
               onClick={() => onQuickAdd(preset)}
+              data-testid={`recipe-ingredient-${preset.id}`}
               className={`
                 relative flex flex-col items-center justify-center gap-1 p-1 h-20 sm:h-24 rounded-xl border transition-all text-center group overflow-hidden
                 ${count > 0 

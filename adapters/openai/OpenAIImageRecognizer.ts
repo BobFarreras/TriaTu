@@ -2,31 +2,38 @@ import OpenAI from 'openai';
 import { ImageRecognitionService } from '@/core/ports/ImageRecognitionService';
 import { ScannedItem } from '@/core/domain/types/ScannedItem';
 import { ScanSanitizer } from '@/core/application/services/ScanSanitizer';
-import { getScanSystemPrompt } from '@/core/prompts/scan-prompts'; // ✅ IMPORTAT
+import { buildScanSystemPrompt, getScanSystemPrompt } from '@/core/prompts/scan-prompts';
+import type { PromptService } from '@/core/application/services/PromptService';
 
 export class OpenAIImageRecognizer implements ImageRecognitionService {
   private client: OpenAI;
 
-  constructor() {
+  constructor(private promptService?: PromptService) {
     this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }
 
   async analyze(imageBase64: string): Promise<ScannedItem[]> {
     try {
-      console.log(`📡 OpenAI: Rebent imatge...`);
-      
+      console.log(`?? OpenAI: Rebent imatge...`);
+
       const base64Data = imageBase64.includes('base64,') ? imageBase64.split('base64,')[1] : imageBase64;
-      
-      // ✅ USEM EL PROMPT CENTRALITZAT
-      const prompt = getScanSystemPrompt();
+
+      const today = new Date().toISOString().split('T')[0];
+      const prompt = this.promptService
+        ? await this.promptService.getPrompt({
+            name: 'triatu-scan',
+            variables: { today },
+            fallback: () => buildScanSystemPrompt(today),
+          })
+        : getScanSystemPrompt();
 
       const response = await this.client.chat.completions.create({
         model: "gpt-4o-mini",
-        response_format: { type: "json_object" }, // Important
+        response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
-            content: prompt // Passem el mateix prompt
+            content: prompt
           },
           {
             role: "user",
@@ -48,15 +55,14 @@ export class OpenAIImageRecognizer implements ImageRecognitionService {
       if (!content) return [];
 
       const parsed = JSON.parse(content);
-      // ✅ OpenAI sempre retorna l'objecte arrel gràcies al prompt
       const rawItems = parsed.items || [];
 
-      console.log(`✅ OpenAI ha trobat ${rawItems.length} elements.`);
+      console.log(`? OpenAI ha trobat ${rawItems.length} elements.`);
 
       return rawItems.map((item: unknown) => ScanSanitizer.sanitize(item as ScannedItem));
 
     } catch (error) {
-      console.error("❌ OpenAI Error:", error);
+      console.error("? OpenAI Error:", error);
       throw error;
     }
   }

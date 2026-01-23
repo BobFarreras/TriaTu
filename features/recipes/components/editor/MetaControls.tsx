@@ -115,6 +115,7 @@ export function MetaControls({
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Nom de la Recepta</label>
                   <textarea
                      id={titleInputId} // ✅ ID APLICAT
+                     data-testid="recipe-title-input"
                      ref={textareaRef}
                      rows={1}
                      value={data.name}

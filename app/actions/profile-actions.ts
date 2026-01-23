@@ -3,9 +3,10 @@
 
 import { container } from '@/services/container';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/adapters/supabase/server';
 import { UpdateProfileSchema } from '@/core/application/schemas/inputSchemas';
-import { debug, error as logError } from '@/lib/logger';
+import { debug } from '@/lib/logger';
+import { logActionError } from '@/lib/observability/action-logger';
+import { getCurrentUser } from '@/lib/auth/session';
 
 type ProfileState = {
   success?: boolean;
@@ -22,11 +23,10 @@ export async function updateProfileAction(prevState: ProfileState, formData: For
   debug('[ACTION] updateProfileAction start');
 
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
-      logError('updateProfileAction unauthorized');
+      logActionError('updateProfileAction', 'updateProfileAction unauthorized');
       throw new Error('Unauthorized');
     }
 
@@ -56,7 +56,11 @@ export async function updateProfileAction(prevState: ProfileState, formData: For
     });
 
     if (!validation.success) {
-      logError('updateProfileAction validation failed', validation.error.format());
+      logActionError(
+        'updateProfileAction',
+        'updateProfileAction validation failed',
+        validation.error.format()
+      );
       return { success: false, error: validation.error.issues[0].message };
     }
 
@@ -84,7 +88,7 @@ export async function updateProfileAction(prevState: ProfileState, formData: For
 
     return { success: true };
   } catch (error: unknown) {
-    logError('updateProfileAction failed', error);
+    logActionError('updateProfileAction', 'updateProfileAction failed', error);
     const message = error instanceof Error ? error.message : 'Error updating profile';
     return { success: false, error: message };
   }

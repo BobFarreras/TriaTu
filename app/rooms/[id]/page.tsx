@@ -3,12 +3,14 @@ import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/adapters/supabase/server';
 import { SupabaseDecisionRoomRepository } from '@/adapters/supabase/SupabaseDecisionRoomRepository';
 import { SupabaseCandidateRepository } from '@/adapters/supabase/SupabaseCandidateRepository';
+import { SupabaseUserProfileRepository } from '@/adapters/supabase/SupabaseUserProfileRepository';
 import { GetDecisionRoom } from '@/core/usecases/rooms/GetDecisionRoom';
 import { RoomDetail, RoomDTO } from '@/features/rooms/components/RoomDetail';
 import { CandidateDTO } from '@/features/rooms/components/DecisionControls';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { DecisionMetadata } from '@/core/domain/types/DecisionTypes';
+import { getCurrentUser } from '@/lib/auth/session';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
@@ -25,11 +27,11 @@ interface HistoryItemWithMetadata {
 }
 export default async function RoomPage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect(`/login?next=/rooms/${id}`);
 
+  const supabase = await createClient();
   // 1. Instanciem Repositori i Use Case
   const roomRepo = new SupabaseDecisionRoomRepository();
   const getRoomUseCase = new GetDecisionRoom(roomRepo);
@@ -45,6 +47,9 @@ export default async function RoomPage({ params }: PageProps) {
   // 4. Carregar Candidats
   const candidateRepo = new SupabaseCandidateRepository();
   const candidates = await candidateRepo.getAllForRoom(id);
+  const profileRepo = new SupabaseUserProfileRepository();
+  const profiles = await profileRepo.getProfilesByIds(room.participants.map((p) => p.userId));
+  const profileNames = new Map(profiles.map((profile) => [profile.id, profile.username]));
 
   const { data: rawRoom } = await supabase
     .from('decision_rooms')
@@ -62,7 +67,10 @@ export default async function RoomPage({ params }: PageProps) {
     hostUserId: room.hostUserId,
     votingMode: room.votingMode,
     inviteCode: room.inviteCode,
-    participants: room.participants.map(p => ({ userId: p.userId })),
+    participants: room.participants.map((p) => ({
+      userId: p.userId,
+      name: profileNames.get(p.userId)
+    })),
     enableInventory: enableInventory, // <--- ✅ PASSEM LA DADA REAL F
     enableShoppingList: enableShoppingList,
     // ✅ CORRECCIÓ CLAU: Ara passem la metadata al DTO

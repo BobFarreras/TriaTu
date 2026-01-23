@@ -17,6 +17,7 @@ export function InventoryContextSelector({ scope, setScope, rooms }: Props) {
       <select
         value={scope}
         onChange={(e) => setScope(e.target.value)}
+        data-testid="inventory-scope-select"
         className="appearance-none bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-medium py-2 pl-9 pr-8 rounded-full border border-slate-700 hover:border-emerald-500/50 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
       >
         <option value="PERSONAL">👤 Inventari Personal</option>

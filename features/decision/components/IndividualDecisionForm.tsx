@@ -19,8 +19,9 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
     // 1. DADES DEL TOUR
-    const { isActive: isTourActive, currentStepIndex, nextStep } = useOnboarding();
-    const tourData = useDecisionTour(logic.setMode, setIsMobileExpanded);
+    const { isActive: isTourActive, currentStepIndex, currentTourId } = useOnboarding();
+    const tourData = useDecisionTour(logic.mode, logic.setMode, setIsMobileExpanded);
+    const isDecisionTourActive = isTourActive && currentTourId === 'decision-maker';
 
     // 2. ESTATS LOCALS
     const [simLoading, setSimLoading] = useState(false);
@@ -31,12 +32,13 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
     // LOG DE DEBUG (Opcional)
     useEffect(() => {
         // console.log("🔄 [RENDER] Estat:", { isTourActive, currentStepIndex });
-    }, [isTourActive, currentStepIndex]);
+    }, [isDecisionTourActive, currentStepIndex]);
 
     // 🚑 AUTO-SIMULACIÓ (CORREGIDA PER EVITAR ERROR DE REACT)
     useEffect(() => {
+        const resultsStepIndex = tourData.steps.findIndex((step) => step.targetId === 'tour-dec-results');
         // Si estem al tour + Pas Resultats (4) + No tenim resultats
-        if (isTourActive && currentStepIndex === 4 && !showFakeResults && !logic.hasActiveResult) {
+        if (isDecisionTourActive && currentStepIndex === resultsStepIndex && !showFakeResults && !logic.hasActiveResult) {
             console.log("🚑 [AUTO-FIX] Forçant simulació...");
             
             // ✅ FIX: Usem un setTimeout per evitar "setState synchronously within an effect"
@@ -52,22 +54,23 @@ export function IndividualDecisionForm({ userId }: { userId: string }) {
 
             return () => clearTimeout(timer);
         }
-    }, [isTourActive, currentStepIndex, showFakeResults, logic.hasActiveResult]);
+    }, [isDecisionTourActive, currentStepIndex, showFakeResults, logic.hasActiveResult, tourData.steps]);
 
 
     // 3. HANDLE EXECUTE (PER SI CLICA EL BOTÓ REAL)
     const handleExecute = (dishNameOverride?: string) => {
         console.log("🔥 [CLICK] Botó apretat!");
+        const actionStepIndex = tourData.steps.findIndex((step) => step.targetId === 'tour-dec-action');
 
         // Si estem al pas del botó (3), simulem
-        if (isTourActive && currentStepIndex === 3) {
+        if (isDecisionTourActive && currentStepIndex === actionStepIndex) {
             console.log("🤡 [LOGIC] Simulació per click...");
             setSimLoading(true);
             setTimeout(() => {
                 setSimLoading(false);
                 setShowFakeResults(true);
                 // Avancem manualment al següent pas
-                setTimeout(() => nextStep(), 200);
+                setTimeout(() => tourData.nextStep(), 200);
             }, 2000);
             return; 
         }

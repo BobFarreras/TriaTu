@@ -1,11 +1,12 @@
 'use client'
 
-import { RefObject, useEffect } from 'react';
+import { RefObject, useEffect, useRef } from 'react';
 import { EditorData } from '../types';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 // Importem els sub-components
 import { SuggestionChips } from './input/SuggestionChips';
 import { InputHeader } from './input/InputHeader';
+import { HighlightedContent } from '../steps/list/HighlightedContent';
 
 interface Props {
   data: EditorData;
@@ -26,10 +27,16 @@ interface Props {
 export function StepsInput({ data, currentText, onChangeText, onSave, onCancel, isEditing, textareaRef, labels }: Props) {
 
   const { isListening, transcript, interimTranscript, startListening, stopListening, clearTranscript } = useSpeechToText();
+  const ignoreNextTranscriptRef = useRef(false);
 
   // Gestió de Veu
   useEffect(() => {
     if (transcript) {
+      if (ignoreNextTranscriptRef.current) {
+        ignoreNextTranscriptRef.current = false;
+        clearTranscript();
+        return;
+      }
       insertToken(transcript + ' ');
       clearTranscript();
     }
@@ -49,15 +56,25 @@ export function StepsInput({ data, currentText, onChangeText, onSave, onCancel, 
 
   // Lògica d'inserció de text (el cursor màgic)
   const insertToken = (token: string) => {
+    const wasListening = isListening;
+    if (wasListening) {
+      ignoreNextTranscriptRef.current = true;
+      stopListening();
+      clearTranscript();
+    }
     const textarea = textareaRef.current;
+    const liveText = wasListening && interimTranscript
+      ? `${currentText}${currentText && !currentText.endsWith(' ') ? ' ' : ''}${interimTranscript}`
+      : currentText;
+    const baseText = wasListening ? liveText : (textarea?.value ?? liveText);
     if (!textarea) {
-      onChangeText(currentText + (currentText ? ' ' : '') + token);
+      onChangeText(baseText + (baseText ? ' ' : '') + token);
       return;
     }
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const textBefore = currentText.substring(0, start);
-    const textAfter = currentText.substring(end);
+    const start = wasListening ? baseText.length : textarea.selectionStart;
+    const end = wasListening ? baseText.length : textarea.selectionEnd;
+    const textBefore = baseText.substring(0, start);
+    const textAfter = baseText.substring(end);
 
     // Gestió intel·ligent d'espais
     const prefix = (textBefore.length > 0 && !textBefore.endsWith(' ') && !token.startsWith(' ')) ? ' ' : '';
@@ -111,8 +128,10 @@ export function StepsInput({ data, currentText, onChangeText, onSave, onCancel, 
           onChange={(e) => onChangeText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={isListening ? "Parla ara..." : labels.placeholder}
+          data-testid="recipe-step-input"
+          spellCheck={false}
           className={`
-                    flex-1 w-full bg-slate-900 border rounded-2xl p-4 text-base text-white outline-none resize-none transition-all leading-relaxed custom-scrollbar
+                    flex-1 w-full bg-slate-900 border rounded-2xl p-4 text-base text-white caret-white outline-none resize-none transition-all leading-relaxed custom-scrollbar
                     ${isListening
               ? 'border-red-500/50 ring-1 ring-red-500/20'
               : isEditing
