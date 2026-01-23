@@ -7,9 +7,10 @@ interface Props {
   isEditing: boolean;
   onExit: () => void;
   onTitleClick: () => void;
+  rightSlot?: React.ReactNode;
 }
 
-export function EditorHeader({ title, isEditing, onExit, onTitleClick }: Props) {
+export function EditorHeader({ title, isEditing, onExit, onTitleClick, rightSlot }: Props) {
   return (
     <div className="shrink-0 px-4 py-3 bg-slate-950 flex items-center justify-between border-b border-slate-900">
       <div onClick={onExit}>
@@ -18,7 +19,7 @@ export function EditorHeader({ title, isEditing, onExit, onTitleClick }: Props) 
       <h1 className="text-slate-200 font-bold text-lg cursor-pointer" onClick={onTitleClick}>
         {title || (isEditing ? "Editant Recepta" : "Nova Recepta")}
       </h1>
-      <div className="w-10"></div>
+      <div className="min-w-[2.5rem] flex justify-end">{rightSlot}</div>
     </div>
   );
 }

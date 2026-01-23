@@ -41,8 +41,14 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
   const onboardingSteps = useMemo(() => getEditorTourSteps(t), [t]);
 
   useEffect(() => {
-    if (initialRecipe) return;
-    const timer = setTimeout(() => startTour('recipe-editor', onboardingSteps), 800);
+    if (typeof window === 'undefined') return;
+    const key = initialRecipe ? 'tour:recipe-editor-edit' : 'tour:recipe-editor-create';
+    const hasSeen = window.localStorage.getItem(key);
+    if (hasSeen) return;
+    const timer = setTimeout(() => {
+      startTour('recipe-editor', onboardingSteps);
+      window.localStorage.setItem(key, '1');
+    }, 800);
     return () => clearTimeout(timer);
   }, [startTour, onboardingSteps, initialRecipe]);
 
@@ -102,19 +108,18 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
         message={feedback.message}
       />
 
-      <div className="absolute top-4 right-4 z-50">
-        <TourTrigger tourId="recipe-editor" steps={onboardingSteps} />
-      </div>
 
       {/* HEADER MODIFICAT: Passem la funció de delete o col·loquem el botó aquí si EditorHeader ho permet */}
       {/* Si EditorHeader no accepta children o accions extra, podem posar el botó flotant a l'esquerra del Save o a dalt */}
 
       <div className="relative z-50">
+
         <EditorHeader
           title={data.name}
           isEditing={!!initialRecipe}
           onExit={handleExit}
           onTitleClick={() => setActiveTab('meta')}
+          rightSlot={<TourTrigger tourId="recipe-editor" steps={onboardingSteps} />}
         />
         {/* Botó d'eliminar absolut a la capçalera (ajustar posició segons disseny de EditorHeader) */}
         {initialRecipe && (
