@@ -115,7 +115,9 @@ export async function joinRoomByInputAction(entry: string, userId: string): Prom
 
   const isUuid = z.string().uuid().safeParse(trimmed).success;
   if (isUuid) {
-    return joinRoomAction(trimmed, userId);
+    const result = await joinRoomAction(trimmed, userId);
+    if (!result.error) return result;
+    if (!result.error.startsWith('Room not found:')) return result;
   }
 
   try {
