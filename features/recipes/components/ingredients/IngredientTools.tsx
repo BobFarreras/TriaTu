@@ -39,7 +39,12 @@ export function SearchHeader({ query, setQuery, selectedCategory, setSelectedCat
         <CategoryPill active={selectedCategory === 'ALL'} onClick={() => setSelectedCategory('ALL')} label={labels.category_all} />
         {categories.map(cat => (
           // Use String(cat) per seguretat visual
-          <CategoryPill key={String(cat)} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} label={String(cat)} />
+          <CategoryPill
+            key={String(cat)}
+            active={selectedCategory === cat}
+            onClick={() => setSelectedCategory(selectedCategory === cat ? 'ALL' : cat)}
+            label={String(cat)}
+          />
         ))}
       </div>
     </div>

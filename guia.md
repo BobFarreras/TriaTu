@@ -78,6 +78,8 @@ L'usuari prem un botó en una feature:
 - Les cerques de productes passen per `ProductSearchFilter` (core/application/services) per garantir coherència i filtres comuns, incloent bloqueig per secció (categoria).
 - A la cerca manual de productes, hi ha fallback per termes i un producte manual amb emoji si no hi ha resultats.
 - Els tokens curts clau (ex: `pa`, `ou`, `vi`, `te`) actuen com a àncores per evitar falsos positius.
+- El linker d'ingredients de receptes expandeix queries amb `SearchQueryBuilder` per millorar el match.
+- El modal de cost de receptes permet cercar manualment productes per ingredient.
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 - Prompts IA: es resolen via `PromptService` (LangSmith + fallback local).
 

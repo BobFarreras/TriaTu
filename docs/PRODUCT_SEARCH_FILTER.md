@@ -16,6 +16,7 @@ El servei s usa tant a l'inventari com al linkador d'ingredients de receptes.
 - `features/inventory/products/useProductSearch.ts`
 - `features/recipes/components/editor/ingredients/useProductLinker.ts`
 - `lib/taxonamy/*.ts` (definicio de queries per seccio i subcategoria)
+- `core/application/services/SearchQueryBuilder.ts` (expandeix queries per ingredients)
 
 ## Com funciona
 
@@ -39,6 +40,9 @@ El servei s usa tant a l'inventari com al linkador d'ingredients de receptes.
 - Rebost: les queries s'han ampliat a `lib/taxonamy/pantry.ts` per cobrir variants comercials.
 - Pa: la subcategoria exigeix `pa/pan` (mustContain) i exclou cereals/galetes per reduir falsos positius.
 - Quan una subcategoria no retorna resultats, es crea un item manual amb emoji per poder afegir-lo igualment a l'inventari.
+- El linker d'ingredients aplica `minMatchRatio=1` i `minMatchCount` més estrictes quan no hi ha taxonomia.
+- El modal de cost permet cerca manual per ingredient i reutilitza el filtratge d'inventari.
+- El linker aplica un filtre extra de coincidència exacta de tokens per evitar marques semblants (ex: "dorada" vs "orada").
 
 ## Opcions
 
@@ -91,3 +95,6 @@ Resultat:
 - `tests/services/ProductSearchFilter.test.ts`
 - `tests/services/ProductSearchFilter.integration.test.ts`
 - `tests/features/ProductFallback.test.ts`
+- `tests/services/SearchQueryBuilder.test.ts`
+- `tests/features/RecipePresetFilter.test.ts`
+- `tests/services/ExactTokenMatcher.test.ts`

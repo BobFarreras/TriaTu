@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { EditorData, Ingredient, FoodPreset } from '../editor/types';
 import { FOOD_PRESETS } from "@/lib/food-presets";
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { filterAndOrderPresets } from './presetFilter';
 
 export function useIngredientsManager(data: EditorData, update: (d: EditorData) => void) {
   const { t } = useLanguage();
@@ -33,11 +34,7 @@ export function useIngredientsManager(data: EditorData, update: (d: EditorData) 
 
   // 2. FILTRATGE
   const filteredPresets = useMemo(() => {
-    return translatedPresets.filter(preset => {
-      const matchesSearch = preset.name.toLowerCase().includes(query.toLowerCase());
-      const matchesCategory = selectedCategory === 'ALL' || preset.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
+    return filterAndOrderPresets(translatedPresets, query, selectedCategory);
   }, [query, selectedCategory, translatedPresets]);
 
   const getIncrementStep = (unit: string) => {
