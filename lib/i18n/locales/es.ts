@@ -134,6 +134,10 @@ export const es = {
     invite_sent: "¡Enlace enviado!", // Opcional, feedback
 
     link_copied: "¡Enlace copiado!",
+    room_id_title: "ID de la sala",
+    room_id_label: "ID",
+    copy_room_id: "Copiar ID",
+    room_id_copied: "✅ ID copiado!",
     copy_error: "Error al copiar el enlace",
     share_title: "Únete a '{name}'",
     share_text: "¡Ey! Ayúdame a decidir qué hacemos en la sala '{name}'. Entra aquí:",
@@ -202,10 +206,11 @@ export const es = {
     back: '← ATRÁS',
     hero_title: '¿Tienes una invitación?',
     hero_subtitle: 'Introduce el código para unirte a la fiesta.',
-    label_code: 'CÓDIGO DE LA SALA (UUID)',
-    placeholder_code: 'pégalo-aquí...',
+    label_code: 'CÓDIGO O ID DE LA SALA',
+    placeholder_code: 'pega el código o ID...',
     btn_join: 'ENTRAR AHORA 🍿',
-    err_code_required: 'El código es obligatorio.'
+    err_code_required: 'El código es obligatorio.',
+    err_invalid_code: 'Este código no es válido.'
   },
   profile: {
     // Identitat

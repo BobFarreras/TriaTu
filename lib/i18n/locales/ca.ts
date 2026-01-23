@@ -136,6 +136,10 @@ export const ca = {
     err_general: 'Error desconegut',
     invite_cta: "Invitar Amics",
     link_copied: "Enllaç copiat!",
+    room_id_title: "ID de la sala",
+    room_id_label: "ID",
+    copy_room_id: "Copiar ID",
+    room_id_copied: "✅ ID copiat!",
     copy_error: "Error al copiar l'enllaç",
     // Textos per compartir per WhatsApp:
     share_title: "Uneix-te a '{name}'",
@@ -210,10 +214,11 @@ export const ca = {
     back: '← ENRERE',
     hero_title: 'Tens una invitació?',
     hero_subtitle: 'Introdueix el codi per unir-te a la festa.',
-    label_code: 'CODI DE LA SALA (UUID)',
-    placeholder_code: 'enganxa-ho-aqui...',
+    label_code: 'CODI O ID DE LA SALA',
+    placeholder_code: 'enganxa el codi o ID...',
     btn_join: 'ENTRAR ARA 🍿',
-    err_code_required: 'El codi és obligatori.'
+    err_code_required: 'El codi és obligatori.',
+    err_invalid_code: 'Aquest codi no és vàlid.'
   },
   profile: {
     // Identitat

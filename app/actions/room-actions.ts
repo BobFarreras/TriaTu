@@ -103,9 +103,35 @@ export async function joinRoomAction(roomId: string, userId: string): Promise<Ac
   try {
     const useCase = container.getJoinDecisionRoom();
     await useCase.execute(validation.data);
-    return { success: true };
+    return { success: true, roomId };
   } catch (error: unknown) {
     return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+export async function joinRoomByInputAction(entry: string, userId: string): Promise<ActionState> {
+  const trimmed = entry.trim();
+  if (!trimmed) return { success: false, error: 'missing_code' };
+
+  const isUuid = z.string().uuid().safeParse(trimmed).success;
+  if (isUuid) {
+    return joinRoomAction(trimmed, userId);
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: room, error } = await supabase
+      .from('decision_rooms')
+      .select('id')
+      .eq('invite_code', trimmed)
+      .single();
+
+    if (error || !room) return { success: false, error: 'invalid_code' };
+
+    return joinRoomAction(room.id, userId);
+  } catch (error) {
+    logActionError('joinRoomByInputAction', 'joinRoomByInputAction failed', error);
+    return { success: false, error: 'invalid_code' };
   }
 }
 

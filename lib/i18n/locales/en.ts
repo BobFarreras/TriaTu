@@ -130,6 +130,10 @@ export const en = {
     invite_sent: "Link sent!", // Optional feedback
 
     link_copied: "Link copied!",
+    room_id_title: "Room ID",
+    room_id_label: "ID",
+    copy_room_id: "Copy ID",
+    room_id_copied: "✅ ID copied!",
     copy_error: "Error copying link",
     share_title: "Join '{name}'",
     share_text: "Hey! Help me decide in room '{name}'. Join here:",
@@ -200,10 +204,11 @@ export const en = {
     back: '← BACK',
     hero_title: 'Got an invite?',
     hero_subtitle: 'Enter the code to join the party.',
-    label_code: 'ROOM CODE (UUID)',
-    placeholder_code: 'paste-it-here...',
+    label_code: 'ROOM CODE OR ID',
+    placeholder_code: 'paste the code or ID...',
     btn_join: 'JOIN NOW 🍿',
-    err_code_required: 'Code is required.'
+    err_code_required: 'Code is required.',
+    err_invalid_code: 'This code is not valid.'
   },
   profile: {
     // Identitat

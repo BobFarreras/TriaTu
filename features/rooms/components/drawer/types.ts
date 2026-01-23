@@ -7,6 +7,9 @@ export interface DrawerTranslations {
   features_title: string;
   enable_inventory: string;
   enable_shopping: string;
+  room_id_title: string;
+  room_id_label: string;
+  copy_room_id: string;
   actions_title: string;
   invite_cta: string;
   delete_room: string;

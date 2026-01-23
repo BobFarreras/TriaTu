@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react';
-import { joinRoomAction } from '@/app/actions/room-actions';
+import { joinRoomByInputAction } from '@/app/actions/room-actions';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext'; // <---
@@ -22,11 +22,21 @@ export function JoinRoomContent({ userId }: { userId: string }) {
     }
 
     startTransition(async () => {
-      const res = await joinRoomAction(roomId, userId);
+      const res = await joinRoomByInputAction(roomId, userId);
       if (res.error) {
+        if (res.error === 'missing_code') {
+          setError(t.join_room.err_code_required);
+          return;
+        }
+        if (res.error === 'invalid_code') {
+          setError(t.join_room.err_invalid_code);
+          return;
+        }
         setError(res.error);
-      } else {
-        router.push(`/rooms/${roomId}`);
+        return;
+      }
+      if (res.roomId) {
+        router.push(`/rooms/${res.roomId}`);
       }
     });
   };
