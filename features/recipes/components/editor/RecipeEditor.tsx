@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useTransition } from 'react';
+import { useState, useEffect, useMemo, useTransition, useRef } from 'react';
 import { IngredientsManager } from './IngredientsManager';
 import { StepsBuilder } from './StepsBuilder';
 import { MetaControls } from './MetaControls';
@@ -16,7 +16,7 @@ import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { useRouter } from 'next/navigation';
 import { RecipeProps } from '@/core/domain/entities/Recipe';
 import { EditorTabs, TabType } from './editor/EditorTabs';
-import { getEditorTourSteps, mapRecipeToFormData } from './editor/utils';
+import { getEditorTourSamples, getEditorTourSteps, mapRecipeToFormData } from './editor/utils';
 import { EditorHeader } from './editor/EditorHeader';
 import { deleteRecipeAction } from '@/app/actions/delete-recipe'; // Importem l'acció
 interface Props {
@@ -39,6 +39,16 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
   // 3. ONBOARDING LOGIC
   const { startTour, currentStepIndex, isActive, steps: activeSteps } = useOnboarding();
   const onboardingSteps = useMemo(() => getEditorTourSteps(t), [t]);
+  const tourSamples = useMemo(() => getEditorTourSamples(), []);
+  const simulationRef = useRef({
+    name: false,
+    prep: false,
+    tags: false,
+    ingredients: false,
+    linked: false,
+    stepText: false,
+    stepSaved: false
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -51,6 +61,56 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
     }, 800);
     return () => clearTimeout(timer);
   }, [startTour, onboardingSteps, initialRecipe]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    const stepId = activeSteps[currentStepIndex]?.targetId;
+    if (!stepId) return;
+
+    if (stepId === 'tour-recipe-title' && !simulationRef.current.name && !data.name.trim()) {
+      simulationRef.current.name = true;
+      setData({ ...data, name: tourSamples.name });
+      return;
+    }
+
+    if (stepId === 'tour-prep-time' && !simulationRef.current.prep) {
+      simulationRef.current.prep = true;
+      setData({ ...data, prepTimeMinutes: tourSamples.prepTimeMinutes });
+      return;
+    }
+
+    if (stepId === 'tour-dietary-tags' && !simulationRef.current.tags) {
+      simulationRef.current.tags = true;
+      const mergedTags = Array.from(new Set([...data.dietaryTags, ...tourSamples.dietaryTags]));
+      setData({ ...data, dietaryTags: mergedTags });
+      return;
+    }
+
+    if (stepId === 'tour-ing-input' && !simulationRef.current.ingredients && data.ingredients.length === 0) {
+      simulationRef.current.ingredients = true;
+      setData({ ...data, ingredients: tourSamples.ingredients });
+      return;
+    }
+
+    if (stepId === 'tour-ing-list' && !simulationRef.current.linked && data.ingredients.length > 0) {
+      simulationRef.current.linked = true;
+      setData({ ...data, ingredients: tourSamples.linkedIngredients });
+      return;
+    }
+
+    if (stepId === 'tour-step-textarea' && !simulationRef.current.stepText) {
+      simulationRef.current.stepText = true;
+      return;
+    }
+
+    if (stepId === 'tour-step-chips' && !simulationRef.current.stepSaved && data.steps.length === 0) {
+      simulationRef.current.stepSaved = true;
+      setData({
+        ...data,
+        steps: [{ id: crypto.randomUUID(), content: tourSamples.stepText }]
+      });
+    }
+  }, [activeSteps, currentStepIndex, data, isActive, setData, tourSamples]);
 
   // Sincronització de Tabs amb el Tour
   useEffect(() => {
@@ -169,6 +229,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
               labels={safeIngredientsLabels}
               searchInputId="tour-ing-input"
               ingredientsListId="tour-ing-list"
+              forceLinkerOpen={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-ing-list'}
             />
           )}
 
@@ -179,6 +240,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
               labels={safeStepsLabels}
               textareaId="tour-step-textarea"
               stepsListId="tour-step-chips"
+              simulatedText={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-textarea' ? tourSamples.stepText : undefined}
             />
           )}
         </div>

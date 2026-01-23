@@ -1,7 +1,7 @@
 // src/components/recipes/editor/StepsBuilder.tsx
 'use client'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EditorData, StepsLabels, RecipeStep } from './types';
 import { useStepsManager } from './steps/useStepsManager';
 import { StepsInput } from './steps/StepsInput';
@@ -15,11 +15,12 @@ interface Props {
   // ✅ Props per al Tour
   textareaId?: string;
   stepsListId?: string;
+  simulatedText?: string;
 }
 
 export function StepsBuilder({
   data, update, labels,
-  textareaId, stepsListId
+  textareaId, stepsListId, simulatedText
 }: Props) {
   const {
     currentStepText,
@@ -35,6 +36,13 @@ export function StepsBuilder({
   } = useStepsManager(data, update);
 
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
+
+  useEffect(() => {
+    if (!simulatedText) return;
+    if (editingId) return;
+    if (currentStepText.trim()) return;
+    setCurrentStepText(simulatedText);
+  }, [currentStepText, editingId, setCurrentStepText, simulatedText]);
 
   // Wrapper per canviar de vista automàticament al mòbil quan editem
   const handleEditClick = (step: RecipeStep) => {

@@ -1,5 +1,5 @@
 import { RecipeProps } from '@/core/domain/entities/Recipe';
-import { EditorData } from '../types';
+import { EditorData, EditorIngredient } from '../types';
 import { TourStep } from '@/components/onboarding/OnboardingContext';
 import { Dictionary } from '@/lib/i18n/dictionaries';
 
@@ -67,4 +67,34 @@ export function getEditorTourSteps(t: Dictionary): TourStep[] {
     { targetId: 'tour-step-chips', title: t.onboarding.editor.step7_title, description: t.onboarding.editor.step7_desc, requiredTab: 'steps' },
     { targetId: 'tour-save-btn', title: t.onboarding.editor.step8_title, description: t.onboarding.editor.step8_desc }
   ];
+}
+
+export function getEditorTourSamples(): {
+  name: string;
+  prepTimeMinutes: number;
+  dietaryTags: string[];
+  ingredients: EditorIngredient[];
+  linkedIngredients: EditorIngredient[];
+  stepText: string;
+} {
+  const ingredients: EditorIngredient[] = [
+    { id: 'tour-ingredient-1', name: 'Ceba', quantity: 1, unit: 'ut', emoji: '🧅' },
+    { id: 'tour-ingredient-2', name: 'Tomàquet', quantity: 2, unit: 'ut', emoji: '🍅' },
+    { id: 'tour-ingredient-3', name: 'Oli d\'oliva', quantity: 2, unit: 'cda', emoji: '🫒' }
+  ];
+
+  const linkedIngredients: EditorIngredient[] = ingredients.map((ing, index) => ({
+    ...ing,
+    linkedProductId: `tour-product-${index + 1}`,
+    estimatedCost: [0.35, 0.6, 0.25][index] ?? 0.2
+  }));
+
+  return {
+    name: 'Pizza verda',
+    prepTimeMinutes: 30,
+    dietaryTags: ['vegan'],
+    ingredients,
+    linkedIngredients,
+    stepText: 'Salteja la ceba, afegeix [Tomàquet] i cuina 10 min.'
+  };
 }

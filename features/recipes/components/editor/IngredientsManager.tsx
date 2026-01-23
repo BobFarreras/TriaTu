@@ -1,7 +1,7 @@
 // src/components/recipes/IngredientsManager.tsx
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Ingredient } from './types';
 import { EditorData, InventoryItemUI, IngredientsLabels } from './types';
 import { useIngredientsManager } from '../ingredients/useIngredientsManager';
@@ -17,11 +17,12 @@ interface Props {
   labels: IngredientsLabels;
   searchInputId?: string;
   ingredientsListId?: string;
+  forceLinkerOpen?: boolean;
 }
 
 export function IngredientsManager({
   data, update, inventory, labels,
-  searchInputId, ingredientsListId
+  searchInputId, ingredientsListId, forceLinkerOpen
 }: Props) {
   
   const {
@@ -37,6 +38,11 @@ export function IngredientsManager({
   } = useIngredientsManager(data, update);
 
   const [isLinkerOpen, setIsLinkerOpen] = useState(false);
+
+  useEffect(() => {
+    if (forceLinkerOpen === undefined) return;
+    setIsLinkerOpen(forceLinkerOpen);
+  }, [forceLinkerOpen]);
 
   // ✅ SOLUCIÓ TYPESCRIPT: Tot coincideix amb la interfície Ingredient
   const handleUpdateIngredients = (updated: Ingredient[]) => {
