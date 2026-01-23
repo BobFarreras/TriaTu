@@ -106,6 +106,11 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
     alert('✅ Enllaç copiat!');
   };
 
+  const handleCopyRoomId = async () => {
+    await navigator.clipboard.writeText(room.id);
+    alert(t.room.room_id_copied || '✅ ID copiat!');
+  };
+
   return (
     <div className="max-w-6xl mx-auto pb-10 px-4 min-h-[calc(100vh-100px)] flex flex-col font-sans relative">
 
@@ -135,6 +140,7 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
         features={features} // Passem l'estat del hook
         onToggleFeature={toggleFeature} // Passem el handler del hook
         onCopyCode={handleShare}
+        onCopyRoomId={handleCopyRoomId}
         t={t}
       />
 
