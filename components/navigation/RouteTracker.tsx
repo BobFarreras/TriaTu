@@ -13,8 +13,10 @@ export function RouteTracker() {
     const fullPath = query ? `${pathname}${query}` : pathname;
     const prevPath = prevPathRef.current;
     if (pathname === '/recipes') {
-      if (prevPath && prevPath !== '/recipes') {
+      if (prevPath && !prevPath.startsWith('/recipes')) {
         sessionStorage.setItem('back-origin:/recipes', prevPath);
+      } else {
+        sessionStorage.removeItem('back-origin:/recipes');
       }
     } else {
       sessionStorage.setItem('back-origin:/recipes', fullPath);
