@@ -22,10 +22,11 @@ describe('Rooms Feature - RoomHeader', () => {
           roomName="Sala Prova"
           roomId="room-12345678"
           hostUserId="host-1"
-          participants={[{ userId: 'host-1' }, { userId: 'user-2' }]}
+          participants={[{ userId: 'host-1', name: 'Host' }, { userId: 'user-2', name: 'Ada' }]}
           currentUserId="host-1"
           onKick={() => {}}
           onCopyCode={() => {}}
+          onOpenSettings={() => {}}
         />
       </LanguageProvider>
     );
@@ -42,10 +43,11 @@ describe('Rooms Feature - RoomHeader', () => {
           roomName="Sala Prova"
           roomId="room-12345678"
           hostUserId="host-1"
-          participants={[{ userId: 'host-1' }, { userId: 'user-2' }]}
+          participants={[{ userId: 'host-1', name: 'Host' }, { userId: 'user-2', name: 'Ada' }]}
           currentUserId="host-1"
           onKick={() => {}}
           onCopyCode={() => {}}
+          onOpenSettings={() => {}}
         />
       </LanguageProvider>
     );

@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { useRealtimeRoom } from '../hooks/useRealtimeRoom';
 import { kickParticipantAction } from '@/app/actions/room-actions';
 import { DecisionControls, CandidateDTO } from './DecisionControls';
@@ -13,6 +13,7 @@ import { useRoomSimulation } from '@/features/rooms/hooks/useRoomSimulation';
 import { HistoryItem } from '../logic/history-types';
 import { RoomSettingsDrawer } from './RoomSettingsDrawer';
 import { useRoomFeatures } from '../hooks/useRoomFeatures'; // ✅ Importem el nou hook
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // ------ TYPES ------
 interface ModeToggleProps {
@@ -26,7 +27,7 @@ export type RoomDTO = {
   name: string;
   inviteCode: string;
   hostUserId: string;
-  participants: { userId: string }[];
+  participants: { userId: string; name?: string }[];
   history: HistoryItem[];
   votingMode: 'BLIND' | 'PUBLIC';
   enableInventory: boolean;
@@ -48,6 +49,8 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
   // State UI
   const [mode, setMode] = useState<'magic' | 'manual'>('manual');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [areControlsCollapsed, setAreControlsCollapsed] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<'decisions' | 'history'>('decisions');
   const isHost = room.hostUserId === currentUserId;
 
   // 1. Custom Hook per Features (Lògica extreta) ✅
@@ -58,10 +61,44 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
     room.enableShoppingList
   );
   // 2. Custom Hooks existents
-  const { steps, isActive: isTourActive, currentStepIndex, nextStep } = useRoomTour();
+  const { steps, isActive: isTourActive, currentStepIndex, nextStep } = useRoomTour({
+    includeSettingsStep: isHost
+  });
   const simulation = useRoomSimulation(
-    room, currentUserId, initialCandidates, isTourActive, currentStepIndex, nextStep
+    room, currentUserId, initialCandidates, isTourActive, currentStepIndex, nextStep, steps
   );
+
+  useEffect(() => {
+    if (!isTourActive) return;
+    const historyStepIndex = steps.findIndex((step) => step.targetId === 'tour-room-history');
+    if (historyStepIndex !== -1 && currentStepIndex >= historyStepIndex) {
+      setMobilePanel('history');
+      return;
+    }
+    setMobilePanel('decisions');
+  }, [currentStepIndex, isTourActive, steps]);
+
+  useEffect(() => {
+    if (!isTourActive) return;
+    const settingsStepIndex = steps.findIndex((step) => step.targetId === 'tour-room-settings');
+    if (settingsStepIndex === -1) return;
+    if (currentStepIndex === settingsStepIndex) {
+      setIsSettingsOpen(true);
+      return;
+    }
+    setIsSettingsOpen(false);
+  }, [currentStepIndex, isTourActive, steps]);
+
+  useEffect(() => {
+    if (isTourActive) return;
+    if (typeof window === 'undefined') return;
+    const key = `room-mobile-first-visit:${room.id}`;
+    const hasVisited = window.localStorage.getItem(key);
+    if (!hasVisited) {
+      setMobilePanel('history');
+      window.localStorage.setItem(key, '1');
+    }
+  }, [isTourActive, room.id]);
 
   // 3. Actions Simples
   const handleKick = (userIdToKick: string) => {
@@ -94,6 +131,7 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
           onKick={handleKick}
           onOpenSettings={() => setIsSettingsOpen(true)}
           onCopyCode={handleShare}
+          headerActions={!isE2E ? <TourTrigger tourId="room-guide" steps={steps} /> : null}
         />
       </div>
 
@@ -109,37 +147,84 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
         t={t}
       />
 
-      {!isE2E && (
-        <div className="fixed top-4 right-4 z-50">
-          <TourTrigger tourId="room-guide" steps={steps} />
-        </div>
-      )}
-
       <div className="flex flex-col lg:flex-row gap-6 flex-1 items-start">
         <div className="flex-1 w-full bg-zinc-900/90 backdrop-blur-xl rounded-[2.5rem] border-[6px] border-zinc-800 shadow-2xl overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-500 z-10">
-          <div id="tour-room-mode" className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-black/60 backdrop-blur-md rounded-full p-1.5 flex shadow-inner border border-zinc-700">
-            <ModeToggle mode={mode} setMode={setMode} t={t} />
-          </div>
+          <div className="flex-1 p-4 md:p-8 flex flex-col gap-4">
+            <div id="tour-room-mode" className="bg-black/60 backdrop-blur-md rounded-full p-1.5 flex shadow-inner border border-zinc-700 self-center">
+              <ModeToggle mode={mode} setMode={setMode} t={t} />
+              <button
+                type="button"
+                onClick={() => setAreControlsCollapsed((prev) => !prev)}
+                className="ml-2 h-8 w-8 rounded-full bg-zinc-800/80 border border-zinc-700 flex items-center justify-center text-gray-300 hover:bg-zinc-700 transition-colors"
+                aria-expanded={!areControlsCollapsed}
+                aria-label="Toggle controls"
+              >
+                {areControlsCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+              </button>
+            </div>
 
-          <div id="tour-room-controls" className="flex-1 p-4 pt-20 md:p-8 md:pt-24">
-            <DecisionControls
-              roomId={room.id}
-              userId={currentUserId}
-              isHost={isHost}
-              mode={mode}
-              candidates={simulation.displayCandidates}
-              votingMode={room.votingMode}
-              simulatedInputValue={simulation.simInput}
-              isSimulatingLoading={simulation.isSimLoading}
-              onSimulatedAdd={simulation.handlers.onSimulatedAdd}
-            />
-            {isTourActive && currentStepIndex === 4 && (
-              <div onClick={simulation.handlers.onSimulatedDecide} className="absolute bottom-0 left-0 w-full h-24 z-50 cursor-pointer" />
+            {!areControlsCollapsed && (
+              <>
+                <div className="lg:hidden flex items-center justify-center gap-2 bg-zinc-900/70 border border-zinc-800 rounded-2xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => setMobilePanel('decisions')}
+                    className={`px-4 py-2 text-xs font-black rounded-xl transition-colors ${mobilePanel === 'decisions' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+                  >
+                    {t.room.decisions_tab}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobilePanel('history')}
+                    className={`px-4 py-2 text-xs font-black rounded-xl transition-colors ${mobilePanel === 'history' ? 'bg-emerald-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+                  >
+                    {t.room.history_tab}
+                  </button>
+                </div>
+
+                <div id="tour-room-controls" className="flex-1">
+                  <div className="lg:hidden">
+                    {mobilePanel === 'history' ? (
+                      <div id="tour-room-history">
+                        <HistoryList history={simulation.displayHistory} />
+                      </div>
+                    ) : (
+                      <DecisionControls
+                        roomId={room.id}
+                        userId={currentUserId}
+                        isHost={isHost}
+                        mode={mode}
+                        candidates={simulation.displayCandidates}
+                        votingMode={room.votingMode}
+                        simulatedInputValue={simulation.simInput}
+                        isSimulatingLoading={simulation.isSimLoading}
+                        onSimulatedAdd={simulation.handlers.onSimulatedAdd}
+                      />
+                    )}
+                  </div>
+                  <div className="hidden lg:block">
+                    <DecisionControls
+                      roomId={room.id}
+                      userId={currentUserId}
+                      isHost={isHost}
+                      mode={mode}
+                      candidates={simulation.displayCandidates}
+                      votingMode={room.votingMode}
+                      simulatedInputValue={simulation.simInput}
+                      isSimulatingLoading={simulation.isSimLoading}
+                      onSimulatedAdd={simulation.handlers.onSimulatedAdd}
+                    />
+                  </div>
+                {isTourActive && currentStepIndex === simulation.actionStepIndex && (
+                  <div onClick={simulation.handlers.onSimulatedDecide} className="absolute bottom-0 left-0 w-full h-24 z-50 cursor-pointer" />
+                )}
+                </div>
+              </>
             )}
           </div>
         </div>
 
-        <div id="tour-room-history" className="lg:w-md w-full shrink-0 space-y-4 lg:sticky lg:top-4">
+        <div id="tour-room-history" className="hidden lg:block lg:w-md w-full shrink-0 space-y-4 lg:sticky lg:top-4">
           <HistoryList history={simulation.displayHistory} />
         </div>
       </div>

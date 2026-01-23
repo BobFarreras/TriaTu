@@ -1,6 +1,7 @@
 // features/rooms/components/RoomHeader.tsx
 'use client';
 
+import type { ReactNode } from 'react';
 import { Settings, LogOut, Share2 } from 'lucide-react';
 import { ParticipantsDock } from './ParticipantsDock';
 import Link from 'next/link';
@@ -9,12 +10,13 @@ interface Props {
   roomName: string;
   roomId: string;
   hostUserId: string;
-  participants: { userId: string }[];
+  participants: { userId: string; name?: string }[];
   currentUserId: string;
   onKick: (userId: string) => void;
   onOpenSettings: () => void;
   // ✅ CORRECCIÓ: Afegim la propietat que faltava
   onCopyCode: () => void; 
+  headerActions?: ReactNode;
 }
 
 export function RoomHeader({ 
@@ -25,7 +27,8 @@ export function RoomHeader({
   currentUserId, 
   onKick, 
   onOpenSettings,
-  onCopyCode 
+  onCopyCode,
+  headerActions
 }: Props) {
   const isHost = currentUserId === hostUserId;
 
@@ -60,6 +63,12 @@ export function RoomHeader({
       </div>
 
       <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+        {headerActions && (
+          <div className="flex items-center gap-2">
+            {headerActions}
+          </div>
+        )}
+
         {/* Share Mobile */}
         <button
           onClick={onCopyCode}

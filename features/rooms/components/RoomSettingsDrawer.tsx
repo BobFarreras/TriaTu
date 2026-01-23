@@ -76,7 +76,9 @@ export function RoomSettingsDrawer({
       />
       
       {/* DRAWER / MODAL CONTAINER */}
-      <div className={`
+      <div
+        id="tour-room-settings"
+        className={`
         fixed z-50 bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden
         
         /* ✨ ANIMACIÓ DE FLUX (Fluid Physics) ✨ */
@@ -94,7 +96,8 @@ export function RoomSettingsDrawer({
         md:w-125 md:h-auto md:max-h-[85vh]
         md:rounded-[2.5rem] 
         md:zoom-in-95 md:slide-in-from-bottom-0 /* Resetegem slide en desktop */
-      `}>
+      `}
+      >
         
         {/* Mobile Handle (Indicador visual) */}
         <div className="w-full flex justify-center pt-4 md:hidden" onClick={onClose}>

@@ -118,6 +118,8 @@ export const es = {
     decide_roll: '🎲 ¡Tirar los Dados!',
     waiting_host: 'Esperando al Anfitrión...',
     history_title: 'Historial',
+    decisions_tab: 'Decisiones',
+    history_tab: 'Lista',
     trophy_empty_title: 'Sala de Trofeos vacía',
     trophy_empty_desc: 'Aún no se ha tomado ninguna decisión.',
     wall_fame: 'Muro de la Fama',
@@ -136,7 +138,7 @@ export const es = {
     share_title: "Únete a '{name}'",
     share_text: "¡Ey! Ayúdame a decidir qué hacemos en la sala '{name}'. Entra aquí:",
     history: {
-      title: "Muro de la Fama",
+      title: "Lista de decisiones",
       empty: "Aún no hay trofeos",
       type_recipe: "Receta",
       type_algo: "Algoritmo",
@@ -906,6 +908,9 @@ export const es = {
     room: {
       step1_title: "¡Bienvenido a la Sala! 👋",
       step1_desc: "Aquí puedes ver quién está conectado e invitar amigos a unirse a la sala.",
+
+      step_settings_title: "Ajustes de la sala ⚙️",
+      step_settings_desc: "Abre este panel para activar la despensa compartida, la lista de compra o eliminar la sala (solo Host).",
 
       step2_title: "¿Modo Mágico o Manual? ✨",
       step2_desc: "Elige 'Mágico' para dejar que la IA decida o 'Manual' para votar de forma democrática.",

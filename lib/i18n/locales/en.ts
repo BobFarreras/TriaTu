@@ -133,8 +133,10 @@ export const en = {
     copy_error: "Error copying link",
     share_title: "Join '{name}'",
     share_text: "Hey! Help me decide in room '{name}'. Join here:",
+    decisions_tab: 'Decisions',
+    history_tab: 'Decision list',
     history: {
-      title: "Wall of Fame",
+      title: "Decision list",
       empty: "There are no trophies yet",
       type_recipe: "Recipe",
       type_algo: "Algorithm",
@@ -907,6 +909,9 @@ export const en = {
     room: {
       step1_title: "Welcome to the Room! 👋",
       step1_desc: "Here you can see who’s connected and invite friends to join the room.",
+
+      step_settings_title: "Room Settings ⚙️",
+      step_settings_desc: "Open this panel to enable the shared pantry, shopping list, or delete the room (Host only).",
 
       step2_title: "Magic or Manual Mode? ✨",
       step2_desc: "Choose 'Magic' to let the AI decide or 'Manual' to vote democratically.",
