@@ -1,16 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { joinRoomByInputAction } from '@/app/actions/room-actions';
 import { createClient } from '@/adapters/supabase/server';
-import { container } from '@/services/container';
 
 vi.mock('@/adapters/supabase/server', () => ({
   createClient: vi.fn()
 }));
 
 vi.mock('@/services/container', () => ({
-  container: {
-    getJoinDecisionRoom: vi.fn()
-  }
+  container: {}
 }));
 
 describe('joinRoomByInputAction', () => {
@@ -26,42 +23,44 @@ describe('joinRoomByInputAction', () => {
   });
 
   it('joins by invite code when input is not a uuid', async () => {
-    const execute = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(container.getJoinDecisionRoom).mockReturnValue({ execute } as never);
-
-    const fromMock = vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({ data: { id: '9f03b1b5-2e6b-4b29-b0f2-c2c8c1f6b0aa' }, error: null })
-        }))
+    const selectRoom = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: { id: '9f03b1b5-2e6b-4b29-b0f2-c2c8c1f6b0aa' }, error: null })
       }))
     }));
+    const insertParticipant = vi.fn().mockResolvedValue({ error: null });
+    const fromMock = vi.fn((table: string) => {
+      if (table === 'decision_rooms') return { select: selectRoom };
+      if (table === 'room_participants') return { insert: insertParticipant };
+      return null;
+    });
     vi.mocked(createClient).mockResolvedValue({ from: fromMock } as never);
 
     const result = await joinRoomByInputAction('INVITE-CODE', userId);
 
     expect(result).toEqual({ success: true, roomId: '9f03b1b5-2e6b-4b29-b0f2-c2c8c1f6b0aa' });
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(insertParticipant).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to invite code when uuid is not found', async () => {
-    const execute = vi.fn()
-      .mockImplementationOnce(() => { throw new Error('Room not found: 3a43f713-d60c-4014-8628-ae31737acb96'); })
-      .mockResolvedValueOnce(undefined);
-    vi.mocked(container.getJoinDecisionRoom).mockReturnValue({ execute } as never);
-
-    const fromMock = vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({ data: { id: '0b9c7a02-8fdb-4f1e-9b5d-7b5c3b7e9a52' }, error: null })
-        }))
+    const selectRoom = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: { id: '0b9c7a02-8fdb-4f1e-9b5d-7b5c3b7e9a52' }, error: null })
       }))
     }));
+    const insertParticipant = vi.fn()
+      .mockResolvedValueOnce({ error: { code: '23503' } })
+      .mockResolvedValueOnce({ error: null });
+    const fromMock = vi.fn((table: string) => {
+      if (table === 'decision_rooms') return { select: selectRoom };
+      if (table === 'room_participants') return { insert: insertParticipant };
+      return null;
+    });
     vi.mocked(createClient).mockResolvedValue({ from: fromMock } as never);
 
     const result = await joinRoomByInputAction('3a43f713-d60c-4014-8628-ae31737acb96', userId);
 
     expect(result).toEqual({ success: true, roomId: '0b9c7a02-8fdb-4f1e-9b5d-7b5c3b7e9a52' });
-    expect(execute).toHaveBeenCalledTimes(2);
+    expect(insertParticipant).toHaveBeenCalledTimes(2);
   });
 });

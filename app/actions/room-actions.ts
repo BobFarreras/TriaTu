@@ -109,15 +109,45 @@ export async function joinRoomAction(roomId: string, userId: string): Promise<Ac
   }
 }
 
+async function joinRoomByIdInternal(roomId: string, userId: string): Promise<ActionState> {
+  const validation = ParticipantActionSchema.safeParse({ roomId, userId });
+  if (!validation.success) return { success: false, error: getZodError(validation.error) };
+
+  try {
+    const supabase = await createClient();
+    const { error: joinError } = await supabase
+      .from('room_participants')
+      .insert({ room_id: roomId, user_id: userId });
+
+    if (joinError) {
+      if (joinError.code === '23505') {
+        revalidatePath(`/rooms/${roomId}`);
+        return { success: true, roomId };
+      }
+      if (joinError.code === '23503') {
+        return { success: false, error: 'invalid_code' };
+      }
+      logActionError('joinRoomByIdInternal', 'joinRoomByIdInternal insert failed', joinError);
+      return { success: false, error: 'db_error' };
+    }
+
+    revalidatePath(`/rooms/${roomId}`);
+    return { success: true, roomId };
+  } catch (error) {
+    logActionError('joinRoomByIdInternal', 'joinRoomByIdInternal failed', error);
+    return { success: false, error: 'db_error' };
+  }
+}
+
 export async function joinRoomByInputAction(entry: string, userId: string): Promise<ActionState> {
   const trimmed = entry.trim();
   if (!trimmed) return { success: false, error: 'missing_code' };
 
   const isUuid = z.string().uuid().safeParse(trimmed).success;
   if (isUuid) {
-    const result = await joinRoomAction(trimmed, userId);
+    const result = await joinRoomByIdInternal(trimmed, userId);
     if (!result.error) return result;
-    if (!result.error.startsWith('Room not found:')) return result;
+    if (result.error !== 'invalid_code') return result;
   }
 
   try {
@@ -130,7 +160,7 @@ export async function joinRoomByInputAction(entry: string, userId: string): Prom
 
     if (error || !room) return { success: false, error: 'invalid_code' };
 
-    return joinRoomAction(room.id, userId);
+    return joinRoomByIdInternal(room.id, userId);
   } catch (error) {
     logActionError('joinRoomByInputAction', 'joinRoomByInputAction failed', error);
     return { success: false, error: 'invalid_code' };
