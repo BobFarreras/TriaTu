@@ -50,8 +50,13 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
   const [mode, setMode] = useState<'magic' | 'manual'>('manual');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [areControlsCollapsed, setAreControlsCollapsed] = useState(false);
-  const [mobilePanel, setMobilePanel] = useState<'decisions' | 'history'>('decisions');
+  const [userPanel, setUserPanel] = useState<'decisions' | 'history'>('decisions');
   const isHost = room.hostUserId === currentUserId;
+  const firstVisitKey = `room-mobile-first-visit:${room.id}`;
+  const [isFirstVisit] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !window.localStorage.getItem(firstVisitKey);
+  });
 
   // 1. Custom Hook per Features (Lògica extreta) ✅
   // ✅ 1. INICIALITZEM EL HOOK
@@ -69,36 +74,19 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
   );
 
   useEffect(() => {
-    if (!isTourActive) return;
-    const historyStepIndex = steps.findIndex((step) => step.targetId === 'tour-room-history');
-    if (historyStepIndex !== -1 && currentStepIndex >= historyStepIndex) {
-      setMobilePanel('history');
-      return;
-    }
-    setMobilePanel('decisions');
-  }, [currentStepIndex, isTourActive, steps]);
-
-  useEffect(() => {
-    if (!isTourActive) return;
-    const settingsStepIndex = steps.findIndex((step) => step.targetId === 'tour-room-settings');
-    if (settingsStepIndex === -1) return;
-    if (currentStepIndex === settingsStepIndex) {
-      setIsSettingsOpen(true);
-      return;
-    }
-    setIsSettingsOpen(false);
-  }, [currentStepIndex, isTourActive, steps]);
-
-  useEffect(() => {
     if (isTourActive) return;
     if (typeof window === 'undefined') return;
-    const key = `room-mobile-first-visit:${room.id}`;
-    const hasVisited = window.localStorage.getItem(key);
-    if (!hasVisited) {
-      setMobilePanel('history');
-      window.localStorage.setItem(key, '1');
+    if (isFirstVisit) {
+      window.localStorage.setItem(firstVisitKey, '1');
     }
-  }, [isTourActive, room.id]);
+  }, [firstVisitKey, isFirstVisit, isTourActive]);
+
+  const historyStepIndex = steps.findIndex((step) => step.targetId === 'tour-room-history');
+  const settingsStepIndex = steps.findIndex((step) => step.targetId === 'tour-room-settings');
+  const shouldForceHistory = (isTourActive && historyStepIndex !== -1 && currentStepIndex >= historyStepIndex)
+    || (!isTourActive && isFirstVisit);
+  const shouldForceSettingsOpen = isTourActive && settingsStepIndex !== -1 && currentStepIndex === settingsStepIndex;
+  const mobilePanel = shouldForceHistory ? 'history' : userPanel;
 
   // 3. Actions Simples
   const handleKick = (userIdToKick: string) => {
@@ -136,8 +124,11 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
       </div>
 
       <RoomSettingsDrawer
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        isOpen={isSettingsOpen || shouldForceSettingsOpen}
+        onClose={() => {
+          if (shouldForceSettingsOpen) return;
+          setIsSettingsOpen(false);
+        }}
         roomId={room.id}
         roomName={room.name}
         isHost={isHost}
@@ -168,14 +159,14 @@ export function RoomDetail({ room, currentUserId, initialCandidates }: RoomDetai
                 <div className="lg:hidden flex items-center justify-center gap-2 bg-zinc-900/70 border border-zinc-800 rounded-2xl p-1">
                   <button
                     type="button"
-                    onClick={() => setMobilePanel('decisions')}
+                    onClick={() => setUserPanel('decisions')}
                     className={`px-4 py-2 text-xs font-black rounded-xl transition-colors ${mobilePanel === 'decisions' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white'}`}
                   >
                     {t.room.decisions_tab}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMobilePanel('history')}
+                    onClick={() => setUserPanel('history')}
                     className={`px-4 py-2 text-xs font-black rounded-xl transition-colors ${mobilePanel === 'history' ? 'bg-emerald-600 text-white' : 'text-zinc-400 hover:text-white'}`}
                   >
                     {t.room.history_tab}
