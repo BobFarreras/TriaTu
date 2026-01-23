@@ -3,6 +3,7 @@ import { container } from '@/services/container';
 import { RecipeEditor } from '@/features/recipes/components/editor/RecipeEditor';
 import { redirect, notFound } from 'next/navigation';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
+import { OnboardingOverlay } from '@/components/onboarding/OnboardingOverlay';
 import { InventoryItemUI } from '@/features/recipes/components/editor/types';
 import { Recipe } from '@/core/domain/entities/Recipe';
 import { InventoryItem } from '@/core/domain/entities/InventoryItem';
@@ -47,6 +48,7 @@ export default async function EditRecipePage({ params }: PageProps) {
 
   return (
     <OnboardingProvider>
+      <OnboardingOverlay />
       <div className="h-dvh overflow-hidden flex flex-col">
         {/* Passem la recepta existent com a punt de partida */}
         <RecipeEditor 

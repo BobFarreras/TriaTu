@@ -81,6 +81,7 @@ L'usuari prem un botó en una feature:
 - El linker d'ingredients de receptes expandeix queries amb `SearchQueryBuilder` per millorar el match.
 - El modal de cost de receptes permet cercar manualment productes per ingredient.
 - Rooms: es pot unir a una sala amb enllaç d'invitació o amb ID; l'host pot copiar l'ID des dels ajustos.
+- L'editor de receptes té tour d'onboarding disponible a crear i editar (via TourTrigger).
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 - Prompts IA: es resolen via `PromptService` (LangSmith + fallback local).
 

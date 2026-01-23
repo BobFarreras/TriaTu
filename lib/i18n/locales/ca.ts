@@ -814,28 +814,28 @@ export const ca = {
     // Aquí posarem els textos específics de l'editor
     editor: {
       step1_title: "1. Bateja la teva creació",
-      step1_desc: "Tot comença amb un bon nom. Escriu alguna cosa que faci venir gana!",
+      step1_desc: "Tot comença amb un bon nom. Ex: \"Pizza casolana\" o \"Arròs verd\".",
 
       step2_title: "2. El Temps és Or",
-      step2_desc: "Quan trigarem? Sigues realista, no volem que se'ns cremi l'arròs.",
+      step2_desc: "Quan trigarem? Ex: 30 min. Sigues realista, no volem que se'ns cremi l'arròs.",
 
       step3_title: "3. Etiqueta-ho",
-      step3_desc: "És Vegà? Sense Gluten? Picant? Ajuda a la gent a filtrar.",
+      step3_desc: "És Vegà? Sense Gluten? Picant? Marca 2-3 etiquetes clares.",
 
       step4_title: "4. A la Cistella!",
-      step4_desc: "Busca ingredients (ex: 'Ceba') i afegeix quantitats. Fes servir el teu inventari!",
+      step4_desc: "Busca ingredients (ex: \"Ceba\") i afegeix quantitats. Fes servir el teu inventari!",
 
       step5_title: "5. Gestió d'Ingredients",
-      step5_desc: "Aquí veuràs la llista. Si t'equivoques, clica la icona per esborrar-los.",
+      step5_desc: "Revisa la llista. Si t'equivoques, esborra o ajusta quantitats.",
 
       step6_title: "6. La Màgia (Pas a Pas)",
-      step6_desc: "Explica com es fa. Sigues clar i concís.",
+      step6_desc: "Explica com es fa amb frases curtes. Ex: \"Bull l'aigua i afegeix la pasta\".",
 
       step7_title: "7. Superpoder: Inserció Ràpida",
-      step7_desc: "Clica aquests ingredients per afegir-los al text amb la seva icona. Queda súper pro!",
+      step7_desc: "Clica ingredients per inserir-los al text amb icona. És més visual!",
 
       step8_title: "8. Publicar",
-      step8_desc: "Revisa-ho tot i prem el botó màgic per guardar."
+      step8_desc: "Revisa-ho tot i guarda. Pots editar-ho més tard."
     },
     dashboard: {
       step1_title: "Benvingut a la Cuina! 🏠",

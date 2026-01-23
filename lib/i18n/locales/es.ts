@@ -799,28 +799,28 @@ export const es = {
     // Aquí pondremos los textos específicos del editor
     editor: {
       step1_title: "1. Bautiza tu creación",
-      step1_desc: "Todo empieza con un buen nombre. ¡Escribe algo que abra el apetito!",
+      step1_desc: "Todo empieza con un buen nombre. Ej: \"Pizza casera\" o \"Arroz verde\".",
 
       step2_title: "2. El Tiempo es Oro",
-      step2_desc: "¿Cuánto tardaremos? Sé realista, no queremos que se nos queme el arroz.",
+      step2_desc: "¿Cuánto tardaremos? Ej: 30 min. Sé realista, no queremos que se nos queme el arroz.",
 
       step3_title: "3. Etiquétalo",
-      step3_desc: "¿Es Vegano? ¿Sin Gluten? ¿Picante? Ayuda a la gente a filtrar.",
+      step3_desc: "¿Es Vegano? ¿Sin Gluten? ¿Picante? Marca 2-3 etiquetas claras.",
 
       step4_title: "4. ¡A la Cesta!",
-      step4_desc: "Busca ingredientes (ej: 'Cebolla') y añade cantidades. ¡Usa tu inventario!",
+      step4_desc: "Busca ingredientes (ej: \"Cebolla\") y añade cantidades. ¡Usa tu inventario!",
 
       step5_title: "5. Gestión de Ingredientes",
-      step5_desc: "Aquí verás la lista. Si te equivocas, haz clic en el icono para eliminarlos.",
+      step5_desc: "Revisa la lista. Si te equivocas, borra o ajusta cantidades.",
 
       step6_title: "6. La Magia (Paso a Paso)",
-      step6_desc: "Explica cómo se hace. Sé claro y conciso.",
+      step6_desc: "Explica cómo se hace con frases cortas. Ej: \"Hierve el agua y añade la pasta\".",
 
       step7_title: "7. Superpoder: Inserción Rápida",
-      step7_desc: "Haz clic en estos ingredientes para añadirlos al texto con su icono. ¡Queda súper pro!",
+      step7_desc: "Haz clic en ingredientes para insertarlos con su icono. Es más visual.",
 
       step8_title: "8. Publicar",
-      step8_desc: "Revísalo todo y pulsa el botón mágico para guardar."
+      step8_desc: "Revísalo todo y guarda. Puedes editarlo más tarde."
     },
     dashboard: {
       step1_title: "¡Bienvenido a la Cocina! 🏠",

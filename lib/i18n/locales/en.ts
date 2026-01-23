@@ -800,28 +800,28 @@ export const en = {
     // Here we will place the editor-specific texts
     editor: {
       step1_title: "1. Name Your Creation",
-      step1_desc: "Everything starts with a good name. Write something that makes people hungry!",
+      step1_desc: "Everything starts with a good name. E.g. \"Homemade pizza\" or \"Green rice\".",
 
       step2_title: "2. Time Is Gold",
-      step2_desc: "How long will it take? Be realistic—we don't want to burn the rice.",
+      step2_desc: "How long will it take? E.g. 30 min. Be realistic—we don't want to burn the rice.",
 
       step3_title: "3. Tag It",
-      step3_desc: "Is it Vegan? Gluten-Free? Spicy? Help people filter it.",
+      step3_desc: "Is it Vegan? Gluten-Free? Spicy? Pick 2-3 clear tags.",
 
       step4_title: "4. Into the Basket!",
-      step4_desc: "Search for ingredients (e.g. 'Onion') and add quantities. Use your inventory!",
+      step4_desc: "Search for ingredients (e.g. \"Onion\") and add quantities. Use your inventory!",
 
       step5_title: "5. Ingredient Management",
-      step5_desc: "Here you'll see the list. If you make a mistake, click the icon to remove them.",
+      step5_desc: "Review the list. If you make a mistake, remove or adjust quantities.",
 
       step6_title: "6. The Magic (Step by Step)",
-      step6_desc: "Explain how it's made. Be clear and concise.",
+      step6_desc: "Explain how it's made with short sentences. E.g. \"Boil water and add pasta\".",
 
       step7_title: "7. Superpower: Quick Insert",
-      step7_desc: "Click these ingredients to add them to the text with their icon. It looks super pro!",
+      step7_desc: "Click ingredients to insert them with their icon. It reads better.",
 
       step8_title: "8. Publish",
-      step8_desc: "Review everything and press the magic button to save."
+      step8_desc: "Review everything and save. You can edit it later."
     },
     dashboard: {
       step1_title: "Welcome to the Kitchen! 🏠",
