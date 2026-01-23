@@ -8,9 +8,10 @@ interface Props {
   content: string; // TypeScript diu string, però pot arribar null en runtime
   ingredients: Ingredient[];
   interactive?: boolean;
+  inlinePreview?: boolean;
 }
 
-export function HighlightedContent({ content, ingredients, interactive = false }: Props) {
+export function HighlightedContent({ content, ingredients, interactive = false, inlinePreview = false }: Props) {
   // ✅ 1. PROTECCIÓ ROBUSTA: Si no hi ha contingut o no és string, retornem null
   if (!content || typeof content !== 'string') return null;
 
@@ -18,7 +19,7 @@ export function HighlightedContent({ content, ingredients, interactive = false }
   const parts = content.split(/(\[.*?\]|⏰\s*\d+\s*(?:min|minuts|minutes|s|segons)?)/g);
 
   return (
-    <p className="whitespace-pre-wrap leading-relaxed text-base text-slate-300">
+    <span className="whitespace-pre-wrap leading-relaxed text-base text-slate-300 m-0">
       {parts.map((part, i) => {
         const key = `part-${i}-${part.substring(0, 5)}`;
 
@@ -42,6 +43,17 @@ export function HighlightedContent({ content, ingredients, interactive = false }
           // Busquem l'ingredient complet a la llista per tenir imatge/preu
           const ingredientData = ingredients.find((ing) => ing.name === cleanName);
 
+          if (inlinePreview) {
+            return (
+              <span
+                key={key}
+                className="inline-block align-baseline bg-slate-800/60 text-emerald-200 rounded px-1.5 border border-slate-700/60"
+              >
+                {cleanName}
+              </span>
+            );
+          }
+
           return (
             <IngredientChip 
                 key={key} 
@@ -54,6 +66,6 @@ export function HighlightedContent({ content, ingredients, interactive = false }
         // CAS 3: Text normal
         return <span key={key}>{part}</span>;
       })}
-    </p>
+    </span>
   );
 }
