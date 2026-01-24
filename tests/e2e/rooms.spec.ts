@@ -127,19 +127,25 @@ test.describe('rooms', () => {
     });
 
     await test.step('toggle inventory feature', async () => {
-      await page.locator('[data-testid="room-feature-inventory-enable"]').click();
-      await expect(page.locator('[data-testid="room-feature-inventory-open"]')).toBeVisible();
-
-      await page.locator('[data-testid="room-feature-inventory-disable"]').click();
-      await expect(page.locator('[data-testid="room-feature-inventory-open"]')).toHaveCount(0);
+      await page.locator('[data-testid="room-settings-open"]').click();
+      const toggle = page.locator('[data-testid="room-feature-inventory-toggle"]');
+      await expect(toggle).toBeVisible();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
     });
 
     await test.step('toggle shopping list feature', async () => {
-      await page.locator('[data-testid="room-feature-shopping-enable"]').click();
-      await expect(page.locator('[data-testid="room-feature-shopping-open"]')).toBeVisible();
-
-      await page.locator('[data-testid="room-feature-shopping-disable"]').click();
-      await expect(page.locator('[data-testid="room-feature-shopping-open"]')).toHaveCount(0);
+      const toggle = page.locator('[data-testid="room-feature-shopping-toggle"]');
+      if (!(await toggle.isVisible())) {
+        await page.locator('[data-testid="room-settings-open"]').click();
+      }
+      await expect(toggle).toBeVisible();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
     });
 
     await test.step('cleanup room and user', async () => {

@@ -97,7 +97,7 @@ export function NavigationPanel() {
         <div className="z-10 flex flex-col justify-center">
           {/* Badge opcional si tens el count */}
           {/* <span className="text-[9px] font-black text-purple-200 bg-purple-800/30 px-2 py-0.5 rounded w-fit mb-0.5">PENDENT</span> */}
-          <h3 className="text-lg md:text-xl font-black text-white leading-none tracking-tight">Llista Compra</h3>
+          <h3 className="text-lg md:text-xl font-black text-white leading-none tracking-tight">{t.dashboard.nav.shopping_list}</h3>
         </div>
         <span className="text-3xl md:text-5xl filter drop-shadow-lg group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300">📝</span>
       </Link>

@@ -1,7 +1,7 @@
 // src/components/recipes/IngredientsManager.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Ingredient } from './types';
 import { EditorData, InventoryItemUI, IngredientsLabels } from './types';
 import { useIngredientsManager } from '../ingredients/useIngredientsManager';
@@ -40,12 +40,12 @@ export function IngredientsManager({
     removeIngredient 
   } = useIngredientsManager(data, update);
 
-  const [isLinkerOpen, setIsLinkerOpen] = useState(false);
-
-  useEffect(() => {
-    if (forceLinkerOpen === undefined) return;
-    setIsLinkerOpen(forceLinkerOpen);
-  }, [forceLinkerOpen]);
+  const [localIsLinkerOpen, setLocalIsLinkerOpen] = useState(false);
+  const isLinkerOpen = forceLinkerOpen ?? localIsLinkerOpen;
+  const setIsLinkerOpen = (next: boolean) => {
+    if (forceLinkerOpen !== undefined) return;
+    setLocalIsLinkerOpen(next);
+  };
 
   // ✅ SOLUCIÓ TYPESCRIPT: Tot coincideix amb la interfície Ingredient
   const handleUpdateIngredients = (updated: Ingredient[]) => {

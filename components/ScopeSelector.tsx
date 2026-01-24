@@ -1,6 +1,7 @@
 'use client';
 
 import { Users, User, ChevronDown } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Props {
   scope: string;
@@ -16,11 +17,15 @@ export function ScopeSelector({
   scope,
   setScope,
   rooms,
-  personalLabel = 'Personal',
-  sharedLabel = 'Sales Compartides',
+  personalLabel,
+  sharedLabel,
   testId,
   className
 }: Props) {
+  const { t } = useLanguage();
+  const resolvedPersonalLabel = personalLabel ?? t.common.scope_personal;
+  const resolvedSharedLabel = sharedLabel ?? t.common.scope_shared;
+
   if (rooms.length === 0) return null;
 
   return (
@@ -34,8 +39,8 @@ export function ScopeSelector({
         data-testid={testId}
         className="appearance-none bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-medium py-2 pl-9 pr-8 rounded-full border border-slate-700 hover:border-emerald-500/50 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
       >
-        <option value="PERSONAL">👤 {personalLabel}</option>
-        <optgroup label={sharedLabel}>
+        <option value="PERSONAL">👤 {resolvedPersonalLabel}</option>
+        <optgroup label={resolvedSharedLabel}>
           {rooms.map((room) => (
             <option key={room.id} value={room.id}>🏠 {room.name}</option>
           ))}

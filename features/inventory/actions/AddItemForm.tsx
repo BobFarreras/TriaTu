@@ -8,11 +8,11 @@ import { SmartDatePicker } from '../ui/SmartDatePicker';
 
 
 type UnitType = 'ut' | 'kg' | 'l' | 'g';
-const units: { val: UnitType; icon: string; label: string }[] = [
-  { val: 'ut', icon: '📦', label: 'Unit' },
-  { val: 'kg', icon: '⚖️', label: 'Kg' },
-  { val: 'l', icon: '💧', label: 'L' },
-  { val: 'g', icon: '🤏', label: 'g' },
+const units: { val: UnitType; icon: string; labelKey: 'ut' | 'kg' | 'l' | 'g' }[] = [
+  { val: 'ut', icon: '📦', labelKey: 'ut' },
+  { val: 'kg', icon: '⚖️', labelKey: 'kg' },
+  { val: 'l', icon: '💧', labelKey: 'l' },
+  { val: 'g', icon: '🤏', labelKey: 'g' },
 ];
 
 export function AddItemForm() {
@@ -138,7 +138,7 @@ export function AddItemForm() {
             name="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Què afegim al revost?"
+            placeholder={t.inventory.form.name_placeholder}
             className="w-full bg-transparent border-none px-6 text-2xl md:text-3xl font-bold text-white placeholder-slate-700 outline-none h-16"
             autoComplete="off"
           />
@@ -149,7 +149,7 @@ export function AddItemForm() {
 
           {/* Quantitat */}
           <div className="bg-slate-950/30 p-6 rounded-3xl border border-slate-800 flex flex-col justify-between h-full">
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Quantitat</label>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{t.inventory.form.quantity_label}</label>
 
             <div className="flex items-center gap-4 mb-6">
               <button type="button" onClick={() => handleQuantityChange(-1)} className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg">−</button>
@@ -177,9 +177,9 @@ export function AddItemForm() {
           <div className="flex flex-col gap-6">
             <div className="bg-slate-950/30 p-1 rounded-2xl border border-slate-800 grid grid-cols-3 gap-1">
               {[
-                { val: 'FRIDGE', icon: '❄️', label: 'Nevera' },
-                { val: 'PANTRY', icon: '🚪', label: 'Revost' },
-                { val: 'FREEZER', icon: '🧊', label: 'Congelador' }
+                { val: 'FRIDGE', icon: '❄️', label: t.inventory.form.location.fridge },
+                { val: 'PANTRY', icon: '🚪', label: t.inventory.form.location.pantry },
+                { val: 'FREEZER', icon: '🧊', label: t.inventory.form.location.freezer }
               ].map((opt) => (
                 <button
                   key={opt.val}
@@ -213,7 +213,7 @@ export function AddItemForm() {
           disabled={isSubmitting}
           className="w-full bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-black text-lg py-6 rounded-2xl shadow-xl shadow-purple-900/30 transform transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 tracking-widest uppercase border-t border-white/20"
         >
-          {isSubmitting ? 'Guardant...' : '📥 Guardar al Rebost'}
+          {isSubmitting ? t.inventory.actions.saving : t.inventory.actions.save}
         </button>
 
       </form>

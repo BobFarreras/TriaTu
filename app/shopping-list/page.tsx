@@ -2,9 +2,9 @@
 import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { redirect } from 'next/navigation';
-import { BackButton } from '@/components/ui/BackButton';
 import { ShoppingListManager } from '@/features/shoppingList/components/ShoppingListManager';
 import { getCurrentUser } from '@/lib/auth/session';
+import { ShoppingPageHeader } from '@/features/shoppingList/components/ShoppingPageHeader';
 
 // ✅ 1. IMPORTAR TOTS DOS: Provider (Lògica) i Overlay (Visual)
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
@@ -50,13 +50,7 @@ export default async function ShoppingListPage({ searchParams }: PageProps) {
     <main className="min-h-screen bg-slate-950 text-white p-4 pb-32">
       <div className="max-w-2xl mx-auto space-y-6">
 
-        <div className="flex items-center justify-between mb-6">
-          <BackButton/>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            📝 Compra Activa
-          </h1>
-
-        </div>
+        <ShoppingPageHeader />
 
         {/* ✅ 2. ESTRUCTURA CORRECTA D'ONBOARDING */}
         <OnboardingProvider>

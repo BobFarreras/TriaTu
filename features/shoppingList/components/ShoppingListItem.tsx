@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export interface ShoppingItemUI {
     id: string;
@@ -22,6 +23,7 @@ interface Props {
 
 export function ShoppingListItem({ item, onToggle }: Props) {
     const hasImage = !!item.productImage;
+    const { t } = useLanguage();
 
     return (
         <motion.div 
@@ -63,7 +65,7 @@ export function ShoppingListItem({ item, onToggle }: Props) {
                     </span>
                     {item.estimatedCost && !item.isChecked && (
                         <span className="text-[10px] text-emerald-400 font-mono">
-                            {item.estimatedCost.toFixed(2)}€ /ut
+                            {item.estimatedCost.toFixed(2)}{t.shoppingList.unit_price_suffix}
                         </span>
                     )}
                 </div>

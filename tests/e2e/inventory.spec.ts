@@ -89,8 +89,11 @@ test.describe('inventory', () => {
     });
 
     await test.step('enable inventory for room', async () => {
-      await page.locator('[data-testid="room-feature-inventory-enable"]').click();
-      await expect(page.locator('[data-testid="room-feature-inventory-open"]')).toBeVisible();
+      await page.locator('[data-testid="room-settings-open"]').click();
+      const toggle = page.locator('[data-testid="room-feature-inventory-toggle"]');
+      await expect(toggle).toBeVisible();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     });
 
     await test.step('add item in shared inventory', async () => {
@@ -185,8 +188,11 @@ test.describe('inventory', () => {
     });
 
     await test.step('enable inventory for room', async () => {
-      await page.locator('[data-testid="room-feature-inventory-enable"]').click();
-      await expect(page.locator('[data-testid="room-feature-inventory-open"]')).toBeVisible();
+      await page.locator('[data-testid="room-settings-open"]').click();
+      const toggle = page.locator('[data-testid="room-feature-inventory-toggle"]');
+      await expect(toggle).toBeVisible();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     });
 
     await test.step('add and consume inventory item', async () => {

@@ -2,23 +2,28 @@
 
 // ✅ FIX: Corregit 'taxonamy' -> 'taxonomy'
 import { FOOD_TAXONOMY, MainCategory } from '@/lib/taxonamy';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Props {
   onSelect: (cat: MainCategory) => void;
 }
 
 export function CategoryGrid({ onSelect }: Props) {
+  const { t } = useLanguage();
+
   return (
     <div className="p-2 pb-32">
        {/* HEADER DIVERTIT */}
        <div className="mb-6 text-center animate-in slide-in-from-top-4 fade-in duration-700">
-          <h2 className="text-3xl font-black text-white mb-1">Què afegim? 😋</h2>
-          <p className="text-slate-400 text-sm">Tria una secció per començar</p>
+          <h2 className="text-3xl font-black text-white mb-1">{t.inventory.explorer_title}</h2>
+          <p className="text-slate-400 text-sm">{t.inventory.explorer_subtitle}</p>
        </div>
 
        {/* GRID DE CATEGORIES (Masonry like) */}
        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {FOOD_TAXONOMY.map((cat, index) => (
+          {FOOD_TAXONOMY.map((cat, index) => {
+             const label = t.taxonomy.categories[cat.id as keyof typeof t.taxonomy.categories] ?? cat.label;
+             return (
              <button
                 key={cat.id}
                 onClick={() => onSelect(cat)}
@@ -46,13 +51,13 @@ export function CategoryGrid({ onSelect }: Props) {
                 
                 {/* Etiqueta */}
                 <span className="font-bold text-white text-sm tracking-wide drop-shadow-md relative z-10">
-                   {cat.label}
+                   {label}
                 </span>
 
                 {/* Decoració de fons (cercles) */}
                 <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-white/10 rounded-full blur-xl" />
              </button>
-          ))}
+          )})}
        </div>
        
        {/* Espai extra per no tapar amb el dock */}
