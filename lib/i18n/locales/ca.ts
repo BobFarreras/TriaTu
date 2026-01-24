@@ -640,7 +640,16 @@ export const ca = {
     aspirants: 'Aspirants',
     empty_list: 'Aquí no hi ha ningú... 👻',
     you_suffix: '(Tu)',
-    points_abbr: 'PTS'
+    points_abbr: 'PTS',
+    info_title: 'Com funciona la puntuació',
+    info_close: 'Tancar',
+    info_desc: 'La teva posició depèn de tres blocs de punts. La suma dona el total.',
+    info_quality: 'Reputació (estrelles)',
+    info_pantry: 'Hàbit (rebost al dia)',
+    info_community: 'Participació (vots i comunitat)',
+    info_total: 'Total',
+    info_total_hint: 'Qualitat + Rebost + Comunitat',
+    info_note: 'Les medalles s’assignen quan superes els llindars de cada bloc.'
   },
   inventory: {
     header: {

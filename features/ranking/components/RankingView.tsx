@@ -1,13 +1,16 @@
 'use client';
 
 
-import {Crown, Sparkles } from 'lucide-react';
+import { Crown, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext'; // ✅ Hook de traducció
 import { RankingPodium } from './RankingPodium';
 import { RankingList } from './RankingList';
 // Assegura't d'importar el tipus Player correctament segons la teva estructura
 import { Player } from '@/core/domain/entities/Player';
 import { BackButton } from '@/components/ui/BackButton';
+import { TourTrigger } from '@/components/onboarding/TourTrigger';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RankingInfoDialog } from './RankingInfoDialog';
 
 interface Props {
     podiumPlayers: Player[];
@@ -18,9 +21,63 @@ interface Props {
 
 export function RankingView({ podiumPlayers, listPlayers, currentUserId, totalPlayersCount }: Props) {
     const { t } = useLanguage(); // ✅ Accés a traduccions
+    const [isInfoOpen, setIsInfoOpen] = useState(false);
+    const [players, setPlayers] = useState(listPlayers);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [totalCount, setTotalCount] = useState(totalPlayersCount);
+    const listContainerRef = useRef<HTMLDivElement | null>(null);
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
+    const infoSteps = useMemo(() => [{ targetId: 'ranking-info-trigger', title: '', description: '' }], []);
+    const baseOffset = podiumPlayers.length;
+
+    useEffect(() => {
+        setPlayers(listPlayers);
+        setTotalCount(totalPlayersCount);
+    }, [listPlayers, totalPlayersCount]);
+
+    const loadMore = useCallback(async () => {
+        if (isLoadingMore) return;
+
+        const offset = baseOffset + players.length;
+        if (totalCount && offset >= totalCount) return;
+
+        setIsLoadingMore(true);
+        try {
+            const response = await fetch(`/api/ranking?offset=${offset}&limit=20`);
+            if (!response.ok) return;
+            const data = await response.json();
+            if (Array.isArray(data.players) && data.players.length > 0) {
+                setPlayers((prev) => [...prev, ...data.players]);
+            }
+            if (typeof data.totalCount === 'number') {
+                setTotalCount(data.totalCount);
+            }
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [baseOffset, isLoadingMore, players.length, totalCount]);
+
+    useEffect(() => {
+        const container = listContainerRef.current;
+        const target = loadMoreRef.current;
+        if (!container || !target) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    loadMore();
+                }
+            },
+            { root: container, rootMargin: '0px 0px 120px 0px', threshold: 0.1 }
+        );
+
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [loadMore]);
 
     return (
         <main className="min-h-dvh w-full bg-[#0d1117] relative overflow-hidden flex flex-col font-sans selection:bg-yellow-500/30">
+            <RankingInfoDialog isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
 
             {/* --- FONS "PARTY" ANIMAT --- */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -51,7 +108,12 @@ export function RankingView({ podiumPlayers, listPlayers, currentUserId, totalPl
                         </span>
                     </div>
 
-                    <div className="w-12"></div> {/* Espaiador */}
+                    <TourTrigger
+                        tourId="ranking-info"
+                        steps={infoSteps}
+                        onClick={() => setIsInfoOpen(true)}
+                        className="bg-slate-900 border-slate-800 text-yellow-400 hover:text-yellow-300"
+                    />
                 </div>
 
                 {/* PODI (Top 3) */}
@@ -73,8 +135,14 @@ export function RankingView({ podiumPlayers, listPlayers, currentUserId, totalPl
                         </span>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto min-h-0 p-3 no-scrollbar">
-                        <RankingList players={listPlayers} currentUserId={currentUserId} />
+                    <div ref={listContainerRef} className="flex-1 overflow-y-auto min-h-0 p-3 no-scrollbar">
+                        <RankingList players={players} currentUserId={currentUserId} />
+                        <div ref={loadMoreRef} className="h-6" />
+                        {isLoadingMore && (
+                            <div className="text-center py-4 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                                {t.common.loading}
+                            </div>
+                        )}
                     </div>
                 </div>
 

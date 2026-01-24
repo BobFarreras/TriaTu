@@ -22,7 +22,7 @@ hotfix/*          -> Correccions urgents
 - No fer merge directe a `main`.
 - PRs: `feature/*` -> `develop`.
 - `release/*` es crea des de `develop` i es mergeja a `main` i `develop`.
-- `hotfix/*` es crea des de `main` i es mergeja a `main` i `develop`.
+- `hotfix/*` es crea des de la versio de `realease`.
 - Abans de publicar, guarda la versio a `docs/releases/vX.Y.Z.md`.
 
 ## Nomenclatura recomanada

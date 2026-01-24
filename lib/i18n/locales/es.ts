@@ -629,7 +629,16 @@ export const es = {
     aspirants: 'Aspirantes',
     empty_list: 'Aquí no hay nadie... 👻',
     you_suffix: '(Tú)',
-    points_abbr: 'PTS'
+    points_abbr: 'PTS',
+    info_title: 'Cómo funciona la puntuación',
+    info_close: 'Cerrar',
+    info_desc: 'Tu posición depende de tres bloques de puntos. La suma da el total.',
+    info_quality: 'Reputación (estrellas)',
+    info_pantry: 'Hábito (despensa al día)',
+    info_community: 'Participación (votos y comunidad)',
+    info_total: 'Total',
+    info_total_hint: 'Calidad + Despensa + Comunidad',
+    info_note: 'Las medallas se asignan cuando superas los umbrales de cada bloque.'
   },
   inventory: {
     header: {

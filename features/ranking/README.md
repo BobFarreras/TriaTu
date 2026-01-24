@@ -9,6 +9,7 @@ Responsabilitats:
 
 Components clau:
 - `RankingView`, `RankingPodium`, `RankingList`.
+- `RankingInfoDialog` (explica la puntuacio amb modal).
 
 Estructura:
 - `components/` UI de ranking.
@@ -18,7 +19,15 @@ Estructura:
 - `index.ts` (exports publics).
 
 Flux principal:
-UI -> Server Actions (si cal) -> Repositoris.
+UI -> Server Components (`app/ranking/page.tsx`) -> Repositoris.
+
+Logica clau:
+- `sumRankingScore` agrega `qualityScore`, `pantryScore`, `communityScore` (valors absents = 0).
+- `RankingInfoDialog` es mostra via `TourTrigger` per explicar la puntuacio.
+- `RankingView` carrega el podi i la primera pagina, i fa load-more via `/api/ranking`.
 
 Tests:
-- Tests d'infra/repositoris relacionats.
+- `features/ranking/__tests__/score.test.ts` valida la suma de puntuacions.
+
+Docs:
+- `docs/ranking.md`
