@@ -1,9 +1,11 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { addToShoppingListAction } from '@/app/actions/shopping-list-actions';
 import { quickAddInventoryAction } from '@/app/actions/inventory'; // Aquesta és la que farem servir
+import { getMyInventoryRoomsAction, getMyShoppingRoomsAction } from '@/app/actions/room-actions';
+import { ScopeSelector } from '@/components/ScopeSelector';
 import { toast } from 'sonner';
 
 // ✅ INTERFÍCIE ACTUALITZADA (Ingredient Ric)
@@ -28,6 +30,31 @@ interface Props {
 
 export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState<'list' | 'inventory' | null>(null);
+  const [inventoryRooms, setInventoryRooms] = useState<{ id: string; name: string }[]>([]);
+  const [shoppingRooms, setShoppingRooms] = useState<{ id: string; name: string }[]>([]);
+  const [inventoryScope, setInventoryScope] = useState<string>('PERSONAL');
+  const [shoppingScope, setShoppingScope] = useState<string>('PERSONAL');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    getMyInventoryRoomsAction()
+      .then((rooms) => {
+        setInventoryRooms(rooms);
+        if (rooms.length > 0 && inventoryScope === 'PERSONAL') {
+          setInventoryScope(rooms[0].id);
+        }
+      })
+      .catch(() => {});
+
+    getMyShoppingRoomsAction()
+      .then((rooms) => {
+        setShoppingRooms(rooms);
+        if (rooms.length > 0 && shoppingScope === 'PERSONAL') {
+          setShoppingScope(rooms[0].id);
+        }
+      })
+      .catch(() => {});
+  }, [isOpen, inventoryScope, shoppingScope]);
 
   if (!isOpen || !ingredient) return null;
 
@@ -37,6 +64,7 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
 
   const handleAddToList = async () => {
     setLoading('list');
+    const roomId = shoppingScope === 'PERSONAL' ? undefined : shoppingScope;
 
     // ✅ Passem totes les dades rellevants
     const result = await addToShoppingListAction(
@@ -46,7 +74,8 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
       ingredient.emoji,
       ingredient.linkedProductId,   // ✅ ID
       ingredient.linkedProductImage,// ✅ Imatge (IMPORTANT!)
-      ingredient.estimatedCost      // ✅ Preu
+      ingredient.estimatedCost,     // ✅ Preu
+      roomId
     );
 
     if (result.success) {
@@ -60,6 +89,7 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
 
   const handleAddToInventory = async () => {
     setLoading('inventory');
+    const roomId = inventoryScope === 'PERSONAL' ? undefined : inventoryScope;
 
     // ✅ CRIDEM A L'ACCIÓ RÀPIDA AMB DADES RIQUES
     const result = await quickAddInventoryAction(
@@ -67,7 +97,8 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
       ingredient.quantity,
       ingredient.unit,
       ingredient.emoji,
-      ingredient.linkedProductId // ✅ Passem l'ID del producte si existeix
+      ingredient.linkedProductId, // ✅ Passem l'ID del producte si existeix
+      roomId
     );
 
     if (result.success) {
@@ -123,11 +154,25 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
                   <span className="text-2xl bg-slate-900 p-2 rounded-lg group-hover:scale-110 transition-transform">📝</span>
                   <div className="text-left">
                     <div className="font-bold text-slate-200">Afegir a la Llista</div>
-                    <div className="text-xs text-slate-400">Per comprar-ho més tard</div>
+                    <div className="text-xs text-slate-400">
+                      {shoppingScope === 'PERSONAL' ? 'Personal' : 'Compartida'}
+                    </div>
                   </div>
                 </div>
                 {loading === 'list' && <span className="animate-spin">⏳</span>}
               </button>
+              {shoppingRooms.length > 0 && (
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <span className="uppercase text-[10px] font-bold tracking-wider">Llista</span>
+                  <ScopeSelector
+                    scope={shoppingScope}
+                    setScope={setShoppingScope}
+                    rooms={shoppingRooms}
+                    personalLabel="Compra Personal"
+                    className="flex-1"
+                  />
+                </div>
+              )}
 
               <button
                 onClick={handleAddToInventory}
@@ -138,11 +183,25 @@ export function MissingIngredientDialog({ isOpen, ingredient, onClose, onSuccess
                   <span className="text-2xl bg-slate-900 p-2 rounded-lg group-hover:scale-110 transition-transform">📦</span>
                   <div className="text-left">
                     <div className="font-bold text-slate-200">Ja en tinc (Afegir stock)</div>
-                    <div className="text-xs text-slate-400">L'afegeix al rebost immediatament</div>
+                    <div className="text-xs text-slate-400">
+                      {inventoryScope === 'PERSONAL' ? 'Personal' : 'Compartit'}
+                    </div>
                   </div>
                 </div>
                 {loading === 'inventory' && <span className="animate-spin">⏳</span>}
               </button>
+              {inventoryRooms.length > 0 && (
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <span className="uppercase text-[10px] font-bold tracking-wider">Inventari</span>
+                  <ScopeSelector
+                    scope={inventoryScope}
+                    setScope={setInventoryScope}
+                    rooms={inventoryRooms}
+                    personalLabel="Inventari Personal"
+                    className="flex-1"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="p-4 bg-slate-950 border-t border-slate-800 text-center">

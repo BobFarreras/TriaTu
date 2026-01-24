@@ -77,6 +77,7 @@ export class CompleteShoppingSession {
       return InventoryItem.create({
         id: crypto.randomUUID(),
         userId: userId,
+        roomId: roomId || null,
         name: item.props.name,
         quantity: item.props.quantity,
         unit: item.props.unit,
@@ -86,7 +87,9 @@ export class CompleteShoppingSession {
         expiryDate: expiryDate, // ✅ Data calculada correctament
         addedAt: new Date(),
 
-        productId: item.props.productId || null // ✅ Només passem l'ID
+        productId: item.props.productId || null,
+        image: item.props.productImage || null,
+        price: item.props.estimatedCost || null
       });
     });
 

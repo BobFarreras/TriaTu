@@ -93,7 +93,7 @@ Nota d'UX: el tour d'onboarding de decisions individuals s'inicia manualment amb
 Nota IA: els prompts es resolen via `PromptService` amb LangSmith i fallback local.
 Nota productes: el filtratge de cerques de catàleg passa per `ProductSearchFilter` (Application) per mantenir coherència entre inventory i receptes, amb bloqueig per secció; la cerca manual fa fallback per termes i ofereix un item manual amb emoji si no hi ha resultats; tokens curts clau actuen com a àncores per evitar falsos positius; el linker d'ingredients fa servir `SearchQueryBuilder` per expandir queries; el modal de cost permet cerca manual per ingredient.
 Nota rooms: la unió a sales accepta enllaç d'invitació o ID; l'host pot copiar l'ID des dels ajustos.
-Nota receptes: el tour de l'editor és accessible a crear i editar; s'auto-activa el primer cop, simula el flux complet i fa servir productes mock al càlcul de costos. En mode FATE, les receptes IA s'enriqueixen amb productes del catàleg quan hi ha coincidències.
+Nota receptes: el tour de l'editor és accessible a crear i editar; s'auto-activa el primer cop, simula el flux complet i fa servir productes mock al càlcul de costos. En mode FATE, les receptes IA s'enriqueixen amb productes del catàleg quan hi ha coincidències. Quan falta un ingredient, es pot decidir si afegir-lo a inventari o llista (personal o de sala).
 
 ---
 

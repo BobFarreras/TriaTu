@@ -10,7 +10,7 @@ describe('CompleteShoppingSession Use Case', () => {
         // Mocks tipats
         const mockShoppingRepo = {
             findAll: vi.fn().mockResolvedValue([
-                { props: { id: '1', name: 'Pomes', quantity: 2, unit: 'kg', isChecked: true } },
+                { props: { id: '1', name: 'Pomes', quantity: 2, unit: 'kg', isChecked: true, productId: 'prod-1', productImage: 'https://example.com/apple.png' } },
                 { props: { id: '2', name: 'Aigua', quantity: 6, unit: 'l', isChecked: false } },
             ]),
             deleteMany: vi.fn().mockResolvedValue(undefined),
@@ -25,7 +25,7 @@ describe('CompleteShoppingSession Use Case', () => {
         const useCase = new CompleteShoppingSession(mockShoppingRepo, mockInventoryRepo);
         
         // EXECUCIÓ
-        const result = await useCase.execute('user-1');
+        const result = await useCase.execute('user-1', 'room-1');
 
         // VERIFICACIÓ
         // 1. Només s'ha d'haver guardat 1 item a l'inventari (les pomes)
@@ -40,6 +40,9 @@ describe('CompleteShoppingSession Use Case', () => {
         expect(savedItems).toHaveLength(1);
         // Ara TypeScript sap que 'savedItems[0]' és un InventoryItem i té 'props'
         expect(savedItems[0].props.name).toBe('Pomes');
+        expect(savedItems[0].props.roomId).toBe('room-1');
+        expect(savedItems[0].props.productId).toBe('prod-1');
+        expect(savedItems[0].props.image).toBe('https://example.com/apple.png');
 
         // 2. Només s'ha d'haver esborrat 1 item de la llista (les pomes)
         expect(mockShoppingRepo.deleteMany).toHaveBeenCalledWith(['1']);

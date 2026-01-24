@@ -38,7 +38,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('useLanguage used outside LanguageProvider. Falling back to default locale.');
+    }
+    return {
+      locale: 'ca',
+      t: dictionaries.ca,
+      changeLanguage: () => {}
+    };
   }
   return context;
 }

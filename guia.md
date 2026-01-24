@@ -83,6 +83,7 @@ L'usuari prem un botó en una feature:
 - Rooms: es pot unir a una sala amb enllaç d'invitació o amb ID; l'host pot copiar l'ID des dels ajustos.
 - L'editor de receptes té tour d'onboarding a crear i editar; s'auto-activa el primer cop (localStorage), simula el flux complet i usa productes mock al càlcul de costos.
 - En mode FATE, les receptes generades s'enriqueixen amb productes del catàleg (preu + imatge) quan hi ha coincidències.
+- En ingredients faltants de receptes, l'usuari pot afegir a inventari o llista (personal o de sala).
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 - Prompts IA: es resolen via `PromptService` (LangSmith + fallback local).
 
