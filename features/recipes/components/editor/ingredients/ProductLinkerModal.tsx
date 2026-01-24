@@ -2,6 +2,7 @@
 
 import { Ingredient } from '../types';
 import { useProductLinker } from './useProductLinker';
+import type { ProductResult } from '@/app/actions/inventory';
 import { Loader2, Check, X, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useRef } from 'react';
@@ -11,9 +12,18 @@ interface Props {
   onClose: () => void;
   ingredients: Ingredient[];
   onUpdateIngredients: (updated: Ingredient[]) => void;
+  useTourMock?: boolean;
+  mockProductsByIngredientId?: Record<string, ProductResult[]>;
 }
 
-export function ProductLinkerModal({ isOpen, onClose, ingredients, onUpdateIngredients }: Props) {
+export function ProductLinkerModal({
+  isOpen,
+  onClose,
+  ingredients,
+  onUpdateIngredients,
+  useTourMock,
+  mockProductsByIngredientId
+}: Props) {
   const {
     loading,
     matches,
@@ -24,7 +34,7 @@ export function ProductLinkerModal({ isOpen, onClose, ingredients, onUpdateIngre
     selectProduct,
     applyChanges,
     totalCost
-  } = useProductLinker(ingredients, isOpen);
+  } = useProductLinker(ingredients, isOpen, { useTourMock, mockProductsByIngredientId });
   const debounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const handleConfirm = () => {
@@ -46,7 +56,10 @@ export function ProductLinkerModal({ isOpen, onClose, ingredients, onUpdateIngre
         onClick={onClose}
       />
 
-      <div className="relative bg-slate-900 w-full max-w-4xl h-[85vh] rounded-3xl border border-slate-800 flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div
+        id="tour-cost-modal"
+        className="relative bg-slate-900 w-full max-w-4xl h-[85vh] rounded-3xl border border-slate-800 flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+      >
         
         {/* HEADER */}
         <div className="shrink-0 px-6 py-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">

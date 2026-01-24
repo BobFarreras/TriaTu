@@ -9,6 +9,7 @@ import { IngredientActionSheet } from '../ingredients/IngredientActionSheet';
 import { SearchHeader, CalculatorGrid } from '../ingredients/IngredientTools';
 import { IngredientDock } from '../ingredients/IngredientDock';
 import { ProductLinkerModal } from './ingredients/ProductLinkerModal';
+import type { ProductResult } from '@/app/actions/inventory';
 
 interface Props {
   data: EditorData;
@@ -18,11 +19,13 @@ interface Props {
   searchInputId?: string;
   ingredientsListId?: string;
   forceLinkerOpen?: boolean;
+  useTourMock?: boolean;
+  mockProductsByIngredientId?: Record<string, ProductResult[]>;
 }
 
 export function IngredientsManager({
   data, update, inventory, labels,
-  searchInputId, ingredientsListId, forceLinkerOpen
+  searchInputId, ingredientsListId, forceLinkerOpen, useTourMock, mockProductsByIngredientId
 }: Props) {
   
   const {
@@ -71,6 +74,8 @@ export function IngredientsManager({
         onClose={() => setIsLinkerOpen(false)}
         ingredients={data.ingredients}
         onUpdateIngredients={handleUpdateIngredients}
+        useTourMock={useTourMock}
+        mockProductsByIngredientId={mockProductsByIngredientId}
       />
 
       <div className="flex flex-col h-full w-full relative overflow-hidden bg-slate-950">

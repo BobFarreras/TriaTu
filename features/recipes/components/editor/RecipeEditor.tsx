@@ -92,7 +92,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
       return;
     }
 
-    if (stepId === 'tour-ing-list' && !simulationRef.current.linked && data.ingredients.length > 0) {
+    if (stepId === 'tour-cost-modal' && !simulationRef.current.linked && data.ingredients.length > 0) {
       simulationRef.current.linked = true;
       setData({ ...data, ingredients: tourSamples.linkedIngredients });
       return;
@@ -105,10 +105,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
 
     if (stepId === 'tour-step-chips' && !simulationRef.current.stepSaved && data.steps.length === 0) {
       simulationRef.current.stepSaved = true;
-      setData({
-        ...data,
-        steps: [{ id: crypto.randomUUID(), content: tourSamples.stepText }]
-      });
+      return;
     }
   }, [activeSteps, currentStepIndex, data, isActive, setData, tourSamples]);
 
@@ -229,7 +226,9 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
               labels={safeIngredientsLabels}
               searchInputId="tour-ing-input"
               ingredientsListId="tour-ing-list"
-              forceLinkerOpen={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-ing-list'}
+              forceLinkerOpen={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-cost-modal'}
+              useTourMock={isActive}
+              mockProductsByIngredientId={tourSamples.mockProductsByIngredientId}
             />
           )}
 
@@ -240,7 +239,11 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
               labels={safeStepsLabels}
               textareaId="tour-step-textarea"
               stepsListId="tour-step-chips"
-              simulatedText={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-textarea' ? tourSamples.stepText : undefined}
+              simulatedText={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-textarea' ? tourSamples.stepDraft : undefined}
+              simulatedIngredient={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-chips' ? tourSamples.stepIngredientName : undefined}
+              simulatedAppendText={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-chips' ? 'i cuina 10 min.' : undefined}
+              simulateSave={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-chips'}
+              forceMobileView={isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-textarea' ? 'edit' : isActive && activeSteps[currentStepIndex]?.targetId === 'tour-step-chips' ? 'preview' : undefined}
             />
           )}
         </div>

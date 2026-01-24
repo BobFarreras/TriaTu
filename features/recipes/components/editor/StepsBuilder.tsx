@@ -1,7 +1,7 @@
 // src/components/recipes/editor/StepsBuilder.tsx
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { EditorData, StepsLabels, RecipeStep } from './types';
 import { useStepsManager } from './steps/useStepsManager';
 import { StepsInput } from './steps/StepsInput';
@@ -16,11 +16,15 @@ interface Props {
   textareaId?: string;
   stepsListId?: string;
   simulatedText?: string;
+  simulatedIngredient?: string;
+  simulatedAppendText?: string;
+  simulateSave?: boolean;
+  forceMobileView?: 'edit' | 'preview';
 }
 
 export function StepsBuilder({
   data, update, labels,
-  textareaId, stepsListId, simulatedText
+  textareaId, stepsListId, simulatedText, simulatedIngredient, simulatedAppendText, simulateSave, forceMobileView
 }: Props) {
   const {
     currentStepText,
@@ -36,6 +40,7 @@ export function StepsBuilder({
   } = useStepsManager(data, update);
 
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
+  const simulationRef = useRef({ ingredient: false, append: false, saved: false });
 
   useEffect(() => {
     if (!simulatedText) return;
@@ -43,6 +48,62 @@ export function StepsBuilder({
     if (currentStepText.trim()) return;
     setCurrentStepText(simulatedText);
   }, [currentStepText, editingId, setCurrentStepText, simulatedText]);
+
+  useEffect(() => {
+    if (!simulatedIngredient) {
+      simulationRef.current.ingredient = false;
+      return;
+    }
+    if (simulationRef.current.ingredient) return;
+    const token = `[${simulatedIngredient}]`;
+    if (currentStepText.includes(token)) {
+      simulationRef.current.ingredient = true;
+      return;
+    }
+    setCurrentStepText((prev) => {
+      const base = prev || '';
+      const needsSpace = base.length > 0 && !base.endsWith(' ');
+      return `${base}${needsSpace ? ' ' : ''}${token}`;
+    });
+    simulationRef.current.ingredient = true;
+  }, [currentStepText, setCurrentStepText, simulatedIngredient]);
+
+  useEffect(() => {
+    if (!simulatedAppendText) {
+      simulationRef.current.append = false;
+      return;
+    }
+    if (simulationRef.current.append) return;
+    if (currentStepText.includes(simulatedAppendText)) {
+      simulationRef.current.append = true;
+      return;
+    }
+    setCurrentStepText((prev) => {
+      const base = prev || '';
+      const needsSpace = base.length > 0 && !base.endsWith(' ');
+      return `${base}${needsSpace ? ' ' : ''}${simulatedAppendText}`;
+    });
+    simulationRef.current.append = true;
+  }, [currentStepText, setCurrentStepText, simulatedAppendText]);
+
+  useEffect(() => {
+    if (!simulateSave) {
+      simulationRef.current.saved = false;
+      return;
+    }
+    if (simulationRef.current.saved) return;
+    if (!currentStepText.trim()) return;
+    if (simulatedIngredient && !currentStepText.includes(`[${simulatedIngredient}]`)) return;
+    if (simulatedAppendText && !currentStepText.includes(simulatedAppendText)) return;
+    saveStep();
+    setMobileView('preview');
+    simulationRef.current.saved = true;
+  }, [currentStepText, saveStep, simulateSave, simulatedAppendText, simulatedIngredient]);
+
+  useEffect(() => {
+    if (!forceMobileView) return;
+    setMobileView(forceMobileView);
+  }, [forceMobileView]);
 
   // Wrapper per canviar de vista automàticament al mòbil quan editem
   const handleEditClick = (step: RecipeStep) => {

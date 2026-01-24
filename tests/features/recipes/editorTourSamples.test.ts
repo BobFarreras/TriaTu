@@ -9,6 +9,10 @@ describe('getEditorTourSamples', () => {
     expect(samples.prepTimeMinutes).toBeGreaterThan(0);
     expect(samples.ingredients).toHaveLength(3);
     expect(samples.linkedIngredients).toHaveLength(3);
+    expect(Object.keys(samples.mockProductsByIngredientId)).toHaveLength(3);
+    expect(samples.linkedIngredients.every((ing) => !!ing.linkedProductImage)).toBe(true);
+    expect(samples.stepDraft).toBeTruthy();
+    expect(samples.stepIngredientName).toBeTruthy();
     expect(samples.stepText).toContain('[Tomàquet]');
   });
 });

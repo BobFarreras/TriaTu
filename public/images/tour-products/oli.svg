@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Oli">
+  <rect width="256" height="256" fill="#f7f3ee"/>
+  <rect x="96" y="52" width="64" height="148" rx="18" fill="#f6d36a" stroke="#e2bf59" stroke-width="6"/>
+  <rect x="106" y="40" width="44" height="20" rx="6" fill="#4f4f4f"/>
+  <text x="128" y="214" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#3b2d1f">Oli</text>
+</svg>
