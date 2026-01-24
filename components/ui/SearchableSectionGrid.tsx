@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export type UISectionItem = {
   id: string;
@@ -24,6 +25,7 @@ interface Props {
 
 export function SearchableSectionGrid({ data, selectedValues, onChange, placeholder, accentColor = 'green' }: Props) {
   const [query, setQuery] = useState('');
+  const { t } = useLanguage();
   
   const [manuallyOpenSections, setManuallyOpenSections] = useState<Set<string>>(
     new Set([data[0]?.title])
@@ -86,7 +88,7 @@ export function SearchableSectionGrid({ data, selectedValues, onChange, placehol
                 transition-all font-bold text-lg text-white
                 placeholder:text-gray-500
             "
-            placeholder={placeholder || "Buscar..."}
+            placeholder={placeholder || t.common.search_placeholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -166,7 +168,7 @@ export function SearchableSectionGrid({ data, selectedValues, onChange, placehol
         ) : (
           <div className="text-center py-12">
              <div className="inline-block text-6xl mb-4 animate-float grayscale opacity-50">🦗</div>
-             <p className="font-bold text-gray-500">Res per aquí...</p>
+             <p className="font-bold text-gray-500">{t.common.empty_results}</p>
           </div>
         )}
       </div>

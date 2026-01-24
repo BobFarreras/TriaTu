@@ -89,8 +89,11 @@ test.describe('shopping list', () => {
     });
 
     await test.step('enable shopping list for room', async () => {
-      await page.locator('[data-testid="room-feature-shopping-enable"]').click();
-      await expect(page.locator('[data-testid="room-feature-shopping-open"]')).toBeVisible();
+      await page.locator('[data-testid="room-settings-open"]').click();
+      const toggle = page.locator('[data-testid="room-feature-shopping-toggle"]');
+      await expect(toggle).toBeVisible();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     });
 
     await test.step('add item in shared shopping list', async () => {
@@ -185,8 +188,11 @@ test.describe('shopping list', () => {
     });
 
     await test.step('enable shopping list for room', async () => {
-      await page.locator('[data-testid="room-feature-shopping-enable"]').click();
-      await expect(page.locator('[data-testid="room-feature-shopping-open"]')).toBeVisible();
+      await page.locator('[data-testid="room-settings-open"]').click();
+      const toggle = page.locator('[data-testid="room-feature-shopping-toggle"]');
+      await expect(toggle).toBeVisible();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     });
 
     await test.step('add and complete shopping list', async () => {

@@ -3,10 +3,11 @@
 
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { ca } from 'date-fns/locale';
+import { ca, es, enUS } from 'date-fns/locale';
 import { SnapshotItem } from '@/core/domain/entities/ShoppingSession';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShoppingSessionDetail } from './history/ShoppingSessionDetail';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export interface HistorySession {
     id: string;
@@ -21,7 +22,13 @@ interface Props {
 }
 
 export function ShoppingHistory({ sessions }: Props) {
+    const { t, locale } = useLanguage();
     const [selectedSession, setSelectedSession] = useState<HistorySession | null>(null);
+    const dateLocale = useMemo(() => {
+        if (locale === 'es') return es;
+        if (locale === 'en') return enUS;
+        return ca;
+    }, [locale]);
     
     // 1. Obtenir mesos disponibles únics
     const availableMonths = useMemo(() => {
@@ -44,7 +51,7 @@ export function ShoppingHistory({ sessions }: Props) {
         return (
             <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800 border-dashed">
                 <div className="text-4xl mb-4">📜</div>
-                <p className="text-slate-500">No tens historial de compres.</p>
+                <p className="text-slate-500">{t.shoppingList.history_empty}</p>
             </div>
         );
     }
@@ -65,7 +72,7 @@ export function ShoppingHistory({ sessions }: Props) {
                 {/* FILTRE I ESTADÍSTIQUES */}
                 <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-4">
                     <div className="flex justify-between items-center">
-                        <label className="text-xs font-bold text-slate-500 uppercase">Mes</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase">{t.shoppingList.history_month_label}</label>
                         <select 
                             value={filterMonth}
                             onChange={(e) => setFilterMonth(e.target.value)}
@@ -77,7 +84,7 @@ export function ShoppingHistory({ sessions }: Props) {
                                 const date = new Date(parseInt(year), parseInt(month) - 1);
                                 return (
                                     <option key={m} value={m}>
-                                        {format(date, 'MMMM yyyy', { locale: ca })}
+                                        {format(date, 'MMMM yyyy', { locale: dateLocale })}
                                     </option>
                                 );
                             })}
@@ -85,7 +92,7 @@ export function ShoppingHistory({ sessions }: Props) {
                     </div>
 
                     <div className="flex items-end justify-between pt-2 border-t border-slate-800">
-                        <span className="text-slate-400 text-sm">Despesa total</span>
+                        <span className="text-slate-400 text-sm">{t.shoppingList.history_total_spend}</span>
                         <span className="text-2xl font-black text-emerald-400">
                             {monthlyTotal.toFixed(2)}€
                         </span>
@@ -107,13 +114,13 @@ export function ShoppingHistory({ sessions }: Props) {
                             <div className="flex justify-between items-center mb-3">
                                 <div className="flex flex-col">
                                     <span className="text-slate-200 font-bold capitalize flex items-center gap-2">
-                                        {format(session.createdAt, "d MMM, EEEE", { locale: ca })}
+                                        {format(session.createdAt, "d MMM, EEEE", { locale: dateLocale })}
                                         <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Veure detalls
+                                            {t.shoppingList.history_view_details}
                                         </span>
                                     </span>
                                     <span className="text-xs text-slate-500">
-                                        {format(session.createdAt, "HH:mm")}h • {session.itemCount} productes
+                                        {format(session.createdAt, "HH:mm")}h • {t.shoppingList.history_products_count.replace('{count}', String(session.itemCount))}
                                     </span>
                                 </div>
                                 <div className="text-right">

@@ -6,7 +6,6 @@ import { useSpeechToText } from '@/hooks/useSpeechToText';
 // Importem els sub-components
 import { SuggestionChips } from './input/SuggestionChips';
 import { InputHeader } from './input/InputHeader';
-import { HighlightedContent } from '../steps/list/HighlightedContent';
 
 interface Props {
   data: EditorData;

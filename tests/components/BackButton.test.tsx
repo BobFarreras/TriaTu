@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { BackButton } from '@/components/ui/BackButton';
+import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 
 const router = {
   back: vi.fn(),
@@ -21,14 +22,26 @@ vi.mock('next/link', () => ({
 
 vi.mock('framer-motion', () => ({
   motion: {
-    button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-      <button {...props}>{children}</button>
-    ),
-    div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-      <div {...props}>{children}</div>
-    )
+    button: (props: React.ButtonHTMLAttributes<HTMLButtonElement> & { whileHover?: unknown; whileTap?: unknown }) => {
+      const { children, ...rest } = props;
+      const clean = { ...rest } as React.ButtonHTMLAttributes<HTMLButtonElement>;
+      delete (clean as Record<string, unknown>).whileHover;
+      delete (clean as Record<string, unknown>).whileTap;
+      return <button {...clean}>{children}</button>;
+    },
+    div: (props: React.HTMLAttributes<HTMLDivElement> & { whileHover?: unknown; whileTap?: unknown }) => {
+      const { children, ...rest } = props;
+      const clean = { ...rest } as React.HTMLAttributes<HTMLDivElement>;
+      delete (clean as Record<string, unknown>).whileHover;
+      delete (clean as Record<string, unknown>).whileTap;
+      return <div {...clean}>{children}</div>;
+    }
   }
 }));
+
+function renderWithLanguage(ui: React.ReactElement) {
+  return render(<LanguageProvider>{ui}</LanguageProvider>);
+}
 
 describe('BackButton', () => {
   beforeEach(() => {
@@ -39,7 +52,7 @@ describe('BackButton', () => {
 
   it('runs onAction without navigating', () => {
     const onAction = vi.fn();
-    const { getByRole } = render(<BackButton onAction={onAction} />);
+    const { getByRole } = renderWithLanguage(<BackButton onAction={onAction} />);
 
     fireEvent.click(getByRole('button'));
 
@@ -49,7 +62,7 @@ describe('BackButton', () => {
   });
 
   it('uses router.back when no href or onAction', () => {
-    const { getByRole } = render(<BackButton />);
+    const { getByRole } = renderWithLanguage(<BackButton />);
 
     fireEvent.click(getByRole('button'));
 
@@ -57,7 +70,7 @@ describe('BackButton', () => {
   });
 
   it('renders a link when href is provided', () => {
-    const { container } = render(<BackButton href="/test" />);
+    const { container } = renderWithLanguage(<BackButton href="/test" />);
     const link = container.querySelector('a[href="/test"]');
 
     expect(link).not.toBeNull();

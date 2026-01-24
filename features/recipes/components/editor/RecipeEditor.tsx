@@ -58,20 +58,20 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
 
   // 4. HANDLERS
   const handleExit = () => {
-    if (confirm("Vols sortir sense guardar els canvis?")) router.back();
+    if (confirm(t.create_recipe.editor.confirm_exit)) router.back();
   };
 
   // 5. LABELS (Mapeig segur)
   const safeIngredientsLabels: IngredientsLabels = {
     ...(t.create_recipe.ingredients as unknown as Record<string, string>),
-    title: t.create_recipe.ingredients.title || "Ingredients",
-    basket_title: "La teva Cistella",
-    basket_empty: "Encara no has afegit ingredients"
+    title: t.create_recipe.ingredients.title,
+    basket_title: t.create_recipe.ingredients.basket_title,
+    basket_empty: t.create_recipe.ingredients.basket_empty
   } as IngredientsLabels;
 
   const safeStepsLabels: StepsLabels = {
     ...(t.create_recipe.steps as unknown as Record<string, string>),
-    title: "Passos"
+    title: t.create_recipe.steps.title
   } as StepsLabels;
   // NOU HANDLER: Gestió de l'eliminació
   const handleDelete = async () => {
@@ -79,7 +79,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
 
     // UX: Confirmació nativa (Simple i efectiva per accions destructives)
     // En el futur es pot canviar per un Modal de UI si es vol més estil.
-    const confirmed = window.confirm("Estàs segur que vols eliminar aquesta recepta? Aquesta acció no es pot desfer.");
+    const confirmed = window.confirm(t.create_recipe.editor.confirm_delete);
 
     if (confirmed) {
       startDeleteTransition(async () => {
@@ -102,10 +102,6 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
         message={feedback.message}
       />
 
-      <div className="absolute top-4 right-4 z-50">
-        <TourTrigger tourId="recipe-editor" steps={onboardingSteps} />
-      </div>
-
       {/* HEADER MODIFICAT: Passem la funció de delete o col·loquem el botó aquí si EditorHeader ho permet */}
       {/* Si EditorHeader no accepta children o accions extra, podem posar el botó flotant a l'esquerra del Save o a dalt */}
 
@@ -115,6 +111,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
           isEditing={!!initialRecipe}
           onExit={handleExit}
           onTitleClick={() => setActiveTab('meta')}
+          rightSlot={<TourTrigger tourId="recipe-editor" steps={onboardingSteps} />}
         />
         {/* Botó d'eliminar absolut a la capçalera (ajustar posició segons disseny de EditorHeader) */}
         {initialRecipe && (
@@ -123,7 +120,7 @@ export function RecipeEditor({ userInventory, initialRecipe }: Props) {
             disabled={isPendingDelete || loading}
             data-testid="recipe-delete-button"
             className="absolute top-4 right-16 p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
-            title="Eliminar recepta"
+            title={t.create_recipe.editor.delete_title}
           >
             {isPendingDelete ? <span className="animate-spin">⏳</span> : <Trash2 className="w-5 h-5" />}
           </button>

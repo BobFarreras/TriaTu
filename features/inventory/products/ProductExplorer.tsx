@@ -4,6 +4,7 @@
 import { ProductResult } from '@/app/actions/inventory';
 import { useProductSearch } from './useProductSearch';
 import { BackButton } from '@/components/ui/BackButton'; // Assegura't de la ruta correcta
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 // Components
 import { CategoryGrid } from './components/CategoryGrid';
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function ProductExplorer({ onSelect, quantities, onClose }: Props) {
+  const { t } = useLanguage();
   const { 
     activeCategory, 
     activeSubQuery, 
@@ -53,7 +55,7 @@ export function ProductExplorer({ onSelect, quantities, onClose }: Props) {
                     type="text"
                     value={manualSearch}
                     onChange={(e) => handleManualInput(e.target.value)}
-                    placeholder="🔎 Què afegim avui?"
+                    placeholder={t.inventory.explorer_search_placeholder}
                     data-testid="product-search-input"
                     className="w-full h-12 pl-12 pr-4 rounded-2xl bg-slate-900 border border-slate-800 text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-base font-medium shadow-inner"
                     autoFocus={false}
@@ -75,7 +77,7 @@ export function ProductExplorer({ onSelect, quantities, onClose }: Props) {
                   <div className="flex items-center gap-2 overflow-hidden">
                      <span className="text-3xl filter drop-shadow-md">{activeCategory.emoji}</span>
                      <h3 className="text-lg font-black text-white truncate uppercase tracking-tight">
-                        {activeCategory.label}
+                        {t.taxonomy.categories[activeCategory.id as keyof typeof t.taxonomy.categories] ?? activeCategory.label}
                      </h3>
                   </div>
                </div>

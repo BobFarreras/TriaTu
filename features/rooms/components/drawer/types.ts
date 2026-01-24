@@ -25,4 +25,5 @@ export interface FeatureToggleCardProps {
   onClick: () => void;
   disabled: boolean;
   activeColor: string;
+  testId?: string;
 }

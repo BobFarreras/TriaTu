@@ -25,6 +25,7 @@ export function FeaturesSection({ txt, features, onToggle, isPending }: Props) {
         onClick={() => onToggle('enableInventory', !features.inventory)}
         disabled={isPending}
         activeColor="bg-orange-500"
+        testId="room-feature-inventory-toggle"
       />
       
       <FeatureToggleCard 
@@ -35,6 +36,7 @@ export function FeaturesSection({ txt, features, onToggle, isPending }: Props) {
         onClick={() => onToggle('enableShoppingList', !features.shoppingList)}
         disabled={isPending}
         activeColor="bg-blue-500"
+        testId="room-feature-shopping-toggle"
       />
     </div>
   );

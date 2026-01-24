@@ -1,5 +1,6 @@
 import { MainCategory } from '@/lib/taxonamy'; // Make sure this import is correct (taxonomy, not taxonamy)
 import { useRef, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Props {
   category: MainCategory;
@@ -9,6 +10,7 @@ interface Props {
 
 export function SubcategoryChips({ category, activeQuery, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   // Auto-scroll to selected chip
   useEffect(() => {
@@ -51,7 +53,7 @@ export function SubcategoryChips({ category, activeQuery, onSelect }: Props) {
             `}
           >
             <span className="text-base">{sub.emoji}</span>
-            <span className="uppercase tracking-wide">{sub.label}</span>
+            <span className="uppercase tracking-wide">{t.taxonomy.subcategories[sub.id as keyof typeof t.taxonomy.subcategories] ?? sub.label}</span>
           </button>
         );
       })}

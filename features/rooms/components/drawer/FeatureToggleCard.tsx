@@ -1,7 +1,16 @@
 // features/rooms/components/drawer/FeatureToggleCard.tsx
 import { FeatureToggleCardProps } from "./types";
 
-export function FeatureToggleCard({ icon, label, description, isActive, onClick, disabled, activeColor }: FeatureToggleCardProps) {
+export function FeatureToggleCard({
+  icon,
+  label,
+  description,
+  isActive,
+  onClick,
+  disabled,
+  activeColor,
+  testId
+}: FeatureToggleCardProps) {
   return (
     <button 
       onClick={(e) => {
@@ -11,6 +20,8 @@ export function FeatureToggleCard({ icon, label, description, isActive, onClick,
       }}
       disabled={disabled}
       type="button" // Importantíssim per no fer submit si està dins un form
+      aria-pressed={isActive}
+      data-testid={testId}
       className={`
         w-full flex items-center justify-between p-4 rounded-3xl border transition-all text-left group
         ${isActive ? 'bg-zinc-900 border-zinc-700 shadow-inner' : 'bg-zinc-900/40 border-zinc-800/50 opacity-70'}
