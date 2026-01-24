@@ -629,7 +629,16 @@ export const en = {
     aspirants: 'Contenders',
     empty_list: 'Nobody here yet... 👻',
     you_suffix: '(You)',
-    points_abbr: 'PTS'
+    points_abbr: 'PTS',
+    info_title: 'How scoring works',
+    info_close: 'Close',
+    info_desc: 'Your position depends on three point blocks. The sum is the total.',
+    info_quality: 'Reputation (stars)',
+    info_pantry: 'Habit (pantry up to date)',
+    info_community: 'Participation (votes and community)',
+    info_total: 'Total',
+    info_total_hint: 'Quality + Pantry + Community',
+    info_note: 'Badges are awarded when you pass each block’s thresholds.'
   },
   inventory: {
     header: {

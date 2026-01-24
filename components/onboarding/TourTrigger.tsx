@@ -8,9 +8,10 @@ interface Props {
   tourId: string; // ✅ NOVA PROP OBLIGATÒRIA
   steps: TourStep[];
   className?: string;
+  onClick?: () => void;
 }
 
-export function TourTrigger({ steps, className, tourId }: Props) {
+export function TourTrigger({ steps, className, tourId, onClick }: Props) {
   const { startTour } = useOnboarding();
   const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 
@@ -21,6 +22,10 @@ export function TourTrigger({ steps, className, tourId }: Props) {
       whileHover={{ scale: 1.1, rotate: 10 }}
       whileTap={{ scale: 0.9 }}
       onClick={() => {
+        if (onClick) {
+          onClick();
+          return;
+        }
         // ✅ { force: true } ignora el localStorage i l'activa igualment
         startTour(tourId, steps, { force: true }); // ✅ Passem l'ID
       }}

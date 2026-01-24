@@ -84,6 +84,7 @@ L'usuari prem un botó en una feature:
 - L'editor de receptes té tour d'onboarding a crear i editar; s'auto-activa el primer cop (localStorage), simula el flux complet i usa productes mock al càlcul de costos.
 - En mode FATE, les receptes generades s'enriqueixen amb productes del catàleg (preu + imatge) quan hi ha coincidències.
 - En ingredients faltants de receptes, l'usuari pot afegir a inventari o llista (personal o de sala).
+- El ranking carrega el podi i la primera pagina, i fa load-more via `/api/ranking` (20 per pagina).
 - Si canvies arquitectura o fluxos, actualitza `arquitectura_triatu.md`.
 - Prompts IA: es resolen via `PromptService` (LangSmith + fallback local).
 
@@ -93,4 +94,5 @@ L'usuari prem un botó en una feature:
 - `docs/AGENTS_GUIDE.md`
 - `docs/skills/README.md`
 - `docs/releases/README.md`
+- `docs/ranking.md`
 
