@@ -1,6 +1,7 @@
 'use client';
 
 import { Users, User, ChevronDown } from 'lucide-react';
+import { useRef } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Props {
@@ -23,6 +24,7 @@ export function ScopeSelector({
   className
 }: Props) {
   const { t } = useLanguage();
+  const selectRef = useRef<HTMLSelectElement>(null);
   const resolvedPersonalLabel = personalLabel ?? t.common.scope_personal;
   const resolvedSharedLabel = sharedLabel ?? t.common.scope_shared;
 
@@ -34,6 +36,7 @@ export function ScopeSelector({
         {scope === 'PERSONAL' ? <User size={14} /> : <Users size={14} />}
       </div>
       <select
+        ref={selectRef}
         value={scope}
         onChange={(e) => setScope(e.target.value)}
         data-testid={testId}
@@ -46,9 +49,17 @@ export function ScopeSelector({
           ))}
         </optgroup>
       </select>
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+      <button
+        type="button"
+        aria-label="Open selector"
+        onClick={() => {
+          selectRef.current?.focus();
+          selectRef.current?.click();
+        }}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+      >
         <ChevronDown size={12} />
-      </div>
+      </button>
     </div>
   );
 }
