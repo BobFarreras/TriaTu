@@ -4,6 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface BackButtonProps {
   href?: string;
@@ -20,13 +21,15 @@ interface BackButtonProps {
 
 export function BackButton({
   href,
-  label = "Tornar",
+  label,
   className = "",
   preferReferrer = false,
   fallbackHref,
   onAction // 👈 Recuperem la prop del test
 }: BackButtonProps) {
   const router = useRouter();
+  const { t } = useLanguage();
+  const resolvedLabel = label ?? t.common.back;
   
   const storageKey = typeof window !== 'undefined'
     ? `back-origin:${window.location.pathname}`
@@ -48,7 +51,7 @@ export function BackButton({
     <>
       <span className="text-xl sm:text-lg leading-none pb-1 sm:pb-0">🔙</span>
       <span className="hidden sm:inline text-xs font-bold uppercase tracking-wide">
-        {label}
+        {resolvedLabel}
       </span>
     </>
   );

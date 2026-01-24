@@ -6,6 +6,7 @@ import { ProductExplorer } from '@/features/inventory/products/ProductExplorer';
 import { CartDock } from '@/features/inventory/products/CartDock'; 
 import { ProductResult } from '@/app/actions/inventory';
 import { addBatchToShoppingListAction } from '@/app/actions/shopping-list-actions';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Props {
   onClose: () => void;
@@ -18,6 +19,7 @@ interface CartItem {
 }
 
 export function BulkAddShoppingItemForm({ onClose, activeRoomId }: Props) {
+  const { t } = useLanguage();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -60,7 +62,7 @@ export function BulkAddShoppingItemForm({ onClose, activeRoomId }: Props) {
         if (result.success) {
            onClose();
         } else {
-           alert("Error guardant: " + result.error);
+           alert(t.shoppingList.save_error.replace('{error}', result.error || ''));
         }
      } catch(e) { 
         console.error(e); 

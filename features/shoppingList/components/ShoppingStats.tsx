@@ -1,14 +1,17 @@
 // ARXIU: src/features/shoppingList/components/ShoppingStats.tsx
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+
 interface Props {
     grandTotal: number;
     cartTotal: number;
 }
 
 export function ShoppingStats({ grandTotal, cartTotal }: Props) {
+    const { t } = useLanguage();
     return (
         <div className="grid grid-cols-2 gap-4">
-            <StatCard label="Total Llista" amount={grandTotal} />
-            <StatCard label="Al Carret" amount={cartTotal} isHighlight />
+            <StatCard label={t.shoppingList.stats_total} amount={grandTotal} />
+            <StatCard label={t.shoppingList.stats_cart} amount={cartTotal} isHighlight />
         </div>
     );
 }

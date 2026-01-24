@@ -75,8 +75,8 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
     const onboardingSteps: TourStep[] = useMemo(() => [
         {
             targetId: 'tour-shopping-header',
-            title: t.onboarding?.shopping?.step_welcome_title || "Benvingut", // Fallback segur
-            description: t.onboarding?.shopping?.step_welcome_desc || "Descripció...",
+            title: t.onboarding?.shopping?.step_welcome_title || t.shoppingList.tour_welcome_title,
+            description: t.onboarding?.shopping?.step_welcome_desc || t.shoppingList.tour_welcome_desc,
         },
         {
             targetId: 'tour-shopping-tabs',
@@ -132,9 +132,11 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
         if (result.success) {
             await refreshData();
             notifyRefresh();
-            toast.success(`🎉 Compra finalitzada!`, { description: `Cost total: ${cartTotal.toFixed(2)}€` });
+            toast.success(t.shoppingList.finish_success_title, {
+                description: t.shoppingList.finish_success_desc.replace('{total}', cartTotal.toFixed(2))
+            });
         } else {
-            toast.error("Error al finalitzar", { description: result.error });
+            toast.error(t.shoppingList.finish_error_title, { description: result.error });
         }
         setIsCompleting(false);
     };
@@ -193,7 +195,7 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
                         </div>
 
                         {isLoading && (
-                            <div className="text-xs text-slate-500">Carregant llista...</div>
+                            <div className="text-xs text-slate-500">{t.shoppingList.loading_list}</div>
                         )}
 
          
@@ -209,7 +211,7 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
                             {items.length === 0 && (
                                 <div className="text-center py-10 text-slate-500 bg-slate-900/20 rounded-xl border border-slate-800/50 border-dashed">
                                     <div className="text-2xl mb-2">🛒</div>
-                                    Tot net! Afegeix coses per comprar.
+                                    {t.shoppingList.empty_list_title}
                                 </div>
                             )}
                         </div>
@@ -227,7 +229,11 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
                                         disabled={isCompleting}
                                         className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-full shadow-2xl shadow-emerald-900/50 flex items-center gap-3 transition-all active:scale-95 border-t border-emerald-400/20"
                                     >
-                                        {isCompleting ? <span className="animate-spin">⏳</span> : <span>💳 Finalitzar Compra</span>}
+                                        {isCompleting ? (
+                                            <span className="animate-spin">⏳</span>
+                                        ) : (
+                                            <span>💳 {t.shoppingList.finish_button}</span>
+                                        )}
                                         <span className="bg-emerald-800 px-2 py-0.5 rounded-full text-xs font-mono border border-emerald-700">
                                             {cartTotal.toFixed(2)}€
                                         </span>

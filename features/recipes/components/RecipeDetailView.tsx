@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { BackButton } from '@/components/ui/BackButton';
 import { Clock, Euro, Edit } from 'lucide-react';
 import { FavoriteButton } from '@/features/recipes/components/FavoriteButton';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 // Utilitzem un tipus compatible amb el que espera el Panel
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function RecipeDetailView({ recipe, inventory, userId }: Props) {
+  const { t } = useLanguage();
   // Casting segur per accedir a les metadades
   const extendedRecipe = recipe as unknown as { 
       ingredients: IngredientWithMeta[], 
@@ -94,7 +96,7 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
           {/* --- DESKTOP HEADER --- */}
           <div className="hidden lg:flex items-start gap-4 mb-8 relative pt-6">
              <div className="shrink-0 flex flex-col gap-3 sticky top-8 z-10">
-                <BackButton label="Tornar" className="bg-slate-900/50 hover:bg-slate-800 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl transition-all" />
+                <BackButton label={t.common.back} className="bg-slate-900/50 hover:bg-slate-800 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl transition-all" />
                 <div className="flex items-center gap-2 mt-2">
                     <FavoriteButton 
                         recipeId={recipe.id} 
@@ -103,7 +105,12 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
                         className="w-10 h-10 bg-slate-900 border border-slate-700 hover:border-rose-500/50"
                     />
                     {isAuthor && (
-                        <Link href={`/recipes/${recipe.id}/edit`} data-testid="recipe-edit-link" className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-900 text-slate-400 hover:bg-purple-600 hover:text-white transition-all border border-slate-700 hover:border-purple-500" title="Editar Recepta">
+                        <Link
+                            href={`/recipes/${recipe.id}/edit`}
+                            data-testid="recipe-edit-link"
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-900 text-slate-400 hover:bg-purple-600 hover:text-white transition-all border border-slate-700 hover:border-purple-500"
+                            title={t.recipes.edit_title}
+                        >
                             <Edit size={18} />
                         </Link>
                     )}
@@ -116,7 +123,7 @@ export function RecipeDetailView({ recipe, inventory, userId }: Props) {
                   prepTime={recipe.prepTimeMinutes}
                   tags={recipe.tags}
                   estimatedCost={cost}
-                  authorName={extendedRecipe.authorName || "Xef Anònim"}
+                  authorName={extendedRecipe.authorName || t.recipes.anonymous_author}
                 />
              </motion.div>
           </div>

@@ -2,7 +2,6 @@ import { createClient } from '@/adapters/supabase/server';
 import { container } from '@/services/container';
 import { RankingView } from '@/features/ranking/components/RankingView';
 import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
-import { Player } from '@/core/domain/entities/Player';
 import { getCurrentUser } from '@/lib/auth/session';
 import { mapRankingEntryToPlayer } from '@/features/ranking/logic/mapRankingEntryToPlayer';
 

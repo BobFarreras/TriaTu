@@ -168,7 +168,6 @@ export async function toggleFavoriteAction(recipeId: string) {
 
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const supabase = await createClient();
   // Ara sí que tenim l'import a dalt
   const repo = new SupabaseRecipeRepository();
 

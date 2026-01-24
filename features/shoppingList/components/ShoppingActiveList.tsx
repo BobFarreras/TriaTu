@@ -3,6 +3,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingListItem, ShoppingItemUI } from './ShoppingListItem';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
 
 export function ShoppingActiveList({ items, onToggle, onFinish, isCompleting, cartTotal, finishButtonId }: Props) {
     const checkedCount = items.filter(i => i.isChecked).length;
+    const { t } = useLanguage();
 
     return (
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
@@ -33,7 +35,7 @@ export function ShoppingActiveList({ items, onToggle, onFinish, isCompleting, ca
                 {items.length === 0 && (
                     <div className="text-center py-10 text-slate-500 bg-slate-900/20 rounded-xl border border-slate-800/50 border-dashed">
                         <div className="text-2xl mb-2">🛒</div>
-                        La llista està buida.
+                        {t.shoppingList.empty_list_short}
                     </div>
                 )}
             </div>
@@ -51,7 +53,11 @@ export function ShoppingActiveList({ items, onToggle, onFinish, isCompleting, ca
                             disabled={isCompleting}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-full shadow-2xl shadow-emerald-900/50 flex items-center gap-3 transition-all active:scale-95 border-t border-emerald-400/20"
                         >
-                            {isCompleting ? <span className="animate-spin">⏳</span> : <span>💳 Finalitzar Compra</span>}
+                            {isCompleting ? (
+                                <span className="animate-spin">⏳</span>
+                            ) : (
+                                <span>💳 {t.shoppingList.finish_button}</span>
+                            )}
                             <span className="bg-emerald-800 px-2 py-0.5 rounded-full text-xs font-mono border border-emerald-700">
                                 {cartTotal.toFixed(2)}€
                             </span>

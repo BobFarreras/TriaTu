@@ -96,14 +96,16 @@ export function StepsBuilder({
     if (simulatedIngredient && !currentStepText.includes(`[${simulatedIngredient}]`)) return;
     if (simulatedAppendText && !currentStepText.includes(simulatedAppendText)) return;
     saveStep();
-    setMobileView('preview');
     simulationRef.current.saved = true;
   }, [currentStepText, saveStep, simulateSave, simulatedAppendText, simulatedIngredient]);
 
-  useEffect(() => {
-    if (!forceMobileView) return;
-    setMobileView(forceMobileView);
-  }, [forceMobileView]);
+  const shouldAutoPreview = Boolean(
+    simulateSave &&
+    currentStepText.trim() &&
+    (!simulatedIngredient || currentStepText.includes(`[${simulatedIngredient}]`)) &&
+    (!simulatedAppendText || currentStepText.includes(simulatedAppendText))
+  );
+  const resolvedMobileView = forceMobileView ?? (shouldAutoPreview ? 'preview' : mobileView);
 
   // Wrapper per canviar de vista automàticament al mòbil quan editem
   const handleEditClick = (step: RecipeStep) => {
@@ -118,7 +120,7 @@ export function StepsBuilder({
       <div className="lg:hidden shrink-0 flex p-1 bg-slate-900 border-b border-slate-800">
         <button
           onClick={() => setMobileView('edit')}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${mobileView === 'edit'
+          className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${resolvedMobileView === 'edit'
             ? 'bg-slate-800 text-white shadow-sm'
             : 'text-slate-500 hover:text-slate-300'
             }`}
@@ -127,7 +129,7 @@ export function StepsBuilder({
         </button>
         <button
           onClick={() => setMobileView('preview')}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${mobileView === 'preview'
+          className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${resolvedMobileView === 'preview'
             ? 'bg-slate-800 text-white shadow-sm'
             : 'text-slate-500 hover:text-slate-300'
             }`}
@@ -139,7 +141,7 @@ export function StepsBuilder({
       {/* INPUT + CONTEXT */}
       <div id={textareaId} className={`
           flex-col h-full overflow-hidden
-          ${mobileView === 'preview' ? 'hidden lg:flex' : 'flex'}
+          ${resolvedMobileView === 'preview' ? 'hidden lg:flex' : 'flex'}
       `}>
         <StepsInput
           data={data}
@@ -157,7 +159,7 @@ export function StepsBuilder({
       <div id={stepsListId} // ✅ ID aplicat al contenidor de la llista
         className={`
           flex-col h-full overflow-hidden bg-slate-950/40
-          ${mobileView === 'edit' ? 'hidden lg:flex' : 'flex'}
+          ${resolvedMobileView === 'edit' ? 'hidden lg:flex' : 'flex'}
       `}>
         <StepsList
           // ✅ CORRECCIÓ: Forcem que cada step tingui un id string per satisfer TS
