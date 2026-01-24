@@ -13,6 +13,7 @@ import { SupabaseSecurityLogger } from '@/adapters/supabase/SupabaseSecurityLogg
 import { debug } from '@/lib/logger';
 import { logActionError } from '@/lib/observability/action-logger';
 import { getCurrentUser } from '@/lib/auth/session';
+import { RecipeEnricherService } from '@/core/application/services/RecipeEnricherService';
 
 // ✅ FIX: Definició robusta de la resposta
 export type ActionResponse = {
@@ -218,7 +219,7 @@ export async function generateMenuAction(
     const service = container.getGenerateMenuService(supabase);
 
     // EXECUTEM EL SERVEI (L'Orchestrator decideix internament)
-    const recipes = await service.execute(
+    let recipes = await service.execute(
       userId,
       mode,
       dishName,
@@ -226,6 +227,16 @@ export async function generateMenuAction(
       time,
       lang
     );
+
+    if (mode === 'FATE') {
+      try {
+        debug('[ACTION] enrich FATE recipes');
+        const enricher = new RecipeEnricherService(container.getProductCatalogRepo(supabase));
+        recipes = await Promise.all(recipes.map((recipe) => enricher.enrichRecipe(recipe)));
+      } catch (error) {
+        logActionError('generateMenuAction', 'Error enriquint receptes FATE', error);
+      }
+    }
 
     // CONVERSIÓ A PRIMITIVES
     // 1. Convertim a primitives (això ja ho fas)
