@@ -7,11 +7,17 @@ import { buildQueryTerms, filterProductsByQuery } from '@/core/application/servi
 import { buildSearchQueries } from '@/core/application/services/SearchQueryBuilder';
 import { hasExactTokenMatch } from '@/core/application/services/ExactTokenMatcher';
 
-export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
+interface TourMockConfig {
+  useTourMock?: boolean;
+  mockProductsByIngredientId?: Record<string, ProductResult[]>;
+}
+
+export function useProductLinker(ingredients: Ingredient[], isOpen: boolean, tourMock?: TourMockConfig) {
   const [loading, setLoading] = useState(false);
   const [matches, setMatches] = useState<Record<string, ProductResult[]>>({});
   const [selectedProducts, setSelectedProducts] = useState<Record<string, ProductResult | null>>({});
   const [manualQueries, setManualQueries] = useState<Record<string, string>>({});
+  const useTourMock = Boolean(tourMock?.useTourMock && tourMock?.mockProductsByIngredientId);
 
   // 1. EFECTE D'INICIALITZACIÓ (Quan s'obre el modal)
   useEffect(() => {
@@ -34,6 +40,22 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
             } as ProductResult; // Cast com a ProductResult si falten opcionals
         }
       });
+      const mockMatches = tourMock?.mockProductsByIngredientId ?? {};
+
+      if (useTourMock) {
+        ingredients.forEach((ing) => {
+          if (existingSelections[ing.id]) return;
+          if (!ing.linkedProductId) return;
+          const match = (mockMatches[ing.id] || []).find((prod) => prod.id === ing.linkedProductId);
+          if (match) existingSelections[ing.id] = match;
+        });
+
+        setSelectedProducts(existingSelections);
+        setMatches(mockMatches);
+        setLoading(false);
+        return;
+      }
+
       setSelectedProducts(existingSelections);
 
       // B. Llancem la cerca
@@ -46,6 +68,10 @@ export function useProductLinker(ingredients: Ingredient[], isOpen: boolean) {
     findTaxonomyMatch(name);
 
   const fetchMatchesForIngredient = async (ing: Ingredient, queryOverride?: string) => {
+    if (useTourMock) {
+      return tourMock?.mockProductsByIngredientId?.[ing.id] ?? [];
+    }
+
     let foundProducts: ProductResult[] = [];
     const override = queryOverride?.trim();
     const effectiveOverride = override && override.length >= 3 ? override : undefined;

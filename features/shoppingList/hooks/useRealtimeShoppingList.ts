@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { createClient } from '@/adapters/supabase/browser';
 import { ShoppingScope } from './useShoppingListData';
 
@@ -11,9 +11,20 @@ export function useRealtimeShoppingList(
 ) {
   const supabase = useMemo(() => createClient(), []);
   const onRefreshRef = useRef(onRefresh);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   useEffect(() => {
     onRefreshRef.current = onRefresh;
   }, [onRefresh]);
+
+  const notifyRefresh = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'shopping-refresh',
+      payload: { scope }
+    });
+  }, [scope]);
 
   useEffect(() => {
     const filterString = scope === 'PERSONAL'
@@ -35,6 +46,15 @@ export function useRealtimeShoppingList(
         },
         () => {
           console.log('✅ [REALTIME] Event shopping_list_items');
+          if (onRefreshRef.current) onRefreshRef.current();
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'shopping-refresh' },
+        (payload) => {
+          if (payload?.payload?.scope && payload.payload.scope !== scope) return;
+          console.log('📣 [REALTIME] Broadcast refresh');
           if (onRefreshRef.current) onRefreshRef.current();
         }
       )
@@ -71,10 +91,15 @@ export function useRealtimeShoppingList(
         }
       });
 
+    channelRef.current = itemsChannel;
+
     return () => {
       console.log(`🔌 [REALTIME] Tancant shopping list (${scope})`);
       supabase.removeChannel(itemsChannel);
       supabase.removeChannel(sessionsChannel);
+      channelRef.current = null;
     };
   }, [scope, userId, supabase]);
+
+  return { notifyRefresh };
 }

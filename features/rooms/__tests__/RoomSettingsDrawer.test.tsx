@@ -14,6 +14,9 @@ describe('RoomSettingsDrawer', () => {
       delete_room: 'Eliminar Sala',
       features_title: 'Funcionalitats',
       actions_title: 'Accions',
+      room_id_title: 'ID de la sala',
+      room_id_label: 'ID',
+      copy_room_id: 'Copiar ID',
       delete_confirm_msg: 'Segur?'
     }
   };
@@ -28,6 +31,7 @@ describe('RoomSettingsDrawer', () => {
     // 2. IMPORTANT: El mock ha de retornar una Promesa, ja que el component espera Promise<void>
     onToggleFeature: vi.fn().mockResolvedValue(undefined),
     onCopyCode: vi.fn(),
+    onCopyRoomId: vi.fn(),
     t: mockT // ✅ Ara passem 't' directament, satisfent la interfície
   };
 

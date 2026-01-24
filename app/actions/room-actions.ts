@@ -103,9 +103,67 @@ export async function joinRoomAction(roomId: string, userId: string): Promise<Ac
   try {
     const useCase = container.getJoinDecisionRoom();
     await useCase.execute(validation.data);
-    return { success: true };
+    return { success: true, roomId };
   } catch (error: unknown) {
     return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function joinRoomByIdInternal(roomId: string, userId: string): Promise<ActionState> {
+  const validation = ParticipantActionSchema.safeParse({ roomId, userId });
+  if (!validation.success) return { success: false, error: getZodError(validation.error) };
+
+  try {
+    const supabase = await createClient();
+    const { error: joinError } = await supabase
+      .from('room_participants')
+      .insert({ room_id: roomId, user_id: userId });
+
+    if (joinError) {
+      if (joinError.code === '23505') {
+        revalidatePath(`/rooms/${roomId}`);
+        return { success: true, roomId };
+      }
+      if (joinError.code === '23503') {
+        return { success: false, error: 'invalid_code' };
+      }
+      logActionError('joinRoomByIdInternal', 'joinRoomByIdInternal insert failed', joinError);
+      return { success: false, error: 'db_error' };
+    }
+
+    revalidatePath(`/rooms/${roomId}`);
+    return { success: true, roomId };
+  } catch (error) {
+    logActionError('joinRoomByIdInternal', 'joinRoomByIdInternal failed', error);
+    return { success: false, error: 'db_error' };
+  }
+}
+
+export async function joinRoomByInputAction(entry: string, userId: string): Promise<ActionState> {
+  const trimmed = entry.trim();
+  if (!trimmed) return { success: false, error: 'missing_code' };
+
+  const isUuid = z.string().uuid().safeParse(trimmed).success;
+  if (isUuid) {
+    const result = await joinRoomByIdInternal(trimmed, userId);
+    if (!result.error) return result;
+    if (result.error !== 'invalid_code') return result;
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: room, error } = await supabase
+      .from('decision_rooms')
+      .select('id')
+      .eq('invite_code', trimmed)
+      .single();
+
+    if (error || !room) return { success: false, error: 'invalid_code' };
+
+    return joinRoomByIdInternal(room.id, userId);
+  } catch (error) {
+    logActionError('joinRoomByInputAction', 'joinRoomByInputAction failed', error);
+    return { success: false, error: 'invalid_code' };
   }
 }
 

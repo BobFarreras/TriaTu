@@ -54,7 +54,7 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
     const [isAddMode, setIsAddMode] = useState(false);
 
     const activeRoomId = scope === 'PERSONAL' ? undefined : scope;
-    useRealtimeShoppingList(scope, userId, refreshData);
+    const { notifyRefresh } = useRealtimeShoppingList(scope, userId, refreshData);
 
     useEffect(() => {
         if (scope === 'PERSONAL') {
@@ -131,6 +131,7 @@ export function ShoppingListManager({ initialItems, history: initialHistory, ini
         const result = await completeShoppingSessionAction(activeRoomId);
         if (result.success) {
             await refreshData();
+            notifyRefresh();
             toast.success(`🎉 Compra finalitzada!`, { description: `Cost total: ${cartTotal.toFixed(2)}€` });
         } else {
             toast.error("Error al finalitzar", { description: result.error });

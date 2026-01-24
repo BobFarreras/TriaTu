@@ -1,7 +1,7 @@
 // src/components/recipes/IngredientsManager.tsx
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Ingredient } from './types';
 import { EditorData, InventoryItemUI, IngredientsLabels } from './types';
 import { useIngredientsManager } from '../ingredients/useIngredientsManager';
@@ -9,6 +9,7 @@ import { IngredientActionSheet } from '../ingredients/IngredientActionSheet';
 import { SearchHeader, CalculatorGrid } from '../ingredients/IngredientTools';
 import { IngredientDock } from '../ingredients/IngredientDock';
 import { ProductLinkerModal } from './ingredients/ProductLinkerModal';
+import type { ProductResult } from '@/app/actions/inventory';
 
 interface Props {
   data: EditorData;
@@ -17,11 +18,14 @@ interface Props {
   labels: IngredientsLabels;
   searchInputId?: string;
   ingredientsListId?: string;
+  forceLinkerOpen?: boolean;
+  useTourMock?: boolean;
+  mockProductsByIngredientId?: Record<string, ProductResult[]>;
 }
 
 export function IngredientsManager({
   data, update, inventory, labels,
-  searchInputId, ingredientsListId
+  searchInputId, ingredientsListId, forceLinkerOpen, useTourMock, mockProductsByIngredientId
 }: Props) {
   
   const {
@@ -37,6 +41,11 @@ export function IngredientsManager({
   } = useIngredientsManager(data, update);
 
   const [isLinkerOpen, setIsLinkerOpen] = useState(false);
+
+  useEffect(() => {
+    if (forceLinkerOpen === undefined) return;
+    setIsLinkerOpen(forceLinkerOpen);
+  }, [forceLinkerOpen]);
 
   // ✅ SOLUCIÓ TYPESCRIPT: Tot coincideix amb la interfície Ingredient
   const handleUpdateIngredients = (updated: Ingredient[]) => {
@@ -65,6 +74,8 @@ export function IngredientsManager({
         onClose={() => setIsLinkerOpen(false)}
         ingredients={data.ingredients}
         onUpdateIngredients={handleUpdateIngredients}
+        useTourMock={useTourMock}
+        mockProductsByIngredientId={mockProductsByIngredientId}
       />
 
       <div className="flex flex-col h-full w-full relative overflow-hidden bg-slate-950">

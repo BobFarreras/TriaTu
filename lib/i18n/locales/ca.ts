@@ -136,6 +136,10 @@ export const ca = {
     err_general: 'Error desconegut',
     invite_cta: "Invitar Amics",
     link_copied: "Enllaç copiat!",
+    room_id_title: "ID de la sala",
+    room_id_label: "ID",
+    copy_room_id: "Copiar ID",
+    room_id_copied: "✅ ID copiat!",
     copy_error: "Error al copiar l'enllaç",
     // Textos per compartir per WhatsApp:
     share_title: "Uneix-te a '{name}'",
@@ -210,10 +214,11 @@ export const ca = {
     back: '← ENRERE',
     hero_title: 'Tens una invitació?',
     hero_subtitle: 'Introdueix el codi per unir-te a la festa.',
-    label_code: 'CODI DE LA SALA (UUID)',
-    placeholder_code: 'enganxa-ho-aqui...',
+    label_code: 'CODI O ID DE LA SALA',
+    placeholder_code: 'enganxa el codi o ID...',
     btn_join: 'ENTRAR ARA 🍿',
-    err_code_required: 'El codi és obligatori.'
+    err_code_required: 'El codi és obligatori.',
+    err_invalid_code: 'Aquest codi no és vàlid.'
   },
   profile: {
     // Identitat
@@ -809,28 +814,28 @@ export const ca = {
     // Aquí posarem els textos específics de l'editor
     editor: {
       step1_title: "1. Bateja la teva creació",
-      step1_desc: "Tot comença amb un bon nom. Escriu alguna cosa que faci venir gana!",
+      step1_desc: "Tot comença amb un bon nom. Ex: \"Pizza casolana\" o \"Arròs verd\".",
 
       step2_title: "2. El Temps és Or",
-      step2_desc: "Quan trigarem? Sigues realista, no volem que se'ns cremi l'arròs.",
+      step2_desc: "Quan trigarem? Ex: 30 min. Sigues realista, no volem que se'ns cremi l'arròs.",
 
       step3_title: "3. Etiqueta-ho",
-      step3_desc: "És Vegà? Sense Gluten? Picant? Ajuda a la gent a filtrar.",
+      step3_desc: "És Vegà? Sense Gluten? Picant? Marca 2-3 etiquetes clares.",
 
       step4_title: "4. A la Cistella!",
-      step4_desc: "Busca ingredients (ex: 'Ceba') i afegeix quantitats. Fes servir el teu inventari!",
+      step4_desc: "Busca ingredients (ex: \"Ceba\") i afegeix quantitats. Fes servir el teu inventari!",
 
       step5_title: "5. Gestió d'Ingredients",
-      step5_desc: "Aquí veuràs la llista. Si t'equivoques, clica la icona per esborrar-los.",
+      step5_desc: "Revisa la llista. Si t'equivoques, esborra o ajusta quantitats.",
 
       step6_title: "6. La Màgia (Pas a Pas)",
-      step6_desc: "Explica com es fa. Sigues clar i concís.",
+      step6_desc: "Explica com es fa amb frases curtes. Ex: \"Bull l'aigua i afegeix la pasta\".",
 
       step7_title: "7. Superpoder: Inserció Ràpida",
-      step7_desc: "Clica aquests ingredients per afegir-los al text amb la seva icona. Queda súper pro!",
+      step7_desc: "Clica ingredients per inserir-los al text amb icona. És més visual!",
 
       step8_title: "8. Publicar",
-      step8_desc: "Revisa-ho tot i prem el botó màgic per guardar."
+      step8_desc: "Revisa-ho tot i guarda. Pots editar-ho més tard."
     },
     dashboard: {
       step1_title: "Benvingut a la Cuina! 🏠",

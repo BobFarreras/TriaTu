@@ -24,11 +24,12 @@ interface RoomSettingsDrawerProps {
   features: { inventory: boolean; shoppingList: boolean };
   onToggleFeature: (setting: 'enableInventory' | 'enableShoppingList', value: boolean) => void;
   onCopyCode: () => void;
+  onCopyRoomId: () => void;
   t: RoomDrawerTranslationsInput;
 }
 
 export function RoomSettingsDrawer({ 
-  isOpen, onClose, roomId, roomName, isHost, features, onToggleFeature, onCopyCode, t 
+  isOpen, onClose, roomId, roomName, isHost, features, onToggleFeature, onCopyCode, onCopyRoomId, t 
 }: RoomSettingsDrawerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -41,6 +42,9 @@ export function RoomSettingsDrawer({
     features_title: (t.room.features_title as string) || 'Funcionalitats',
     enable_inventory: (t.room.enable_inventory as string) || 'Inventari',
     enable_shopping: (t.room.enable_shopping as string) || 'Llista Compra',
+    room_id_title: (t.room.room_id_title as string) || 'ID de la sala',
+    room_id_label: (t.room.room_id_label as string) || 'ID',
+    copy_room_id: (t.room.copy_room_id as string) || 'Copiar ID',
     actions_title: (t.room.actions_title as string) || 'Accions',
     invite_cta: (t.room.invite_cta as string) || 'Invitar',
     delete_room: (t.room.delete_room as string) || 'Eliminar Sala',
@@ -128,6 +132,26 @@ export function RoomSettingsDrawer({
                         onToggle={onToggleFeature} 
                         isPending={isPending} 
                     />
+                )}
+
+                {isHost && (
+                    <div className="space-y-3">
+                        <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1">{txt.room_id_title}</p>
+                        <div className="flex items-center justify-between gap-4 p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{txt.room_id_label}</p>
+                                <p className="text-xs font-mono text-zinc-200 break-all">{roomId}</p>
+                            </div>
+                            <button
+                                onClick={onCopyRoomId}
+                                disabled={isPending}
+                                type="button"
+                                className="px-3 py-2 text-xs font-bold rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                            >
+                                {txt.copy_room_id}
+                            </button>
+                        </div>
+                    </div>
                 )}
 
                 {/* Accions */}
