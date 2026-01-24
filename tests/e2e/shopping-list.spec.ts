@@ -98,9 +98,9 @@ test.describe('shopping list', () => {
 
     await test.step('add item in shared shopping list', async () => {
       await page.goto(`/shopping-list?room=${roomId}`);
-      await page.locator('[data-testid="shopping-scope-select"]').selectOption(roomId);
+      await page.locator('[data-testid="shopping-scope-select"]:visible').selectOption(roomId);
 
-      await page.locator('[data-testid="shopping-add-button"]').click();
+      await page.locator('[data-testid="shopping-add-button"]:visible').click();
       await page.locator('[data-testid="product-search-input"]').fill(productName);
       await page.locator(`[data-testid="product-card-${productId}"]`).click();
       await page.getByRole('button', { name: 'Afegir' }).click();
@@ -197,9 +197,9 @@ test.describe('shopping list', () => {
 
     await test.step('add and complete shopping list', async () => {
       await page.goto(`/shopping-list?room=${roomId}`);
-      await page.locator('[data-testid="shopping-scope-select"]').selectOption(roomId);
+      await page.locator('[data-testid="shopping-scope-select"]:visible').selectOption(roomId);
 
-      await page.locator('[data-testid="shopping-add-button"]').click();
+      await page.locator('[data-testid="shopping-add-button"]:visible').click();
       await page.locator('[data-testid="product-search-input"]').fill(productName);
       await page.locator(`[data-testid="product-card-${productId}"]`).click();
       await page.getByRole('button', { name: 'Afegir' }).click();
@@ -216,7 +216,7 @@ test.describe('shopping list', () => {
     });
 
     await test.step('review history', async () => {
-      await page.getByTestId('shopping-tab-history').click();
+      await page.locator('[data-testid="shopping-tab-history"]:visible').click();
       const sessionCard = page.getByTestId('shopping-history-session').first();
       await expect(sessionCard).toBeVisible();
       await sessionCard.click();

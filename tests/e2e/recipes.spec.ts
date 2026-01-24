@@ -145,9 +145,18 @@ test.describe('recipes', () => {
       recipeId = parts[1] || '';
     });
 
+    await test.step('make recipe public for search', async () => {
+      if (!recipeId) return;
+      const { error } = await admin
+        .from('saved_recipes')
+        .update({ is_public: true })
+        .eq('id', recipeId);
+      if (error) throw error;
+    });
+
     await test.step('filter and search', async () => {
       await page.goto('/recipes');
-      await page.locator('[data-testid="recipe-mode-mine"]').click();
+      await page.locator('[data-testid="recipe-mode-all"]').click();
       await page.locator('[data-testid="recipe-search-input"]').fill(recipeName);
 
       const card = page.locator(`[data-testid="recipe-card-${recipeId}"]`);
