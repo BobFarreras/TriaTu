@@ -21,7 +21,7 @@
     "@google/genai": "^1.34.0",
     "@sentry/nextjs": "^8.55.0",
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.89.0",
+    "@supabase/supabase-js": "^2.90.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.26",
